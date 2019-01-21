@@ -62,13 +62,8 @@ ui <- fluidPage(
 )
 
 server <- function(input, output, session) {
-<<<<<<< HEAD
-  filingStatus <- callModule(filingStatus, "filingStatus")
-  
   # Render dataTable for Information Summary Tabs below
-=======
   filingStatus <- callModule(filingStatus, "filingStatus", session = session)
->>>>>>> 2fe6a01e6f27a44c74c61dead4525fa6bb678bcf
   output$FS_Summary <- renderDataTable({
     filingStatus()
   })
