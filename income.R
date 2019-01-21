@@ -86,30 +86,30 @@ incomeUI <- function (id){
   )
 } # finish incomeUI function
 
-income <- function (input, output, session){
+income <- function (input, output, session ){
   observeEvent(input$hideWages1_2018,{
       # hide additional wages 1 and reset value to zero, and hide the button after it done
-      session$sendCustomMessage (type = "testmessage", message = "Testing")
+      #session$sendCustomMessage (type = "testmessage", message = "Testing")
       hide (id= "addWages1_2018")
-      updateNumericInput(session,inputId = input$addWages1_2018, value = 0)
+      #updateNumericInput(session,inputId = input$addWages1_2018, value = 0)
       hide (id = "hideWages1_2018")
   })
   observeEvent(input$hideWages2_2018, {
       # hide additional wages 2 and reset value to zero, and hide the button after it done
       hide (id= "addWages2_2018")
-      updateNumericInput(session, inputId = input$addWages2_2018, value = 0)
+      #updateNumericInput(session, inputId = input$addWages2_2018, value = 0)
       hide (id = "hideWages2_2018")
   })
   observeEvent(input$hideWages1_2017,{
       # hide additional wages 1 and reset value to zero, and hide the button after it done
       hide (id= "addWages1_2017")
-      updateNumericInput(session, inputId = input$addWages1_2017, value = 0)
+      #updateNumericInput(session, inputId = input$addWages1_2017, value = 0)
       hide (id = "hideWages1_2017")
   })
   observeEvent (input$hideWages2_2017, {
       # hide additional wages 2 and reset value to zero, and hide the button after it done
       hide (id= "addWages2_2017")
-      updateNumericInput(session,inputId =  input$addWages2_2017, value = 0)
+      #updateNumericInput(session,inputId = input$addWages2_2017, value = 0)
       hide (id = "hideWages2_2017")
   })
   incomeDF <- reactive({

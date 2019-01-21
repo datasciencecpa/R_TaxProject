@@ -41,11 +41,11 @@ ui <- fluidPage(
 )
 
 server <- function(input, output, session) {
-  filingStatus <- callModule(filingStatus, "filingStatus")
+  filingStatus <- callModule(filingStatus, "filingStatus", session = session)
   output$FS_Summary <- renderDataTable({
     filingStatus()
   })
-  income <- callModule(income,"income")
+  income <- callModule(income,"income", session = session)
   output$Income_Summary <- renderDataTable({
     income()
   })
