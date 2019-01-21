@@ -4,6 +4,11 @@
 library(shiny)
 library(shinyjs) #loading addional package to enable more UI experience
 library(DT)
+source("filingStatus.R")
+source("income.R")
+source("deductions.R")
+source("credits.R")
+source("results.R")
 ui <- fluidPage(
   useShinyjs(),
   titlePanel("Federal Income Tax 2018 & 2017"),
@@ -11,10 +16,10 @@ ui <- fluidPage(
     tabPanel("Home",
        navlistPanel("Enter Your Information:",
          filingStatusUI("filingStatus"),
-         tabPanel("Income"),
-         tabPanel("Deductions"),
-         tabPanel("Credits"),
-         tabPanel("Result")
+         incomeUI("income"),
+         deductionsUI("deductions"),
+         creditsUI("credits"),
+         resultsUI("results")
        )
     ),
     tabPanel("Help", 
@@ -30,15 +35,16 @@ ui <- fluidPage(
                  dataTableOutput("FS_Summary"))                     
       )
     )       
-             
   )
-  
 )
 
 server <- function(input, output, session) {
   filingStatus <- callModule(filingStatus, "filingStatus")
   output$FS_Summary <- renderDataTable({
     filingStatus()
+  })
+  observe({
+    
   })
 }
 
