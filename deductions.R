@@ -8,3 +8,6 @@ deductionsUI <- function (id){
      hr()
   )
 }
+deduction <- function (input, output, sesson){
+  
+}
