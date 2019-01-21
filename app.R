@@ -32,7 +32,9 @@ ui <- fluidPage(
     tabPanel("Information Summary",
       navlistPanel("Information you Enter:",
         tabPanel("Filing Status & Dependent Infor You Entered:",
-                 dataTableOutput("FS_Summary"))                     
+                 dataTableOutput("FS_Summary")),
+        tabPanel("Income Summary",
+                 dataTableOutput("Income_Summary"))
       )
     )       
   )
@@ -43,8 +45,9 @@ server <- function(input, output, session) {
   output$FS_Summary <- renderDataTable({
     filingStatus()
   })
-  observe({
-    
+  income <- callModule(income,"income")
+  output$Income_Summary <- renderDataTable({
+    income()
   })
 }
 
