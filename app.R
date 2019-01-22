@@ -64,9 +64,7 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   # Render dataTable for Information Summary Tabs below
   filingStatus <- callModule(filingStatus, "filingStatus", session = session)
-  output$FS_Summary <- renderDataTable({
-    filingStatus()
-  })
+  output$FS_Summary <- renderDataTable(filingStatus(), options= list(pageLength = 25), filter = "top")
   income <- callModule(income,"income", session = session)
   output$Income_Summary <- renderDataTable({
     income()
@@ -77,18 +75,10 @@ server <- function(input, output, session) {
   perExemptions <- read.xls(xls = "TaxRates.xls", sheet = 3)
   stdDeductions <- read.xls(xls = "TaxRates.xls", sheet = 4)
   # Render dataTable for Tax Tables below
-  output$TaxBracket <- renderDataTable({
-    taxBrakets
-  })
-  output$LTCapGain <- renderDataTable({
-    ltCapGains
-  })
-  output$PerExemption <- renderDataTable({
-    perExemptions
-  })
-  output$StdDeductions <- renderDataTable({
-    stdDeductions
-  })
+  output$TaxBracket <- renderDataTable(taxBrakets, options = list(pageLength = 20), filter = "top")
+  output$LTCapGain <- renderDataTable(ltCapGains, options = list(pageLength= 25), filter = "top")
+  output$PerExemption <- renderDataTable(perExemptions, options = list(pageLength= 10))
+  output$StdDeductions <- renderDataTable (stdDeductions, options = list(pageLength = 10), filter = "top")
 }
 
 shinyApp(ui, server)
