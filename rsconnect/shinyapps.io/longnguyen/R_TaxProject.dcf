@@ -5,8 +5,8 @@ account: longnguyen
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 657899
-bundleId: 1827570
+bundleId: 1830906
 url: https://longnguyen.shinyapps.io/R_TaxProject/
-when: 1548099940.24779
+when: 1548220809.30794
 asMultiple: FALSE
 asStatic: FALSE

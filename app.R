@@ -10,14 +10,14 @@ source("income.R")
 source("deductions.R")
 source("credits.R")
 source("results.R")
-#source("Introduction.R")
+source("Instructions.R")
 ui <- fluidPage(
   useShinyjs(),
   titlePanel("Federal Income Tax 2018 & 2017 Analysis"),
   navbarPage("Navigation bar",
     tabPanel("Home",
        navlistPanel("Enter Your Information:",
-         #introductionUI("introduction"),
+         instructionUI("instruction"),
          filingStatusUI("filingStatus"),
          incomeUI("income"),
          deductionsUI("deductions"),
@@ -54,8 +54,15 @@ ui <- fluidPage(
     ),
     tabPanel("Contact Us",
       navlistPanel("Contact & About Me Information:",
-        tabPanel("About Me"),
-        tabPanel("Contact me")
+        tabPanel("About Me",
+                 p("Hi, my name is Long Nguyen. Currently, I am a graduate MSSD student at ", a(href = "http://www.bu.edu/csmet/academic-programs/mssd/", "Boston University."),
+                    "This project is part my self-learning R-Shiny and Data-Science."),
+                 p(strong("How this app comes about:"), "I deal with tax every day in my day job. Therefore, my first app would have something to do with the thing that everyone love to hate:Taxxxx!
+                   Though, my goal is to make this less painful and fun while exercising my programming skills."),
+                 p(strong("Source code:"), a(href = "https://github.com/datasciencecpa/R_TaxProject", "R_TaxProject on github"))
+                 
+        ),
+        tabPanel("Contact me", h4("Email:  nguyenhlongvn@gmail.com"))
       )
     )
   )
@@ -64,8 +71,10 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   # Render dataTable for Information Summary Tabs below
   filingStatus <- callModule(filingStatus, "filingStatus", session = session)
-  output$FS_Summary <- renderDataTable(filingStatus(), options= list(pageLength = 25), filter = "top")
   income <- callModule(income,"income", session = session)
+  instructions <- callModule(instruction, "instruction", session = session)
+  output$FS_Summary <- renderDataTable(filingStatus(), options= list(pageLength = 25), filter = "top")
+  
   output$Income_Summary <- renderDataTable({
     income()
   })
@@ -79,6 +88,9 @@ server <- function(input, output, session) {
   output$LTCapGain <- renderDataTable(ltCapGains, options = list(pageLength= 25), filter = "top")
   output$PerExemption <- renderDataTable(perExemptions, options = list(pageLength= 10))
   output$StdDeductions <- renderDataTable (stdDeductions, options = list(pageLength = 10), filter = "top")
+  
+  #Display image
+  output$myImage <- renderImage(list(src = "img/img1.JPG"))
 }
 
 shinyApp(ui, server)
