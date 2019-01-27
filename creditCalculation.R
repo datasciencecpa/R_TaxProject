@@ -8,10 +8,12 @@ childTaxCrd <- function (AGI, filingStatus, taxYear, numQualifyingChild, creditD
   # Link to IRS website, pub 972: https://www.irs.gov/publications/p972
   # numQualifyingRelative is a variable that will be used for tax year 2018 and later only.
   # tax credit of this is $500 per qualified person, nonrefundable.
-  
-  
-
-  
+  a <- creditDF$FILING.STATUS
+  t <- grepl(filingStatus, a)
+  b <- c(TRUE, FALSE, FALSE, FALSE, FALSE)
+  print (t)
+  print (creditDF[t,])
+  print (creditDF[b,])
 }
 
 dependentCareCrd <- function (){

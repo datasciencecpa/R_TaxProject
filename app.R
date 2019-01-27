@@ -85,13 +85,13 @@ server <- function(input, output, session) {
     income()
   })
   # Reading data from TaxRates.xls
-  taxBrakets <- read.xls(xls = "TaxRates.xls", sheet = 1)
-  ltCapGains <- read.xls(xls = "TaxRates.xls", sheet = 2)
-  perExemptions <- read.xls(xls = "TaxRates.xls", sheet = 3)
-  stdDeductions <- read.xls(xls = "TaxRates.xls", sheet = 4)
-  childTaxCredit <- read.xls(xls = "TaxRates.xls", sheet = 5)
+  taxBrakets <- read.xls(xls = "TaxRates.xls", sheet = 1, as.is = TRUE)
+  ltCapGains <- read.xls(xls = "TaxRates.xls", sheet = 2, as.is = TRUE)
+  perExemptions <- read.xls(xls = "TaxRates.xls", sheet = 3, as.is = TRUE)
+  stdDeductions <- read.xls(xls = "TaxRates.xls", sheet = 4, as.is = TRUE)
+  childTaxCredit <- read.xls(xls = "TaxRates.xls", sheet = 5, as.is = TRUE)
   # Render dataTable for Tax Tables below
-  output$TaxBracket <- renderDataTable(taxBrakets, options = list(pageLength = 20), filter = "top")
+  output$TaxBracket <- renderDataTable(taxBrakets, options = list(pageLength = 20), filter = "top", )
   output$LTCapGain <- renderDataTable(ltCapGains, options = list(pageLength= 25), filter = "top")
   output$PerExemption <- renderDataTable(perExemptions, options = list(pageLength= 10))
   output$StdDeductions <- renderDataTable (stdDeductions, options = list(pageLength = 10), filter = "top")
@@ -107,11 +107,12 @@ server <- function(input, output, session) {
   }
 
   output$testing <- renderText({
+    filingStatus2018 <- filingStatusAbbr(as.character(statusInformation()["filingStatus", "status_2018"]))
     # calling Credit calculation testing function
-    result = childTaxCrd(AGI = 200000, filingStatus = statusInformation()["filingStatus", "status_2018"], taxYear = 2018, numQualifyingChild = statusInformation()["numQualifyingChild", "status_2018"],creditDF = ChildTaxCrd)
+    result = childTaxCrd(AGI = 200000, filingStatus = filingStatus2018, taxYear = 2018, numQualifyingChild = statusInformation()["numQualifyingChild", "status_2018"],creditDF = childTaxCredit)
     #return (cat("Child Tax Credit", result))
     # Convert filing status to abbr for ease of use.
-    filingStatus2018 <- filingStatusAbbr(as.character(statusInformation()["filingStatus", "status_2018"]))
+    
     print (filingStatus2018)
   })
 }
