@@ -11,6 +11,7 @@ source("deductions.R")
 source("credits.R")
 source("results.R")
 source("Instructions.R")
+source("creditCalculation.R")
 ui <- fluidPage(
   useShinyjs(),
   titlePanel("Federal Income Tax 2018 & 2017 Analysis"),
@@ -22,7 +23,8 @@ ui <- fluidPage(
          incomeUI("income"),
          deductionsUI("deductions"),
          creditsUI("credits"),
-         resultsUI("results")
+         resultsUI("results"), 
+         tabPanel("Testing", textOutput("testing"))
        )
     ),
     tabPanel("Help", 
@@ -49,7 +51,9 @@ ui <- fluidPage(
         tabPanel("Personal Exemption - 2017",
                  dataTableOutput("PerExemption")),
         tabPanel("Standard Deductions:",
-                 dataTableOutput("StdDeductions"))
+                 dataTableOutput("StdDeductions")),
+        tabPanel("Child Tax Credit:",
+                 dataTableOutput("ChildTaxCrd"))
       )       
     ),
     tabPanel("Contact Us",
@@ -72,10 +76,10 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   # Render dataTable for Information Summary Tabs below
-  filingStatus <- callModule(filingStatus, "filingStatus", session = session)
+  statusInformation <- callModule(filingStatus, "filingStatus", session = session)
   income <- callModule(income,"income", session = session)
   instructions <- callModule(instruction, "instruction", session = session)
-  output$FS_Summary <- renderDataTable(filingStatus(), options= list(pageLength = 25), filter = "top")
+  output$FS_Summary <- renderDataTable(statusInformation(), options= list(pageLength = 25), filter = "top")
   
   output$Income_Summary <- renderDataTable({
     income()
@@ -85,13 +89,31 @@ server <- function(input, output, session) {
   ltCapGains <- read.xls(xls = "TaxRates.xls", sheet = 2)
   perExemptions <- read.xls(xls = "TaxRates.xls", sheet = 3)
   stdDeductions <- read.xls(xls = "TaxRates.xls", sheet = 4)
+  childTaxCredit <- read.xls(xls = "TaxRates.xls", sheet = 5)
   # Render dataTable for Tax Tables below
   output$TaxBracket <- renderDataTable(taxBrakets, options = list(pageLength = 20), filter = "top")
   output$LTCapGain <- renderDataTable(ltCapGains, options = list(pageLength= 25), filter = "top")
   output$PerExemption <- renderDataTable(perExemptions, options = list(pageLength= 10))
   output$StdDeductions <- renderDataTable (stdDeductions, options = list(pageLength = 10), filter = "top")
-  
-  
+  output$ChildTaxCrd <- renderDataTable(childTaxCredit, filter= "top")
+  filingStatusAbbr <- function (filingStatus){
+    return (switch (filingStatus,
+                    "Single" = "Single",
+                    "Married Filing Jointly" = "MFJ",
+                    "Married Filing Separately" = "MFS",
+                    "Head of Household" = "HOH",
+                    "Qualified Widower" = "QW"
+    ))
+  }
+
+  output$testing <- renderText({
+    # calling Credit calculation testing function
+    result = childTaxCrd(AGI = 200000, filingStatus = statusInformation()["filingStatus", "status_2018"], taxYear = 2018, numQualifyingChild = statusInformation()["numQualifyingChild", "status_2018"],creditDF = ChildTaxCrd)
+    #return (cat("Child Tax Credit", result))
+    # Convert filing status to abbr for ease of use.
+    filingStatus2018 <- filingStatusAbbr(as.character(statusInformation()["filingStatus", "status_2018"]))
+    print (filingStatus2018)
+  })
 }
 
 shinyApp(ui, server)
