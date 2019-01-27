@@ -7,6 +7,10 @@ incomeUI <- function (id){
       column(5, h3("2017"))
     ),
     hr(),
+    fluidRow(
+      column(5,checkboxInput(ns("same"), label = "Applied everything from 2018 to 2017", value = TRUE )),
+      column(5, helpText("Check this box if you want to apply the same inputs from 2018 to 2017. Uncheck this box if you would like to make change to 2017"))
+    ), hr(),
     # Wages
     fluidRow(  
       column(5,
