@@ -126,7 +126,7 @@ income <- function (input, output, session ){
                      input$LTGain_2018,
                      input$STGain_2018,
                      input$IRADist_2018,
-                     input$IRAException_2018)
+                     as.numeric(input$IRAException_2018))
     income_2017 <- c(input$yourWages_2017,
                      input$spouseWages_2017,
                      input$addWages1_2017,
@@ -137,7 +137,9 @@ income <- function (input, output, session ){
                      input$LTGain_2017,
                      input$STGain_2017,
                      input$IRADist_2017,
-                     input$IRAException_2017)
+                     as.numeric(input$IRAException_2017))
+    print (income_2018[1])
+    print (income_2018[5])
     return (data.frame(income_2018, income_2017,row.names = rowNames))
   })
 }

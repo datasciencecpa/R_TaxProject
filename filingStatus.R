@@ -1,16 +1,16 @@
-filingStatusUI <- function (id){
+filingInformationUI <- function (id){
   ns <- NS(id)
   tabPanel("Filing Status & Dependency",
      fluidRow(
         column(4, h3("2018"), 
               radioButtons(ns ("filingStatus_2018"), label= "1. Please select your filing status below:",
-                           choices = c("Single", "Married Filing Jointly", "Married Filing Separately", "Head of Household", "Qualified Widower"), 
-                           selected = "Single", inline = FALSE)
+                           choices = c(Single = "Single", Married_Filing_Jointly = "MFJ", Married_Filing_Separately = "MFS", Head_of_Household = "HOH", Qualified_Widower = "QW"), 
+                            inline = FALSE)
         ),
         column(4, h3("2017"), 
               radioButtons(ns("filingStatus_2017"), label= "1. Please select your filing status below:",
-                           choices = c("Single", "Married Filing Jointly", "Married Filing Separately", "Head of Household", "Qualified Widower"), 
-                           selected = "Single", inline = FALSE)
+                           choices = c(Single = "Single", Married_Filing_Jointly = "MFJ", Married_Filing_Separately = "MFS", Head_of_Household = "HOH", Qualified_Widower = "QW"), 
+                            inline = FALSE)
         ),
         column(3,h3("Help"),"Need help? Visit IRS Interactive Tax Assistant: ",
                a(href = "https://www.irs.gov/help/ita/what-is-my-filing-status", "What is my filing status?"))
@@ -113,7 +113,7 @@ filingStatusUI <- function (id){
      )
   )
 }
-filingStatus <- function (input, output, session){
+filingInformation <- function (input, output, session){
   observe({
     if (input$filingStatus_2018 == "Single"){
       hide(id = "numQualifiedChild_2018")
@@ -149,33 +149,27 @@ filingStatus <- function (input, output, session){
                   "yourAge", "spouseAge", "youBlind", "spouseBlind", "child1Age", "child2Age",
                   "child3Age", "child4Age", "child5Age", "relative1Age", "relative2Age",
                   "relative3Age", "relative4Age", "relative5Age")
-    if (input$numQualifiedChild_2018 ==0){
-      print ("String String XXXXX")
-      print (input$numQualifiedChild_2018)
-    } else {
-      print ("Need to do something")
-      print (input$numQualifiedChild_2018)
-    }
-    status_2018 <-  c(as.character(input$filingStatus_2018), 
-                      as.character(input$isDependent_2018),
-                      as.character(input$numQualifiedChild_2018),
-                      as.character(input$numQualifiedRelative_2018),
-                      as.character(input$yourAge_2018),
-                      as.character(input$spouseAge_2018),
-                      as.character(input$youBlind_2018),
-                      as.character(input$spouseBlind_2018),
-                      as.character(input$child1Age_2018),
-                      as.character(input$child2Age_2018),
-                      as.character(input$child3Age_2018),
-                      as.character(input$child4Age_2018),
-                      as.character(input$child5Age_2018),
-                      as.character(input$qualifiedRel1_2018),
-                      as.character(input$qualifiedRel2_2018),
-                      as.character(input$qualifiedRel3_2018),
-                      as.character(input$qualifiedRel4_2018),
-                      as.character(input$qualifiedRel5_2018)) 
+
+    status_2018 <-  c(input$filingStatus_2018, 
+                      input$isDependent_2018,
+                      input$numQualifiedChild_2018,
+                      input$numQualifiedRelative_2018,
+                      input$yourAge_2018,
+                      input$spouseAge_2018,
+                      input$youBlind_2018,
+                      input$spouseBlind_2018,
+                      input$child1Age_2018,
+                      input$child2Age_2018,
+                      input$child3Age_2018,
+                      input$child4Age_2018,
+                      input$child5Age_2018,
+                      input$qualifiedRel1_2018,
+                      input$qualifiedRel2_2018,
+                      input$qualifiedRel3_2018,
+                      input$qualifiedRel4_2018,
+                      input$qualifiedRel5_2018) 
   
-    status_2017 <- c( as.character(input$filingStatus_2017), 
+    status_2017 <- c( input$filingStatus_2017, 
                       as.character(input$isDependent_2017),
                       as.character(input$numQualifiedChild_2017),
                       as.character(input$numQualifiedRelative_2017),
@@ -193,8 +187,9 @@ filingStatus <- function (input, output, session){
                       as.character(input$qualifiedRel3_2017),
                       as.character(input$qualifiedRel4_2017),
                       as.character(input$qualifiedRel5_2017)) 
-    print (status_2018[3])
-    return (data.frame(status_2018, status_2017, row.names = rowNames))
+
+    print(status_2018[1])
+    return (data.frame(status_2018, status_2017, row.names = rowNames, stringsAsFactors = FALSE))
   })
   
 }
