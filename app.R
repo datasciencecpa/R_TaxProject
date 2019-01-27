@@ -11,6 +11,7 @@ source("deductions.R")
 source("credits.R")
 source("results.R")
 source("Instructions.R")
+source("tax.R")
 #source("creditCalculation.R")
 ui <- fluidPage(
   useShinyjs(),
@@ -23,6 +24,7 @@ ui <- fluidPage(
          incomeUI("income"),
          deductionsUI("deductions"),
          creditsUI("credits"),
+         withholdingTaxUI("withholdTax"),
          resultsUI("results"), 
          tabPanel("Testing", textOutput("testing"))
        )

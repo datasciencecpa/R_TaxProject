@@ -2,53 +2,47 @@ filingInformationUI <- function (id){
   ns <- NS(id)
   tabPanel("Filing Status & Dependency",
      fluidRow(
-        column(4, h3("2018"), 
-              radioButtons(ns ("filingStatus_2018"), label= "1. Please select your filing status below:",
+       column(4, h3("2018")),
+       column(4, h3("2017")),
+       column(3, h3("Help"))
+     ), hr(),
+     fluidRow(
+       column(5,checkboxInput(ns("same"), label = "Applied everything from 2018 to 2017", value = TRUE )),
+       column(5, helpText("Check this box if you want to apply the same inputs from 2018 to 2017. Uncheck this box if you would like to make change to 2017"))
+     ), hr(),
+     fluidRow(
+        h3("Filing Status"),
+        column(4, 
+              radioButtons(ns ("filingStatus_2018"), label= "Select your status below:",
                            choices = c(Single = "Single", Married_Filing_Jointly = "MFJ", Married_Filing_Separately = "MFS", Head_of_Household = "HOH", Qualified_Widower = "QW"), 
                             inline = FALSE)
         ),
-        column(4, h3("2017"), 
-              radioButtons(ns("filingStatus_2017"), label= "1. Please select your filing status below:",
+        column(4, 
+              radioButtons(ns("filingStatus_2017"), label= "Select your status below:",
                            choices = c(Single = "Single", Married_Filing_Jointly = "MFJ", Married_Filing_Separately = "MFS", Head_of_Household = "HOH", Qualified_Widower = "QW"), 
                             inline = FALSE)
         ),
-        column(3,h3("Help"),"Need help? Visit IRS Interactive Tax Assistant: ",
+        column(3,"Need help? Visit IRS Interactive Tax Assistant: ",
                a(href = "https://www.irs.gov/help/ita/what-is-my-filing-status", "What is my filing status?"))
               
      ), # End first row of filing status
-     hr(),
-     fluidRow(
-       column(4, 
-              radioButtons(ns ("isDependent_2018"), label = "Can someone claim you as a dependent on their tax return?",
-                           choices = c("Yes", "No"), selected = "No")
-       ), 
-       column(4, 
-              radioButtons(ns ("isDependent_2017"), label = "Can someone claim you as a dependent on their tax return?",
-                           choices = c("Yes", "No"), selected = "No") 
-       ),
-       column(3, tags$strong("Help:"), "Need help? Visit IRS Interactive Tax Assistant: ",
-              a(href = "https://www.irs.gov/help/ita/whom-may-i-claim-as-a-dependent", "Who may I claim as a dependent?"))
-     ), # End second row of checking dependency on other people return
-     hr(),
-     h3("Number of Dependents"),
-     fluidRow(
+      hr(),        
+      fluidRow(
+        h3("Number of Dependents"),
         column(4, 
               numericInput(ns("numQualifiedChild_2018"), label = "Enter number of your qualifying child", 0,
                            min= 0, max=10),
               numericInput(ns("numQualifiedRelative_2018"), label = "Enter number of your qualifying relative",0,
-                           min= 0, max=10)
-        ), 
-        column(4, 
+                           min= 0, max=10)),
+        column(4,
               numericInput(ns("numQualifiedChild_2017"), label = "Enter number of your qualifying child",
                            min= 0, max=5, value = 0),
               numericInput(ns("numQualifiedRelative_2017"), label = "Enter number of your qualifying relative",
-                           min= 0, max=5, value = 0)
-        ),
+                           min= 0, max=5, value = 0)),
         column(3, tags$strong("Help:"), "Need help? Visit this Turbo Tax article to learn more: ",
-              a(href = "https://turbotax.intuit.com/tax-tips/family/rules-for-claiming-a-dependent-on-your-tax-return/L8LODbx94", 
-                "Rules for claiming a dependent on your tax return")
-        )
-     ),# Ending third row, entering number of dependents
+               a(href = "https://turbotax.intuit.com/tax-tips/family/rules-for-claiming-a-dependent-on-your-tax-return/L8LODbx94", 
+                 "Rules for claiming a dependent on your tax return"))
+      ),  # Ending third row, entering number of dependents             
      hr(),
      h3("Ages:"),
      fluidRow(
@@ -115,28 +109,39 @@ filingInformationUI <- function (id){
 }
 filingInformation <- function (input, output, session){
   observe({
+    if (input$filingStatus_2018 == "Single" && input$filingStatus_2017 == "Single"){
+      hide(id= "numQualifiedChild_2018")
+      hide(id= "numQualifiedRelative_2018")
+      hide(id = "numQualifiedChild_2017")
+      hide(id= "numQualifiedRelative_2017")
+    }else {
+      show(id= "numQualifiedChild_2018")
+      show(id= "numQualifiedRelative_2018")
+      show(id = "numQualifiedChild_2017")
+      show(id= "numQualifiedRelative_2017")
+    }
     if (input$filingStatus_2018 == "Single"){
-      hide(id = "numQualifiedChild_2018")
-      hide(id = "numQualifiedRelative_2018")
+      hide(id= "numQualifiedChild_2018")
+      hide(id= "numQualifiedRelative_2018")
     } else {
-      show(id = "numQualifiedChild_2018")
-      show(id = "numQualifiedRelative_2018")
+      show(id= "numQualifiedChild_2018")
+      show(id= "numQualifiedRelative_2018")
     }
     if (input$filingStatus_2017 == "Single"){
       hide(id = "numQualifiedChild_2017")
-      hide(id = "numQualifiedRelative_2017")
+      hide(id= "numQualifiedRelative_2017")
     } else {
       show(id = "numQualifiedChild_2017")
-      show(id = "numQualifiedRelative_2017")
+      show(id= "numQualifiedRelative_2017")
     }
-    if (input$filingStatus_2018 != "Married Filing Jointly"){
+    if (input$filingStatus_2018 != "MFJ"){
       hide(id = "spouseAge_2018")
       hide(id = "spouseBlind_2018")
     }else {
       show(id = "spouseAge_2018")
       show(id = "spouseBlind_2018")
     }
-    if (input$filingStatus_2017 != "Married Filing Jointly"){
+    if (input$filingStatus_2017 != "MFJ"){
       hide(id = "spouseAge_2017")
       hide(id = "spouseBlind_2017")
     }else {
@@ -151,7 +156,6 @@ filingInformation <- function (input, output, session){
                   "relative3Age", "relative4Age", "relative5Age")
 
     status_2018 <-  c(input$filingStatus_2018, 
-                      input$isDependent_2018,
                       input$numQualifiedChild_2018,
                       input$numQualifiedRelative_2018,
                       input$yourAge_2018,
@@ -170,23 +174,22 @@ filingInformation <- function (input, output, session){
                       input$qualifiedRel5_2018) 
   
     status_2017 <- c( input$filingStatus_2017, 
-                      as.character(input$isDependent_2017),
-                      as.character(input$numQualifiedChild_2017),
-                      as.character(input$numQualifiedRelative_2017),
-                      as.character(input$yourAge_2017),
-                      as.character(input$spouseAge_2017),
-                      as.character(input$youBlind_2017),
-                      as.character(input$spouseBlind_2017),
-                      as.character(input$child1Age_2017),
-                      as.character(input$child2Age_2017),
-                      as.character(input$child3Age_2017),
-                      as.character(input$child4Age_2017),
-                      as.character(input$child5Age_2017),
-                      as.character(input$qualifiedRel1_2017),
-                      as.character(input$qualifiedRel2_2017),
-                      as.character(input$qualifiedRel3_2017),
-                      as.character(input$qualifiedRel4_2017),
-                      as.character(input$qualifiedRel5_2017)) 
+                      input$numQualifiedChild_2017,
+                      input$numQualifiedRelative_2017,
+                      input$yourAge_2017,
+                      input$spouseAge_2017,
+                      input$youBlind_2017,
+                      input$spouseBlind_2017,
+                      input$child1Age_2017,
+                      input$child2Age_2017,
+                      input$child3Age_2017,
+                      input$child4Age_2017,
+                      input$child5Age_2017,
+                      input$qualifiedRel1_2017,
+                      input$qualifiedRel2_2017,
+                      input$qualifiedRel3_2017,
+                      input$qualifiedRel4_2017,
+                      input$qualifiedRel5_2017) 
 
     print(status_2018[1])
     return (data.frame(status_2018, status_2017, row.names = rowNames, stringsAsFactors = FALSE))
