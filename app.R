@@ -12,7 +12,7 @@ source("credits.R")
 source("results.R")
 source("Instructions.R")
 source("tax.R")
-#source("creditCalculation.R")
+source("creditCalculation.R")
 ui <- fluidPage(
   useShinyjs(),
   titlePanel("Federal Income Tax 2018 & 2017 Analysis"),
@@ -98,15 +98,9 @@ server <- function(input, output, session) {
   output$PerExemption <- renderDataTable(perExemptions, options = list(pageLength= 10))
   output$StdDeductions <- renderDataTable (stdDeductions, options = list(pageLength = 10), filter = "top")
   output$ChildTaxCrd <- renderDataTable(childTaxCredit, filter= "top")
-
-
   output$testing <- renderText({
+    filingStatus <- statusInformation()["filingStatus", "status_2018"]
     
-    # calling Credit calculation testing function
-    #numQualifyingChild <- statusInformation()["numQualifyingChild", "status_2018"]
-    #result = childTaxCrd(AGI = 200000, filingStatus = filingStatus2018, taxYear = 2018, numQualifyingChild = numQualifyingChild,creditDF = childTaxCredit)
-    #return (cat("Child Tax Credit", result))
-    # Convert filing status to abbr for ease of use.
   })
 }
 
