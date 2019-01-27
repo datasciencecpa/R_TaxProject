@@ -108,8 +108,13 @@ server <- function(input, output, session) {
 
   output$testing <- renderText({
     filingStatus2018 <- filingStatusAbbr(as.character(statusInformation()["filingStatus", "status_2018"]))
+    print (cat("Filing Status 2018: ", filingStatus2018))
     # calling Credit calculation testing function
-    result = childTaxCrd(AGI = 200000, filingStatus = filingStatus2018, taxYear = 2018, numQualifyingChild = statusInformation()["numQualifyingChild", "status_2018"],creditDF = childTaxCredit)
+    numQualifyingChild <- statusInformation()["numQualifyingChild", "status_2018"]
+    print(cat ("Class:", class(numQualifyingChild)))
+    
+    print (cat ("Num Qua Child:", numQualifyingChild))
+    #result = childTaxCrd(AGI = 200000, filingStatus = filingStatus2018, taxYear = 2018, numQualifyingChild = numQualifyingChild,creditDF = childTaxCredit)
     #return (cat("Child Tax Credit", result))
     # Convert filing status to abbr for ease of use.
     
