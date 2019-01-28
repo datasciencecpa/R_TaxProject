@@ -26,7 +26,7 @@ ui <- fluidPage(
          creditsUI("credits"),
          withholdingTaxUI("withholdTax"),
          resultsUI("results"), 
-         tabPanel("Testing", textOutput("testing"))
+         tabPanel("Testing", dataTableOutput("testing"))
        )
     ),
     tabPanel("Help", 
@@ -98,10 +98,13 @@ server <- function(input, output, session) {
   output$PerExemption <- renderDataTable(perExemptions, options = list(pageLength= 10))
   output$StdDeductions <- renderDataTable (stdDeductions, options = list(pageLength = 10), filter = "top")
   output$ChildTaxCrd <- renderDataTable(childTaxCredit, filter= "top")
-  output$testing <- renderText({
-    filingStatus <- statusInformation()["filingStatus", "status_2018"]
-    
-  })
+  output$testing <- renderDataTable({
+    filingStatus <- statusInformation()["Filing_Status", "Status_2018"]
+    numChildUnder17 <- statusInformation()["Qualifying_Child_Under_17", "Status_2018"]
+    numQualifyingRel <- statusInformation()["Qualifying_Relative", "Status_2018"]
+    yourAGI <- income()["Your_Wages", "income_2018"]
+    return (childTaxCrd(yourAGI, filingStatus, 2018, numChildUnder17, childTaxCredit, 8000, numQualifyingRelative = numQualifyingRel))
+  }, options = list(pageLength = 15))
 }
 
 shinyApp(ui, server)
