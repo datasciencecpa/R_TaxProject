@@ -25,17 +25,19 @@ childTaxCrd <- function (AGI, filingStatus, taxYear, numQualifyingChild, creditD
   line_3 <- phase_out_agi
   line_4 <- ifelse(line_2<line_3, 0, round_any(line_2 - line_3, 1000, f= ceiling))
   line_5 <- line_4 *0.05
-  line_6 <- ifelse(line_5>line_1c,0, line_1c - line_5)
+  line_6 <- ifelse(line_5>line_1c,0, line_1c - line_5)  # this is the net credit after the 5% reduction
   line_7 <- as.numeric(taxBeforeCredit)
   line_8 <- sum(nonRefundableCredits)
-  line_9 <- line_7 - line_8
-  line_10 <- ifelse (line_6>line_9, line_9, line_6)
-  resultDF <- c(line_1, line_1b, line_1c, line_2, line_3, line_4, line_5, line_6, line_7, line_8, line_9, line_10)
+  line_9 <- line_7 - line_8                             # This is the net tax after subtraction of other nonrefundable credit
+  line_10 <- ifelse (line_6>line_9, line_9, line_6)     # Smaller of net tax above, or net credit. If net credit is higher, additional credit may apply
+  line_11 <- ifelse (line_6>line_9, line_6 - line_9, 0)
+  resultDF <- c(line_1, line_1b, line_1c, line_2, line_3, line_4, line_5, line_6, line_7, line_8, line_9, line_10, line_11)
   line_1_name <-  paste("Tax_Credit_Per_Qualifying_Child_", numQualifyingChild, sep ="")
   line_1b_name <- paste("Tax_Credit_Per_Other_Dependent_", numQualifyingRelative, sep = "")
   names(resultDF) <- c(line_1_name, line_1b_name,
                        "Total_Tax_Credit", "Your_AGI","Phase_Out_AGI","Amt_Over_AGI", "Reduce_Credit_Amt",
-                       "Net_Tax_Credit","Your_Tax","Sum_Other_Nonrefundable_Credit", "Net_Tax_After_Credit_Above", "Your_Child_Tax_Credit")
+                       "Net_Tax_Credit","Your_Tax","Sum_Other_Nonrefundable_Credit", "Net_Tax_After_Credit_Above", 
+                       "Your_Child_Tax_Credit", "Qualify_For_Additional_Credit")
   
   return (data.frame(resultDF)) 
 }

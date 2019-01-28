@@ -95,26 +95,48 @@ income <- function (input, output, session ){
       # hide additional wages 1 and reset value to zero, and hide the button after it done
       #session$sendCustomMessage (type = "testmessage", message = "Testing")
       hide (id= "addWages1_2018")
-      #updateNumericInput(session,inputId = input$addWages1_2018, value = 0)
+      updateNumericInput(session,inputId = "addWages1_2018", value = 0)
       hide (id = "hideWages1_2018")
   })
   observeEvent(input$hideWages2_2018, {
       # hide additional wages 2 and reset value to zero, and hide the button after it done
       hide (id= "addWages2_2018")
-      #updateNumericInput(session, inputId = input$addWages2_2018, value = 0)
+      updateNumericInput(session, inputId ="addWages2_2018", value = 0)
       hide (id = "hideWages2_2018")
   })
   observeEvent(input$hideWages1_2017,{
       # hide additional wages 1 and reset value to zero, and hide the button after it done
       hide (id= "addWages1_2017")
-      #updateNumericInput(session, inputId = input$addWages1_2017, value = 0)
+      updateNumericInput(session, inputId = "addWages1_2017", value = 0)
       hide (id = "hideWages1_2017")
   })
   observeEvent (input$hideWages2_2017, {
       # hide additional wages 2 and reset value to zero, and hide the button after it done
       hide (id= "addWages2_2017")
-      #updateNumericInput(session,inputId = input$addWages2_2017, value = 0)
+      updateNumericInput(session,inputId = "addWages2_2017", value = 0)
       hide (id = "hideWages2_2017")
+  })
+  observe({  # Use this to handle check box checked.
+    if(input$same){
+      print ("Box same checked")
+      updateNumericInput(session, "yourWages_2017",label = "Enter your wages from W-2, box 1:", value = input$yourWages_2018, min=0)
+      updateNumericInput(session, "spouseWages_2017",label = "Enter spouse wages from W-2, box 1:", value = input$spouseWages_2018, min=0 )
+      updateNumericInput(session, "addWages1_2017",label = "Enter additional wages from W-2, box 1:", value = input$addWages1_2018, min=0 )
+      updateNumericInput(session, "addWages2_2017",label = "Enter additional wages from W-2, box 1:", value = input$addWages2_2018, min=0 )
+      updateNumericInput(session, "interest_2017",label = "Enter your taxable interest income: (Form 1099-Int, Box 1)", 
+                         value = input$interest_2018, min=0 )
+      updateNumericInput(session, "ordinaryDividends_2017",label = "Enter your ordinary dividends income: (Form 1099-DIV)", 
+                         value = input$ordinaryDividends_2018, min=0 )
+      updateNumericInput(session, "qualifiedDividends_2017",label = "Enter your qualified dividends income: (Form 1099-DIV)", 
+                         value = input$qualifiedDividends_2018, min=0)
+      updateNumericInput(session, "LTGain_2017",label = "Enter your long-term capital gains (loss):", 
+                        value = input$LTGain_2018, min=0)
+      updateNumericInput(session, "STGain_2017",label = "Enter your long-term capital gains (loss):", 
+                         value = input$STGain_2018, min=0)
+      updateNumericInput(session, "IRADist_2017",label = "Enter your taxable distribution IRA:", 
+                         value = input$IRADist_2018, min=0)
+      updateCheckboxInput(session, "IRAException_2017", label = "Check if you meet exception to 10% additional tax", value = input$IRAException_2018 )
+    }
   })
   incomeDF <- reactive({
     rowNames <- c("Your_Wages", "Spouse_Wages", "Additional_Wages_1", "Additional_Wages_2",
