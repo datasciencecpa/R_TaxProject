@@ -1,56 +1,52 @@
 filingInformationUI <- function (id){
   ns <- NS(id)
   tabPanel("Filing Status & Dependency",
+     
      fluidRow(
-       column(4, h3("2018")),
-       column(4, h3("2017")),
-       column(3, h3("Help"))
-     ), hr(),
-     fluidRow(
-       column(5,checkboxInput(ns("same"), label = "Applied everything from 2018 to 2017", value = TRUE )),
-       column(5, helpText("Check this box if you want to apply the same inputs from 2018 to 2017. Uncheck this box if you would like to make change to 2017"))
+       column(6,checkboxInput(ns("same"), label = "Applied everything from 2018 to 2017", value = TRUE )),
+       column(4, helpText("Check this box if you want to apply the same inputs from 2018 to 2017. Uncheck this box if you would like to make change to 2017"))
      ), hr(),
      fluidRow(
         h3("Filing Status"),
         column(4, 
-              radioButtons(ns ("filingStatus_2018"), label= "Select your status below:",
+              radioButtons(ns ("filingStatus_2018"), label= "2018: Select your status below:",
                            choices = c(Single = "Single", Married_Filing_Jointly = "MFJ", Married_Filing_Separately = "MFS", Head_of_Household = "HOH", Qualified_Widower = "QW"), 
                             inline = FALSE)
         ),
         column(4, 
-              radioButtons(ns("filingStatus_2017"), label= "Select your status below:",
+              radioButtons(ns("filingStatus_2017"), label= "2017: Select your status below:",
                            choices = c(Single = "Single", Married_Filing_Jointly = "MFJ", Married_Filing_Separately = "MFS", Head_of_Household = "HOH", Qualified_Widower = "QW"), 
                             inline = FALSE)
         ),
-        column(3,"Need help? Visit IRS Interactive Tax Assistant: ",
+        column(4,"Need help? Visit IRS Interactive Tax Assistant: ",
                a(href = "https://www.irs.gov/help/ita/what-is-my-filing-status", "What is my filing status?"))
               
      ), # End first row of filing status
       hr(),        
       fluidRow(
         h3("Number of Dependents"),
-        column(4, 
+        column(4, h4("2018"),
               numericInput(ns("numQualifiedChildUnder17_2018"), label = "Enter number of your qualifying child under age of 17", 0,
                            min= 0, max=10),
               numericInput(ns("numQualifiedChildOver17_2018"), label = "Enter number of your qualifying child over age of 17", 0,
                           min= 0, max=10),
               numericInput(ns("numQualifiedRelative_2018"), label = "Enter number of your qualifying relative",0,
                            min= 0, max=10)),
-        column(4,
+        column(4, h4("2017"),
               numericInput(ns("numQualifiedChildUnder17_2017"), label = "Enter number of your qualifying child under age of 17",
                            min= 0, max=5, value = 0),
               numericInput(ns("numQualifiedChildOver17_2017"), label = "Enter number of your qualifying child over age of 17",
                            min= 0, max=5, value = 0),
               numericInput(ns("numQualifiedRelative_2017"), label = "Enter number of your qualifying relative",
                            min= 0, max=5, value = 0)),
-        column(3, tags$strong("Help:"), "Need help? Visit this Turbo Tax article to learn more: ",
+        column(4, tags$strong("Help:"), "Need help? Visit this Turbo Tax article to learn more: ",
                a(href = "https://turbotax.intuit.com/tax-tips/family/rules-for-claiming-a-dependent-on-your-tax-return/L8LODbx94", 
                  "Rules for claiming a dependent on your tax return"))
       ),  # Ending third row, entering number of dependents             
      hr(),
-     h3("Ages:"),
+     h3("Ages"),
      fluidRow(
-       column(5, 
+       column(6, h4("2018"),
               numericInput(ns("yourAge_2018"), label = "Enter your age:",
                            min= 0, max=200, value = 30),
               checkboxInput(ns("youBlind_2018"), label = "Check if you are blind", value = FALSE),
@@ -79,7 +75,7 @@ filingInformationUI <- function (id){
               numericInput(ns( "qualifiedRel5_2018"), label = "Enter your qualifying relative 5 age:",
                            min = 0, max=200, value = 0)
        ), 
-       column(5, 
+       column(6, h4("2017"),
               numericInput(ns( "yourAge_2017"), label = "Enter your age:",
                            min= 0, max=200, value = 30),
               checkboxInput(ns("youBlind_2017"), label = "Check if you are blind", value = FALSE),

@@ -11,7 +11,7 @@ source("deductions.R")
 source("credits.R")
 source("results.R")
 source("Instructions.R")
-source("tax.R")
+
 source("creditCalculation.R")
 ui <- fluidPage(
   useShinyjs(),
@@ -24,7 +24,6 @@ ui <- fluidPage(
          incomeUI("income"),
          deductionsUI("deductions"),
          creditsUI("credits"),
-         withholdingTaxUI("withholdTax"),
          resultsUI("results"), 
          tabPanel("Testing", dataTableOutput("testing"))
        )
@@ -84,7 +83,7 @@ server <- function(input, output, session) {
   output$FS_Summary <- renderDataTable(statusInformation(), options= list(pageLength = 25), filter = "top")
   
   output$Income_Summary <- renderDataTable(
-    income(), options = list(pageLength = 15), filter = 'top'
+    income(), options = list(pageLength = 25), filter = 'top'
   )
   # Reading data from TaxRates.xls
   taxBrakets <- read.xls(xls = "TaxRates.xls", sheet = 1, as.is = TRUE)
