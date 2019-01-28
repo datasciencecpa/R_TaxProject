@@ -11,7 +11,6 @@ source("deductions.R")
 source("credits.R")
 source("results.R")
 source("Instructions.R")
-
 source("creditCalculation.R")
 ui <- fluidPage(
   useShinyjs(),
@@ -25,7 +24,8 @@ ui <- fluidPage(
          deductionsUI("deductions"),
          creditsUI("credits"),
          resultsUI("results"), 
-         tabPanel("Testing", dataTableOutput("testing"))
+         tabPanel("Testing Child Tax Credit", dataTableOutput("testingCTC")),
+         tabPanel("Testing Child and Dependent Care Exp", dataTableOutput("testingCDC"))
        )
     ),
     tabPanel("Help", 
@@ -40,7 +40,9 @@ ui <- fluidPage(
         tabPanel("Filing Status & Dependent Infor You Entered:",
                  dataTableOutput("FS_Summary")),
         tabPanel("Income Summary",
-                 dataTableOutput("Income_Summary"))
+                 dataTableOutput("Income_Summary")),
+        tabPanel("Deduction Summary",
+                 dataTableOutput("Deduction_Summary"))
       )
     ),
     tabPanel("Tax Tables",
@@ -55,6 +57,7 @@ ui <- fluidPage(
                  dataTableOutput("StdDeductions")),
         tabPanel("Child Tax Credit:",
                  dataTableOutput("ChildTaxCrd"))
+
       )       
     ),
     tabPanel("Contact Us",
@@ -77,33 +80,41 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   # Render dataTable for Information Summary Tabs below
+  instructions <- callModule(instruction, "instruction", session = session)
   statusInformation <- callModule(filingInformation, "filingInformation", session = session)
   income <- callModule(income,"income", session = session)
-  instructions <- callModule(instruction, "instruction", session = session)
-  output$FS_Summary <- renderDataTable(statusInformation(), options= list(pageLength = 25), filter = "top")
+  deductions <- callModule(deductions, "deductions", session = session)
   
+  output$FS_Summary <- renderDataTable(statusInformation(), options= list(pageLength = 25), filter = "top")
   output$Income_Summary <- renderDataTable(
     income(), options = list(pageLength = 25), filter = 'top'
   )
+  output$Deduction_Summary <- renderDataTable(
+    deductions(), options = list(pageLength = 25), filter="top"
+  )
   # Reading data from TaxRates.xls
-  taxBrakets <- read.xls(xls = "TaxRates.xls", sheet = 1, as.is = TRUE)
-  ltCapGains <- read.xls(xls = "TaxRates.xls", sheet = 2, as.is = TRUE)
-  perExemptions <- read.xls(xls = "TaxRates.xls", sheet = 3, as.is = TRUE)
-  stdDeductions <- read.xls(xls = "TaxRates.xls", sheet = 4, as.is = TRUE)
-  childTaxCredit <- read.xls(xls = "TaxRates.xls", sheet = 5, as.is = TRUE)
+  taxBraketsTbl <- read.xls(xls = "TaxRates.xls", sheet = 1, as.is = TRUE)
+  ltCapGainsTbl <- read.xls(xls = "TaxRates.xls", sheet = 2, as.is = TRUE)
+  perExemptionsTbl <- read.xls(xls = "TaxRates.xls", sheet = 3, as.is = TRUE)
+  stdDeductionsTbl <- read.xls(xls = "TaxRates.xls", sheet = 4, as.is = TRUE)
+  childTaxCreditTbl <- read.xls(xls = "TaxRates.xls", sheet = 5, as.is = TRUE)
+  childDepExpTbl <- read.xls(xls = "TaxRates.xls", sheet=6, as.is = TRUE)
   # Render dataTable for Tax Tables below
-  output$TaxBracket <- renderDataTable(taxBrakets, options = list(pageLength = 20), filter = "top" )
-  output$LTCapGain <- renderDataTable(ltCapGains, options = list(pageLength= 25), filter = "top")
-  output$PerExemption <- renderDataTable(perExemptions, options = list(pageLength= 10))
-  output$StdDeductions <- renderDataTable (stdDeductions, options = list(pageLength = 10), filter = "top")
-  output$ChildTaxCrd <- renderDataTable(childTaxCredit, filter= "top")
-  output$testing <- renderDataTable({
+  output$TaxBracket <- renderDataTable(taxBraketsTbl, options = list(pageLength = 20), filter = "top" )
+  output$LTCapGain <- renderDataTable(ltCapGainsTbl, options = list(pageLength= 25), filter = "top")
+  output$PerExemption <- renderDataTable(perExemptionsTbl, options = list(pageLength= 10))
+  output$StdDeductions <- renderDataTable (stdDeductionsTbl, options = list(pageLength = 10), filter = "top")
+  output$ChildTaxCrd <- renderDataTable(childTaxCreditTbl, filter= "top")
+  output$testingCTC<- renderDataTable({
     filingStatus <- statusInformation()["Filing_Status", "Status_2018"]
     numChildUnder17 <- statusInformation()["Qualifying_Child_Under_17", "Status_2018"]
     numQualifyingRel <- statusInformation()["Qualifying_Relative", "Status_2018"]
-    yourAGI <- income()["Your_Wages", "income_2018"]
-    return (childTaxCrd(yourAGI, filingStatus, 2018, numChildUnder17, childTaxCredit, 8000, numQualifyingRelative = numQualifyingRel))
+    yourAGI <- income()["Your_Wages", "Income_Tax_2018"]
+    return (childTaxCrd(yourAGI, filingStatus, 2018, numChildUnder17, childTaxCreditTbl, 8000, numQualifyingRelative = numQualifyingRel))
   }, options = list(pageLength = 15))
+  output$testingCDC <- renderDataTable({
+    
+  })
 }
 
 shinyApp(ui, server)

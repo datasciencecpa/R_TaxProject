@@ -2,12 +2,95 @@ deductionsUI <- function (id){
   ns <- NS(id)
   tabPanel("Deductions",
      fluidRow(
-       column(6, h3("2018")),
-       column(6, h3("2017"))
+       column(6,checkboxInput(ns("same"), label = "Applied everything from 2018 to 2017", value = TRUE )),
+       column(5, helpText("Check this box if you want to apply the same inputs from 2018 to 2017. Uncheck this box if you would like to make change to 2017"))
      ), 
-     hr()
+     hr(), # Inputs for above the line deductions
+     fluidRow(
+       column(6, h4("2018"),
+          numericInput(ns("educatorExp_2018"), label = "Educator Expense ($250/person, up to $500 for MFJ):", value = 0, min = 0),
+          numericInput(ns("HSA_2018"), label = "HSA contributions:", value = 0, min = 0),
+          numericInput(ns("IRA_2018"), label = "Deductible IRA Contribution:", value = 0, min = 0),
+          numericInput(ns("studentLoan_2018"), label = "Enter your student loan interest(Max $2500):", value = 0, min = 0)
+       ),
+       column(6, h4("2017"),
+          numericInput(ns("educatorExp_2017"), label = "Educator Expense ($250/person, up to $500 for MFJ):", value = 0, min = 0),
+          numericInput(ns("HSA_2017"), label = "HSA contributions:", value = 0, min = 0),
+          numericInput(ns("IRA_2017"), label = "Deductible IRA Contribution:", value = 0, min = 0),
+          numericInput(ns("studentLoan_2017"), label = "Enter your student loan interest(Max $2500):", value = 0, min = 0)
+       )
+     ), hr(), #Input for itemize deductions
+     fluidRow(
+       helpText("Enter expenses below if you would like to check itemized deductions. Standard deduction will be claimed if it is higher than your itemized expenses!")
+     ),
+     fluidRow(
+       column(6, h4("2018"),
+          numericInput(ns("medicalExp_2018"), label = "Enter eligible medical expenses(Amount exceeds 7.5% of your AGI):", value = 0, min = 0),
+          numericInput(ns("stateTax_2018"), label = "Enter state and local income taxes or general sales tax:", value = 0, min = 0),
+          numericInput(ns("realEstateTax_2018"), label = "Enter real estate taxes:", value = 0, min = 0),
+          numericInput(ns("personalTax_2018"), label = "Enter personal property taxes:", value = 0, min = 0),
+          numericInput(ns("mortgageInterest_2018"), label = "Enter your eligible mortgage interest:", value = 0, min = 0),
+          numericInput(ns("PMI_2018"), label = "Enter your premium mortgage insurance:", value = 0, min = 0),
+          numericInput(ns("charitable_2018"), label = "Enter your charitable deductions:", value = 0, min = 0)
+       ),
+       column(6, h4("2018"),
+          numericInput(ns("medicalExp_2017"), label = "Enter eligible medical expenses(Amount exceeds 7.5% of your AGI):", value = 0, min = 0),
+          numericInput(ns("stateTax_2017"), label = "Enter state and local income taxes or general sales tax:", value = 0, min = 0),
+          numericInput(ns("realEstateTax_2017"), label = "Enter real estate taxes:", value = 0, min = 0),
+          numericInput(ns("personalTax_2017"), label = "Enter personal property taxes:", value = 0, min = 0),
+          numericInput(ns("mortgageInterest_2017"), label = "Enter your eligible mortgage interest:", value = 0, min = 0),
+          numericInput(ns("PMI_2017"), label = "Enter your premium mortgage insurance:", value = 0, min = 0),
+          numericInput(ns("charitable_2017"), label = "Enter your charitable deductions:", value = 0, min = 0)
+       )
+     )
   )
 }
-deduction <- function (input, output, sesson){
-  
+deductions <- function (input, output, session){
+  observe({  
+    if (input$same){
+      updateNumericInput(session, "educatorExp_2017", label = "Educator Expense ($250/person, up to $500 for MFJ):", value = input$educatorExp_2018)
+      updateNumericInput(session, "HSA_2017", label = "HSA contributions:", value = input$HSA_2018)
+      updateNumericInput(session, "IRA_2017", label = "Deductible IRA Contribution:", value = input$IRA_2018)
+      updateNumericInput(session, "studentLoan_2017", label = "Enter your student loan interest(Max $2500):", value = input$studentLoan_2018)
+      updateNumericInput(session, "medicalExp_2017", label = "Enter eligible medical expenses(Amount exceeds 7.5% of your AGI):", value = input$medicalExp_2018)
+      updateNumericInput(session, "stateTax_2017", label = "Enter state and local income taxes or general sales tax:", value = input$stateTax_2018)
+      updateNumericInput(session, "realEstateTax_2017", label = "Enter real estate taxes:", value = input$realEstateTax_2018)
+      updateNumericInput(session, "personalTax_2017", label = "Enter personal property taxes:", value = input$personalTax_2018)
+      updateNumericInput(session, "mortgageInterest_2017", label = "Enter your eligible mortgage interest:", value = input$mortgageInterest_2018)
+      updateNumericInput(session, "PMI_2017", label = "Enter your premium mortgage insurance:", value = input$PMI_2018)
+      updateNumericInput(session, "charitable_2017", label = "Enter your charitable deductions:", value = input$charitable_2018)
+    }
+  })
+  deductionDF <- reactive ({
+      rowNames <- c("Educator Expense", "HSA_Contribution", "IRA_Contribution","Student_Loan_Interest", "Medical_Exp",
+                    "State_Local_Taxes", "Real_Estate_Taxes","Personal_Property_Tax", "Mortgage_Interest", 
+                    "Premium_Mortage_Interest","Charitable_Contribution")
+      Deduction_2018 <- c(
+        ifelse(input$educatorExp_2018>500, 500, input$educatorExp_2018), # Reduce amount above $500 to $500, this won't check if user is MFJ or not
+        input$HSA_2018,
+        input$IRA_2018,
+        ifelse(input$studentLoan_2018>2500, 2500, input$studentLoan_2018), # Max amount allowed are $2500 before checking for limitation based on MAGI
+        input$medicalExp_2018,
+        input$stateTax_2018,
+        input$realEstateTax_2018,
+        input$personalTax_2018,
+        input$mortgageInterest_2018,
+        input$PMI_2018,
+        input$charitable_2018
+      )
+      Deduction_2017 <- c(
+        ifelse(input$educatorExp_2017>500, 500, input$educatorExp_2017), # Reduce amount above $500 to $500, this won't check if user is MFJ or not
+        input$HSA_2017,
+        input$IRA_2017,
+        ifelse(input$studentLoan_2017>2500, 2500, input$studentLoan_2017), # Max amount allowed are $2500 before checking for limitation based on MAGI
+        input$medicalExp_2017,
+        input$stateTax_2017,
+        input$realEstateTax_2017,
+        input$personalTax_2017,
+        input$mortgageInterest_2017,
+        input$PMI_2017,
+        input$charitable_2017
+      )
+      return (data.frame(Deduction_2018, Deduction_2017, row.names = rowNames))
+  })
 }

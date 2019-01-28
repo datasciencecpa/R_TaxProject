@@ -52,28 +52,7 @@ filingInformationUI <- function (id){
               checkboxInput(ns("youBlind_2018"), label = "Check if you are blind", value = FALSE),
               numericInput(ns("spouseAge_2018"), label = "Enter your spouse age:",
                            min= 0, max=200, value = 0),
-              checkboxInput(ns("spouseBlind_2018"), label = "Check if you are blind", value = FALSE),
-              numericInput(ns("child1Age_2018"), label = "Enter your child 1 age:",
-                           min = 0, max=200, value = 0),
-              
-              numericInput(ns("child2Age_2018"), label = "Enter your child 2 age:",
-                           min = 0, max=200, value = 0),
-              numericInput(ns("child3Age_2018"), label = "Enter your child 3 age:",
-                           min = 0, max=200, value = 0),
-              numericInput(ns("child4Age_2018"), label = "Enter your child 4 age:",
-                           min = 0, max=200, value = 0),
-              numericInput(ns( "child5Age_2018"), label = "Enter your child 5 age:",
-                           min = 0, max=200, value = 0),
-              numericInput(ns( "qualifiedRel1_2018"), label = "Enter your qualifying relative 1 age:",
-                           min = 0, max=200, value = 0),
-              numericInput(ns( "qualifiedRel2_2018"), label = "Enter your qualifying relative 2 age:",
-                           min = 0, max=200, value = 0),
-              numericInput(ns( "qualifiedRel3_2018"), label = "Enter your qualifying relative 3 age:",
-                           min = 0, max=200, value = 0),
-              numericInput(ns( "qualifiedRel4_2018"), label = "Enter your qualifying relative 4 age:",
-                           min = 0, max=200, value = 0),
-              numericInput(ns( "qualifiedRel5_2018"), label = "Enter your qualifying relative 5 age:",
-                           min = 0, max=200, value = 0)
+              checkboxInput(ns("spouseBlind_2018"), label = "Check if you are blind", value = FALSE)
        ), 
        column(6, h4("2017"),
               numericInput(ns( "yourAge_2017"), label = "Enter your age:",
@@ -81,29 +60,7 @@ filingInformationUI <- function (id){
               checkboxInput(ns("youBlind_2017"), label = "Check if you are blind", value = FALSE),
               numericInput(ns( "spouseAge_2017"), label = "Enter your spouse age:",
                            min= 0, max=200, value = 0),
-              checkboxInput(ns("spouseBlind_2017"), label = "Check if you are blind", value = FALSE),
-              numericInput(ns( "child1Age_2017"), label = "Enter your child 1 age:",
-                           min = 0, max=200, value = 0),
-              
-              numericInput(ns( "child2Age_2017"), label = "Enter your child 2 age:",
-                           min = 0, max=200, value = 0),
-              numericInput(ns( "child3Age_2017"), label = "Enter your child 3 age:",
-                           min = 0, max=200, value = 0),
-              numericInput(ns( "child4Age_2017"), label = "Enter your child 4 age:",
-                           min = 0, max=200, value = 0),
-              numericInput(ns( "child5Age_2017"), label = "Enter your child 5 age:",
-                           min = 0, max=200, value = 0),
-              numericInput(ns( "qualifiedRel1_2017"), label = "Enter your qualifying relative 1 age:",
-                           min = 0, max=200, value = 0),
-              numericInput(ns( "qualifiedRel2_2017"), label = "Enter your qualifying relative 2 age:",
-                           min = 0, max=200, value = 0),
-              numericInput(ns( "qualifiedRel3_2017"), label = "Enter your qualifying relative 3 age:",
-                           min = 0, max=200, value = 0),
-              numericInput(ns( "qualifiedRel4_2017"), label = "Enter your qualifying relative 4 age:",
-                           min = 0, max=200, value = 0),
-              numericInput(ns( "qualifiedRel5_2017"), label = "Enter your qualifying relative 5 age:",
-                           min = 0, max=200, value = 0)
-              
+              checkboxInput(ns("spouseBlind_2017"), label = "Check if you are blind", value = FALSE)
        ) 
      )
   )
@@ -158,23 +115,12 @@ filingInformation <- function (input, output, session){
                          min= 0, max=10)
       updateNumericInput(session, "yourAge_2017", label = "Enter your age:", value = ifelse (input$yourAge_2018>0, input$yourAge_2018-1, input$yourAge_2018))
       updateNumericInput(session, "spouseAge_2017", label = "Enter your spouse age:", value = ifelse(input$spouseAge_2018>0, input$spouseAge_2018-1, input$spouseAge_2018))
-      updateNumericInput(session, "child1Age_2017", label = "Enter your child 1 age:", value = ifelse (input$child1Age_2018>0, input$child1Age_2018-1,input$child1Age_2018))
-      updateNumericInput(session, "child2Age_2017", label = "Enter your child 2 age:", value = ifelse (input$child2Age_2018>0,input$child2Age_2018-1,input$child2Age_2018))
-      updateNumericInput(session, "child3Age_2017", label = "Enter your child 3 age:", value = ifelse (input$child3Age_2018>0,input$child3Age_2018-1, input$child3Age_2018))
-      updateNumericInput(session, "child4Age_2017", label = "Enter your child 4 age:", value = ifelse (input$child4Age_2018>0, input$child4Age_2018-1, input$child4Age_2018))
-      updateNumericInput(session, "child5Age_2017", label = "Enter your child 5 age:", value = ifelse (input$child5Age_2018>0, iinput$child5Age_2018-1, input$child5Age_2018))
-      updateNumericInput(session, "qualifiedRel1_2017", label = "Enter your qualifying relative 1 age:", value = ifelse(input$qualifiedRel1_2018>0,input$qualifiedRel1_2018-1, input$qualifiedRel1_2018))
-      updateNumericInput(session, "qualifiedRel2_2017", label = "Enter your qualifying relative 2 age:", value = ifelse(input$qualifiedRel2_2018>0,input$qualifiedRel2_2018-1, input$qualifiedRel2_2018))
-      updateNumericInput(session, "qualifiedRel3_2017", label = "Enter your qualifying relative 3 age:", value = ifelse(input$qualifiedRel3_2018>0,input$qualifiedRel3_2018-1, input$qualifiedRel3_2018))
-      updateNumericInput(session, "qualifiedRel4_2017", label = "Enter your qualifying relative 4 age:", value = ifelse(input$qualifiedRel4_2018>0,input$qualifiedRel4_2018-1, input$qualifiedRel4_2018))
-      updateNumericInput(session, "qualifiedRel5_2017", label = "Enter your qualifying relative 5 age:", value = ifelse(input$qualifiedRel5_2018>0,input$qualifiedRel5_2018-1, input$qualifiedRel5_2018))
+      
     } 
   }) # Finish cosmetic issues.
   filingStatusDF <- reactive ({
     rowNames <- c("Filing_Status", "Qualifying_Child_Under_17", "Qualifying_Child_Over_17","Qualifying_Relative",
-                  "Your_Age", "Spouse_Age", "You_Blind", "Spouse_Blind", "Child_1_Age", "Child_2_Age",
-                  "Child_3_Age", "Child_4_Age", "Child_5_Age", "Relative_1_Age", "Relative_2_Age",
-                  "Relative_3_Age", "Relative_4_Age", "Relative_5_Age")
+                  "Your_Age", "Spouse_Age", "You_Blind", "Spouse_Blind")
 
     Status_2018 <-  c(input$filingStatus_2018, 
                       input$numQualifiedChildUnder17_2018,
@@ -183,17 +129,8 @@ filingInformation <- function (input, output, session){
                       input$yourAge_2018,
                       input$spouseAge_2018,
                       input$youBlind_2018,
-                      input$spouseBlind_2018,
-                      input$child1Age_2018,
-                      input$child2Age_2018,
-                      input$child3Age_2018,
-                      input$child4Age_2018,
-                      input$child5Age_2018,
-                      input$qualifiedRel1_2018,
-                      input$qualifiedRel2_2018,
-                      input$qualifiedRel3_2018,
-                      input$qualifiedRel4_2018,
-                      input$qualifiedRel5_2018) 
+                      input$spouseBlind_2018
+                      ) 
   
     Status_2017 <- c( input$filingStatus_2017, 
                       input$numQualifiedChildUnder17_2017,
@@ -202,17 +139,8 @@ filingInformation <- function (input, output, session){
                       input$yourAge_2017,
                       input$spouseAge_2017,
                       input$youBlind_2017,
-                      input$spouseBlind_2017,
-                      input$child1Age_2017,
-                      input$child2Age_2017,
-                      input$child3Age_2017,
-                      input$child4Age_2017,
-                      input$child5Age_2017,
-                      input$qualifiedRel1_2017,
-                      input$qualifiedRel2_2017,
-                      input$qualifiedRel3_2017,
-                      input$qualifiedRel4_2017,
-                      input$qualifiedRel5_2017) 
+                      input$spouseBlind_2017
+                      ) 
 
     return (data.frame(Status_2018, Status_2017, row.names = rowNames, stringsAsFactors = FALSE))
   })
