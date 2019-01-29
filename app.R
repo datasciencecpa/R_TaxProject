@@ -1,16 +1,17 @@
 # Project: Income Tax Project
 # Author: Long Nguyen
 # Date: 01/19/2019
-library(shiny)
-library(shinyjs)    #loading addional package to enable more UI experience
-library(DT)
-library(gdata)      # Use to read Excel file TaxRates.xls
-source("filingStatus.R")
-source("income.R")
-source("deductions.R")
-source("credits.R")
-source("Instructions.R")
-source("creditCalculation.R")
+library (shiny)
+library (shinyjs)    #loading addional package to enable more UI experience
+library (DT)
+library (gdata)      # Use to read Excel file TaxRates.xls
+source ("filingStatus.R")
+source ("income.R")
+source ("deductions.R")
+source ("credits.R")
+source ("Instructions.R")
+#source ("creditCalculation.R")
+source ("incometaxCalculation.R")
 ui <- fluidPage(
   useShinyjs(),
   titlePanel("Federal Income Tax 2018 & 2017 Analysis"),
@@ -93,11 +94,12 @@ ui <- fluidPage(
 )
 
 server <- function(input, output, session) {
-  # Render dataTable for Information Summary Tabs below
+  # get statusInformation, incomeInformation, and deductions information entered by user.
   statusInformation <- callModule(filingInformation, "filingInformation", session = session)
   income <- callModule(income,"income", session = session)
   deductions <- callModule(deductions, "deductions", session = session)
-  
+  #--------------------------------------------------------------------------------
+  # Display user entered information to information summary tab
   output$FS_Summary <- renderDataTable(statusInformation(), options= list(pageLength = 25), filter = "top")
   output$Income_Summary <- renderDataTable(
     income(), options = list(pageLength = 25), filter = 'top'
@@ -105,19 +107,29 @@ server <- function(input, output, session) {
   output$Deduction_Summary <- renderDataTable(
     deductions(), options = list(pageLength = 25), filter="top"
   )
-  # Reading data from TaxRates.xls
+  #--------------------------------------------------------------------------------
+  # First step - Reading data from TaxRates.xls
   taxBraketsTbl <- read.xls(xls = "TaxRates.xls", sheet = 1, as.is = TRUE)
   ltCapGainsTbl <- read.xls(xls = "TaxRates.xls", sheet = 2, as.is = TRUE)
   perExemptionsTbl <- read.xls(xls = "TaxRates.xls", sheet = 3, as.is = TRUE)
   stdDeductionsTbl <- read.xls(xls = "TaxRates.xls", sheet = 4, as.is = TRUE)
   childTaxCreditTbl <- read.xls(xls = "TaxRates.xls", sheet = 5, as.is = TRUE)
   childDepExpTbl <- read.xls(xls = "TaxRates.xls", sheet=6, as.is = TRUE)
+  AOCTbl <- read.xls(xls = "TaxRates.xls", sheet = 7, as.is = TRUE)
+  LLTbl <- read.xls(xls = "TaxRates.xls", sheet = 8, as.is = TRUE)
+  # *********************************************************************************
   # Render dataTable for Tax Tables below
   output$TaxBracket <- renderDataTable(taxBraketsTbl, options = list(pageLength = 20), filter = "top" )
   output$LTCapGain <- renderDataTable(ltCapGainsTbl, options = list(pageLength= 25), filter = "top")
   output$PerExemption <- renderDataTable(perExemptionsTbl, options = list(pageLength= 10))
   output$StdDeductions <- renderDataTable (stdDeductionsTbl, options = list(pageLength = 10), filter = "top")
   output$ChildTaxCrd <- renderDataTable(childTaxCreditTbl, filter= "top")
+  # -- End Render Tax Tables -----------------------------------------
+  
+  output$AGI <- renderDataTable(AGICalculation(income))
+  
+  
+  # Testing Code Below ----------------------------------------------
   output$testingCTC<- renderDataTable({
     filingStatus <- statusInformation()["Filing_Status", "Status_2018"]
     numChildUnder17 <- statusInformation()["Qualifying_Child_Under_17", "Status_2018"]
