@@ -2,9 +2,17 @@ resultsUI <- function (id){
   ns <- NS(id)
   tabPanel("Results",
      fluidRow(
-       column(6, h3("2018")),
-       column(6, h3("2017"))
+       h4("Your AGI"),
+       dataTableOutput(ns("AGI")),
+       column(3,checkboxInput(ns("displayAGIGraph"),label = "Display Graph", value = TRUE)),
+       column(9,plotOutput(ns("AGIGraph")))
      ), 
-     hr()
+     hr(),
+     fluidRow(
+       h4("Your Adjustments to Income"),
+       dataTableAjax(ns("AdjToIncome")),
+       column(3, checkboxInput(ns("displayAdjToIncomeGraph"), label = "Display Graph", value = TRUE)),
+       column(9, plotOutput(ns("AdjToIncomeGraph")))
+     )
   )
 }
