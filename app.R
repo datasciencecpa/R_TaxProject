@@ -9,7 +9,7 @@ source("filingStatus.R")
 source("income.R")
 source("deductions.R")
 source("credits.R")
-#source("results.R")
+source("results.R")
 source("Instructions.R")
 source("creditCalculation.R")
 ui <- fluidPage(
@@ -23,7 +23,7 @@ ui <- fluidPage(
          incomeUI("income"),
          deductionsUI("deductions"),
          creditsUI("credits"),
-         #resultsUI("results"), 
+         resultsUI("results"), 
          tabPanel("Testing Child Tax Credit", dataTableOutput("testingCTC")),
          tabPanel("Testing Child and Dependent Care Exp", dataTableOutput("testingCDC"))
        )

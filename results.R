@@ -10,9 +10,10 @@ resultsUI <- function (id){
      hr(),
      fluidRow(
        h4("Your Adjustments to Income"),
-       dataTableAjax(ns("AdjToIncome")),
+       dataTableOutput(ns("AdjToIncome")),
        column(3, checkboxInput(ns("displayAdjToIncomeGraph"), label = "Display Graph", value = TRUE)),
        column(9, plotOutput(ns("AdjToIncomeGraph")))
      )
   )
 }
+
