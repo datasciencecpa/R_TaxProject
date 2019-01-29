@@ -9,7 +9,6 @@ source("filingStatus.R")
 source("income.R")
 source("deductions.R")
 source("credits.R")
-source("results.R")
 source("Instructions.R")
 source("creditCalculation.R")
 ui <- fluidPage(
@@ -23,7 +22,22 @@ ui <- fluidPage(
          incomeUI("income"),
          deductionsUI("deductions"),
          creditsUI("credits"),
-         resultsUI("results"), 
+         tabPanel("Results",
+                  fluidRow(
+                    h4("Your AGI"),
+                    dataTableOutput("AGI"),
+                    column(3,checkboxInput("displayAGIGraph",label = "Display Graph", value = TRUE)),
+                    column(9,plotOutput("AGIGraph"))
+                  ), 
+                  hr(),
+                  fluidRow(
+                    h4("Your Adjustments to Income"),
+                    dataTableOutput("AdjToIncome"),
+                    column(3, checkboxInput("displayAdjToIncomeGraph", label = "Display Graph", value = TRUE)),
+                    column(9, plotOutput("AdjToIncomeGraph"))
+                  )
+         ),
+         uiOutput("resultTab"),
          tabPanel("Testing Child Tax Credit", dataTableOutput("testingCTC")),
          tabPanel("Testing Child and Dependent Care Exp", dataTableOutput("testingCDC"))
        )
@@ -80,7 +94,6 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   # Render dataTable for Information Summary Tabs below
-  instructions <- callModule(instruction, "instruction", session = session)
   statusInformation <- callModule(filingInformation, "filingInformation", session = session)
   income <- callModule(income,"income", session = session)
   deductions <- callModule(deductions, "deductions", session = session)

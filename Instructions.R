@@ -9,6 +9,3 @@ instructionUI <- function (id){
            p("This app was born on Jan 19, 2019."),
            p("I will be back with real instructions."))
 }
-instruction <- function (input, output, session){
-  
-}
