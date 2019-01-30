@@ -67,26 +67,7 @@ filingInformationUI <- function (id){
 }
 filingInformation <- function (input, output, session){
   observe({
-    if (input$filingStatus_2018 == "Single"){
-      hide(id= "numQualifiedChildUnder17_2018")
-      hide(id= "numQualifiedChildOver17_2018")
-      hide(id= "numQualifiedRelative_2018")
-    }
-    else {
-      show(id= "numQualifiedChildUnder17_2018")
-      show(id= "numQualifiedChildOver17_2018")
-      show(id= "numQualifiedRelative_2018")
-    }
-    if (input$filingStatus_2017 == "Single"){
-      hide(id = "numQualifiedChildUnder17_2017")
-      hide(id= "numQualifiedChildOver17_2017")
-      hide(id= "numQualifiedRelative_2017")
-    }
-    else {
-      show(id = "numQualifiedChildUnder17_2017")
-      show(id= "numQualifiedChildOver17_2017")
-      show(id= "numQualifiedRelative_2017")
-    }
+    
     if (input$filingStatus_2018 != "MFJ"){
       hide(id = "spouseAge_2018")
       hide(id = "spouseBlind_2018")

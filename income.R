@@ -86,7 +86,24 @@ incomeUI <- function (id){
                         value = 0, min=0)
       )      
     ),
-    hr(),
+    hr(), #Taxable Refunds
+    helpText("Report taxable refunds, credits, or offsets of State and Local Income Taxes only if they are taxable.
+             If you did not itemize deductions, or elected to deduct state and local general sales taxes instead of state and local income taxes -
+             your refund is not taxable. Enter zero below if this applied to you."),
+    fluidRow(
+      column(6, h4("2018"),
+             numericInput(ns("taxRefund_2018"), label = "Taxable refunds, credits, or offsets of state and local income taxes", value = 0)),
+      column(6, h4("2017"),
+             numericInput(ns("taxRefund_2017"), label = "Taxable refunds, credits, or offsets of state and local income taxes", value = 0))
+    ), hr(), #Alimony received
+    helpText("Your alimony income may not be taxable in 2018. If this is the case, enter zero below. See ", 
+             a(href="https://www.irs.gov/forms-pubs/about-publication-504", "IRS Publication 504"), " for detail."),
+    fluidRow(
+      column(6, h4("2018"),
+             numericInput(ns("alimony_2018"), label = "Alimony received", value = 0)),
+      column(6, h4("2017"),
+             numericInput(ns("alimony_2017"), label = "Alimony received", value = 0))
+    ), hr(),
     # Capital Gain
     fluidRow(
       column(4, h4("2018"),
@@ -117,6 +134,16 @@ incomeUI <- function (id){
       column(4, tags$strong("Help:"), 
              a(href="https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-tax-on-early-distributions",
               "Exception to Tax on Early Distributions")
+      )
+    ), hr(), # Unemployment income 
+    fluidRow(
+      column(6, h4("2018"),
+        column(6, numericInput(ns("unemployment_2018"), label= "Unemployment income received", value = 0)),
+        column(6, numericInput(ns("unemploymentTax_2018"), label= "Unemployment income tax withheld", value = 0))
+      ),
+      column(6, h4("2017"),
+             column(6, numericInput(ns("unemployment_2017"), label= "Unemployment income received", value = 0)),
+             column(6, numericInput(ns("unemploymentTax_2017"), label= "Unemployment income tax withheld", value = 0))
       )
     )
   )
@@ -185,13 +212,18 @@ income <- function (input, output, session ){
                          value = input$IRADist_2018, min=0)
       updateNumericInput(session, "IRATax_2017", label = "Enter your income tax withheld:", value = input$IRATax_2018)
       updateCheckboxInput(session, "IRAException_2017", label = "Check if you meet exception to 10% additional tax", value = input$IRAException_2018 )
+      updateNumericInput(session, "taxRefund_2017", label = "Taxable refunds, credits, or offsets of state and local income taxes",
+                         value = input$taxRefund_2018)
+      updateNumericInput(session, "alimony_2017", label = "Alimony received", value = input$alimony_2018)
+      updateNumericInput(session, "unemployment_2017", label = "Unemployment income received", value = input$unemployment_2018)
+      updateNumericInput(session, "unemploymentTax_2017", label = "Unemployment income tax withheld", value = input$unemploymentTax_2018)
     }
   })
   incomeDF <- reactive({
     rowNames <- c("Your_Wages", "Spouse_Wages", "Additional_Wages_1", "Additional_Wages_2",
-                  "Interest", "Ordinary_Dividends","Qualified_Dividends", "Long_Term_Gains", "Short_Term_Gains",
-                  "TaxableIRA", "Exception", "Your_W2_Tax", "Spouse_W2_Tax", "Additional_W2_Tax_1", "Additional_W2_Tax_2",
-                  "Interest_Tax", "Dividend_Tax", "Capital_Gain_Tax", "IRA_Tax")
+                  "Interest", "Ordinary_Dividends","Qualified_Dividends","Tax_Refunds", "Alimony", "Long_Term_Gains", "Short_Term_Gains",
+                  "TaxableIRA", "Exception", "Unemployment_Income", "Your_W2_Tax", "Spouse_W2_Tax", "Additional_W2_Tax_1", "Additional_W2_Tax_2",
+                  "Interest_Tax", "Dividend_Tax", "Capital_Gain_Tax", "IRA_Tax", "Unemployment_Tax")
     Income_Tax_2018 <- c(input$yourWages_2018,
                      input$spouseWages_2018,
                      input$addWages1_2018,
@@ -199,10 +231,13 @@ income <- function (input, output, session ){
                      input$interest_2018,
                      input$ordinaryDividends_2018,
                      input$qualifiedDividends_2018,
+                     input$taxRefund_2018,
+                     input$alimony_2018,
                      input$LTGain_2018,
                      input$STGain_2018,
                      input$IRADist_2018,
                      as.numeric(input$IRAException_2018),
+                     input$unemployment_2018,
                      input$yourW2Tax_2018,
                      input$spouseW2Tax_2018,
                      input$addW2Tax1_2018,
@@ -210,7 +245,8 @@ income <- function (input, output, session ){
                      input$interestTax_2018, 
                      input$dividendTax_2018,
                      input$capitalTax_2018,
-                     input$IRATax_2018
+                     input$IRATax_2018,
+                     input$unemploymentTax_2018
                      )
     Income_Tax_2017 <- c(input$yourWages_2017,
                      input$spouseWages_2017,
@@ -219,10 +255,13 @@ income <- function (input, output, session ){
                      input$interest_2017,
                      input$ordinaryDividends_2017,
                      input$qualifiedDividends_2017,
+                     input$taxRefund_2017,
+                     input$alimony_2018,
                      input$LTGain_2017,
                      input$STGain_2017,
                      input$IRADist_2017,
                      as.numeric(input$IRAException_2017),
+                     input$unemployment_2017,
                      input$yourW2Tax_2017,
                      input$spouseW2Tax_2017,
                      input$addW2Tax1_2017,
@@ -230,7 +269,8 @@ income <- function (input, output, session ){
                      input$interestTax_2017, 
                      input$dividendTax_2017,
                      input$capitalTax_2017,
-                     input$IRATax_2017)
+                     input$IRATax_2017, 
+                     input$unemploymentTax_2017)
 
     return (data.frame(Income_Tax_2018, Income_Tax_2017,row.names = rowNames))
   })
