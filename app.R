@@ -26,10 +26,10 @@ ui <- fluidPage(
          creditsUI("credits"),
          tabPanel("Results",
                   fluidRow(
-                    h4("Your AGI"),
-                    dataTableOutput("AGI"),
-                    column(3,checkboxInput("displayAGIGraph",label = "Display Graph", value = TRUE)),
-                    column(9,plotOutput("AGIGraph"))
+                    h4("Your Income"),
+                    dataTableOutput("totalIncome"),
+                    column(3,checkboxInput("displayTotalIncGraph",label = "Display Graph", value = TRUE)),
+                    column(9,plotOutput("totalIncGraph"))
                   ), 
                   hr(),
                   fluidRow(
@@ -130,14 +130,14 @@ server <- function(input, output, session) {
   
   # -- Observe when user check on display graph---
   observe({
-    if (!input$displayAGIGraph){
-      hide("AGIGraph")
-    } else show ("AGIGraph")
+    if (!input$displayTotalIncGraph){
+      hide("totalIncGraph")
+    } else show ("totalIncGraph")
   })
   #-------------------------------------------------------------------
-  output$AGI <- renderDataTable({
+  output$totalIncome <- renderDataTable({
     AGIIncome <- AGICalculation(income)
-    output$AGIGraph <- renderPlot({
+    output$totalIncGraph <- renderPlot({
       
       ggplot(data = DFConverter(AGIIncome), aes(x= TaxYear, y = Amount, fill = Income_Type)) +
         geom_bar(stat = "identity")
