@@ -10,12 +10,22 @@ deductionsUI <- function (id){
        column(6, h4("2018"),
           numericInput(ns("educatorExp_2018"), label = "Educator Expense ($250/person, up to $500 for MFJ):", value = 0, min = 0),
           numericInput(ns("HSA_2018"), label = "HSA contributions:", value = 0, min = 0),
+          column(8,
+            numericInput(ns("W2HSA_2018"), label = "Enter your HSA contribution as reported on all of your W-2", value = 0)
+          ),
+          column(4,
+            selectInput(ns("HSAPlan_2018"), label = "Select your HSA plan", choices = c("Single", "Family"), selected = "Single")),
           numericInput(ns("IRA_2018"), label = "Deductible IRA Contribution:", value = 0, min = 0),
           numericInput(ns("studentLoan_2018"), label = "Enter your student loan interest(Max $2500):", value = 0, min = 0)
        ),
        column(6, h4("2017"),
           numericInput(ns("educatorExp_2017"), label = "Educator Expense ($250/person, up to $500 for MFJ):", value = 0, min = 0),
           numericInput(ns("HSA_2017"), label = "HSA contributions:", value = 0, min = 0),
+          column(8,
+                 numericInput(ns("W2HSA_2017"), label = "Enter your HSA contribution as reported on all of your W-2", value = 0)
+          ),
+          column(4,
+                 selectInput(ns("HSAPlan_2017"), label = "Select your HSA plan", choices = c("Single", "Family"), selected = "Single")),
           numericInput(ns("IRA_2017"), label = "Deductible IRA Contribution:", value = 0, min = 0),
           numericInput(ns("studentLoan_2017"), label = "Enter your student loan interest(Max $2500):", value = 0, min = 0)
        )
@@ -59,15 +69,19 @@ deductions <- function (input, output, session){
       updateNumericInput(session, "mortgageInterest_2017", label = "Enter your eligible mortgage interest:", value = input$mortgageInterest_2018)
       updateNumericInput(session, "PMI_2017", label = "Enter your premium mortgage insurance:", value = input$PMI_2018)
       updateNumericInput(session, "charitable_2017", label = "Enter your charitable deductions:", value = input$charitable_2018)
+      updateNumericInput(session, "W2HSA_2017", label = "Enter your HSA contribution as reported on all of your W-2", value = input$W2HSA_2018)
+      updateSelectInput(session, "HSAPlan_2017", label = "Select your HSA plan", choices = c("Single", "Family"), selected = input$HSAPlan_2018)
     }
   })
   deductionDF <- reactive ({
-      rowNames <- c("Educator Expense", "HSA_Contribution", "IRA_Contribution","Student_Loan_Interest", "Medical_Exp",
+      rowNames <- c("Educator Expense", "HSA_Contribution", "HSA Contribution_Per_W2", "HSA_Plan_Type","IRA_Contribution","Student_Loan_Interest", "Medical_Exp",
                     "State_Local_Taxes", "Real_Estate_Taxes","Personal_Property_Tax", "Mortgage_Interest", 
                     "Premium_Mortage_Interest","Charitable_Contribution")
       Deduction_2018 <- c(
         ifelse(input$educatorExp_2018>500, 500, input$educatorExp_2018), # Reduce amount above $500 to $500, this won't check if user is MFJ or not
         input$HSA_2018,
+        input$W2HSA_2018,
+        input$HSAPlan_2018,
         input$IRA_2018,
         ifelse(input$studentLoan_2018>2500, 2500, input$studentLoan_2018), # Max amount allowed are $2500 before checking for limitation based on MAGI
         input$medicalExp_2018,
@@ -77,10 +91,13 @@ deductions <- function (input, output, session){
         input$mortgageInterest_2018,
         input$PMI_2018,
         input$charitable_2018
+        
       )
       Deduction_2017 <- c(
         ifelse(input$educatorExp_2017>500, 500, input$educatorExp_2017), # Reduce amount above $500 to $500, this won't check if user is MFJ or not
         input$HSA_2017,
+        input$W2HSA_2017,
+        input$HSAPlan_2017,
         input$IRA_2017,
         ifelse(input$studentLoan_2017>2500, 2500, input$studentLoan_2017), # Max amount allowed are $2500 before checking for limitation based on MAGI
         input$medicalExp_2017,

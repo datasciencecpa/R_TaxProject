@@ -1,6 +1,7 @@
 # Project: Income Tax Project
 # Author: Long Nguyen
 # Date: 01/19/2019
+library (ggplot2)
 library (shiny)
 library (shinyjs)    #loading addional package to enable more UI experience
 library (DT)
@@ -126,7 +127,23 @@ server <- function(input, output, session) {
   output$ChildTaxCrd <- renderDataTable(childTaxCreditTbl, filter= "top")
   # -- End Render Tax Tables -----------------------------------------
   
-  output$AGI <- renderDataTable(AGICalculation(income))
+  
+  # -- Observe when user check on display graph---
+  observe({
+    if (!input$displayAGIGraph){
+      hide("AGIGraph")
+    } else show ("AGIGraph")
+  })
+  #-------------------------------------------------------------------
+  output$AGI <- renderDataTable({
+    AGIIncome <- AGICalculation(income)
+    output$AGIGraph <- renderPlot({
+      
+      ggplot(data = DFConverter(AGIIncome), aes(x= TaxYear, y = Amount, fill = Income_Type)) +
+        geom_bar(stat = "identity")
+    })
+    return (AGIIncome)
+  })
   
   
   # Testing Code Below ----------------------------------------------
