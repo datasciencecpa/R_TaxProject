@@ -7,7 +7,7 @@
 # Author: Long Nguyen
 # Date Created: 01/28/2019
 
-AGICalculation <- function (income){
+totalIncomeCalculation <- function (income){
    Income_Type <- c("Total_W2_Wages", "Interest", "Dividends", "Taxable_Refunds","Alimony", "Net_Capital_Gain_Loss",
                  "IRA_Distribution", "Unemployment Income")
    incomeDF <- income()
@@ -17,7 +17,7 @@ AGICalculation <- function (income){
      incomeDF["Ordinary_Dividends", 1],
      incomeDF["Tax_Refunds", 1],
      incomeDF["Alimony",1],
-     sum(incomeDF[c("Long_Term_Gains","Short_Term_Gains"),1]),
+     ifelse (sum(incomeDF[c("Long_Term_Gains","Short_Term_Gains"),1])<0,-3000,sum(incomeDF[c("Long_Term_Gains","Short_Term_Gains"),1])),
      incomeDF["TaxableIRA",1],
      incomeDF["Unemployment_Income", 1]
    )
@@ -28,7 +28,7 @@ AGICalculation <- function (income){
      incomeDF["Ordinary_Dividends", 2],
      incomeDF["Tax_Refunds", 2],
      incomeDF["Alimony",2],
-     sum(incomeDF[c("Long_Term_Gains","Short_Term_Gains"),2]),
+     ifelse (sum(incomeDF[c("Long_Term_Gains","Short_Term_Gains"),2])<0,-3000,sum(incomeDF[c("Long_Term_Gains","Short_Term_Gains"),2])),
      incomeDF["TaxableIRA",2],
      incomeDF["Unemployment_Income", 2]
    )
@@ -36,7 +36,9 @@ AGICalculation <- function (income){
    
    return (data.frame(Income_Type,AGI_2018, AGI_2017))
 }
-
+deductionToAGI <- function (deductions) {
+  
+}
 DFConverter <- function (df){
   # This function is used to convert given dataframe into different format
   df_col_names <- colnames(df)

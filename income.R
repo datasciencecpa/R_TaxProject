@@ -96,7 +96,7 @@ incomeUI <- function (id){
       column(6, h4("2017"),
              numericInput(ns("taxRefund_2017"), label = "Taxable refunds, credits, or offsets of state and local income taxes", value = 0))
     ), hr(), #Alimony received
-    helpText("Your alimony income may not be taxable in 2018. If this is the case, enter zero below. See ", 
+    helpText("Your alimony income may not be taxable in 2018. If this is the case, enter zero for 2018 below. See ", 
              a(href="https://www.irs.gov/forms-pubs/about-publication-504", "IRS Publication 504"), " for detail."),
     fluidRow(
       column(6, h4("2018"),
@@ -105,6 +105,8 @@ incomeUI <- function (id){
              numericInput(ns("alimony_2017"), label = "Alimony received", value = 0))
     ), hr(),
     # Capital Gain
+    helpText("Enter amount of net short-term and/or long-term capital gain/loss as showed on Schedule D to box below.
+             This app won't calculate special capital gain such as section 1250 gain or collectible gain."),
     fluidRow(
       column(4, h4("2018"),
             numericInput(ns("LTGain_2018"), label = "Enter your long-term capital gains (loss):", value=0 ),

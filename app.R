@@ -27,16 +27,18 @@ ui <- fluidPage(
          tabPanel("Results",
                   fluidRow(
                     h4("Your Income"),
+                    column(3,checkboxInput("displayIncomeTbl", label="Display Income Table", value = TRUE)),
                     dataTableOutput("totalIncome"),
                     column(3,checkboxInput("displayTotalIncGraph",label = "Display Graph", value = TRUE)),
                     column(9,plotOutput("totalIncGraph"))
                   ), 
                   hr(),
                   fluidRow(
-                    h4("Your Adjustments to Income"),
-                    dataTableOutput("AdjToIncome"),
-                    column(3, checkboxInput("displayAdjToIncomeGraph", label = "Display Graph", value = TRUE)),
-                    column(9, plotOutput("AdjToIncomeGraph"))
+                    h4("Your Deductions"),
+                    column(3,checkboxInput("displayDeductionTbl", label="Display Income Table", value = TRUE)),
+                    dataTableOutput("totalDeduction"),
+                    column(3, checkboxInput("displayDeductionGraph", label = "Display Graph", value = TRUE)),
+                    column(9, plotOutput("deductionGraph"))
                   )
          ),
          uiOutput("resultTab"),
@@ -133,10 +135,21 @@ server <- function(input, output, session) {
     if (!input$displayTotalIncGraph){
       hide("totalIncGraph")
     } else show ("totalIncGraph")
+    if (!input$displayIncomeTbl) { 
+      hide ("totalIncome")  
+    } else {
+      show ("totalIncome")
+    }
+    if (!input$displayDeductionGraph){
+      hide ("deductionGraph")
+    } else show ("deductionGraph")
+    if (!input$displayDeductionTbl) {
+      hide ("totalDeduction")
+    } else show ("totalDeduction")
   })
   #-------------------------------------------------------------------
   output$totalIncome <- renderDataTable({
-    AGIIncome <- AGICalculation(income)
+    AGIIncome <- totalIncomeCalculation(income)
     output$totalIncGraph <- renderPlot({
       
       ggplot(data = DFConverter(AGIIncome), aes(x= TaxYear, y = Amount, fill = Income_Type)) +
