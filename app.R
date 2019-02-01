@@ -149,7 +149,7 @@ server <- function(input, output, session) {
   })
   #-------------------------------------------------------------------
   output$totalIncome <- renderDataTable({
-    AGIIncome <- totalIncomeCalculation(income)
+    AGIIncome <- totalIncomeCalculation(income())
     output$totalIncGraph <- renderPlot({
       
       ggplot(data = DFConverter(AGIIncome), aes(x= TaxYear, y = Amount, fill = Income_Type)) +
@@ -157,7 +157,9 @@ server <- function(input, output, session) {
     })
     return (AGIIncome)
   })
-  
+  output$totalDeduction <- renderDataTable({
+    deductionsToAGI <- totalDeductionToAGI (deductions(), statusInformation())
+  })
   
   # Testing Code Below ----------------------------------------------
   output$testingCTC<- renderDataTable({

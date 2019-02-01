@@ -74,7 +74,7 @@ deductions <- function (input, output, session){
     }
   })
   deductionDF <- reactive ({
-      rowNames <- c("Educator Expense", "HSA_Contribution", "HSA Contribution_Per_W2", "HSA_Plan_Type","IRA_Contribution","Student_Loan_Interest", "Medical_Exp",
+      rowNames <- c("Educator_Expense", "HSA_Contribution", "HSA Contribution_Per_W2", "HSA_Plan_Type","IRA_Contribution","Student_Loan_Interest", "Medical_Exp",
                     "State_Local_Taxes", "Real_Estate_Taxes","Personal_Property_Tax", "Mortgage_Interest", 
                     "Premium_Mortage_Interest","Charitable_Contribution")
       Deduction_2018 <- c(
