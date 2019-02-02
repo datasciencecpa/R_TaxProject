@@ -9,6 +9,7 @@
 
 library (gdata)
 hsaTbl <- read.xls(xls="TaxRates.xls", sheet= 10)
+print (hsaTbl)
 HSADeduction <- function (ages, contributionAmt, hsaPlan, taxYear) {
   # In order to calculate HSA deduction, this function will need the following information.
   # * Ages - this will be the ages of individual and/or spouses if both contribute to HSA either as Single or Family.
@@ -24,3 +25,4 @@ HSADeduction <- function (ages, contributionAmt, hsaPlan, taxYear) {
   eligibleAmount <- maxContribution - employerContribution # this is the maximum amount of additional HSA contribution employee can contribute
   return (ifelse (eligibleAmount>employeeContribution, employeeContribution, eligibleAmount))
 }
+
