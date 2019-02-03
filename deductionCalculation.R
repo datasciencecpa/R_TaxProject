@@ -25,10 +25,14 @@ HSADeduction <- function (ages, contributionAmt, hsaPlan, taxYear) {
   } else if (sum(ages>=55) == 1) {
     catchupContribution = 1000
   } else catchupContribution = 0
+  print (catchupContribution)
+  print (paste("Contribution Amt: ",contributionAmt))
   maxContribution <- maxContribution + catchupContribution
+  print (maxContribution)
   employeeContribution <- contributionAmt[1]
   employerContribution <- contributionAmt[2]
   eligibleAmount <- maxContribution - employerContribution # this is the maximum amount of additional HSA contribution employee can contribute
+  print (paste("Eligible Amount: ",eligibleAmount))
   return (ifelse (eligibleAmount>employeeContribution, employeeContribution, eligibleAmount))
 }
 IRADeduction <- function (taxYear, IRAcover, filingStatus, AGI){

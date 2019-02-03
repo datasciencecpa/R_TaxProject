@@ -274,6 +274,6 @@ income <- function (input, output, session ){
                      input$IRATax_2017, 
                      input$unemploymentTax_2017)
 
-    return (data.frame(Income_Tax_2018, Income_Tax_2017,row.names = rowNames))
+    return (data.frame(Income_Tax_2018, Income_Tax_2017,row.names = rowNames, stringsAsFactors = FALSE))
   })
 }

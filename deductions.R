@@ -82,7 +82,7 @@ deductions <- function (input, output, session){
     }
   })
   deductionDF <- reactive ({
-      rowNames <- c("Educator_Expense", "HSA_Contribution", "HSA Contribution_Per_W2", "HSA_Plan_Type","IRA_Contribution","Cover_By_Retirement_Plan","Student_Loan_Interest", 
+      rowNames <- c("Educator_Expense", "HSA_Contribution", "HSA_Contribution_Per_W2", "HSA_Plan_Type","IRA_Contribution","Cover_By_Retirement_Plan","Student_Loan_Interest", 
                     "Medical_Exp","State_Local_Taxes", "Real_Estate_Taxes","Personal_Property_Tax", "Mortgage_Interest", 
                     "Premium_Mortage_Interest","Charitable_Contribution")
       Deduction_2018 <- c(
@@ -118,6 +118,6 @@ deductions <- function (input, output, session){
         input$PMI_2017,
         input$charitable_2017
       )
-      return (data.frame(Deduction_2018, Deduction_2017, row.names = rowNames))
+      return (data.frame(Deduction_2018, Deduction_2017, row.names = rowNames, stringsAsFactors = FALSE))
   })
 }
