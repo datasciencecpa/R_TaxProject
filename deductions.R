@@ -16,6 +16,9 @@ deductionsUI <- function (id){
           column(4,
             selectInput(ns("HSAPlan_2018"), label = "Select your HSA plan", choices = c("Single", "Family"), selected = "Single")),
           numericInput(ns("IRA_2018"), label = "Deductible IRA Contribution:", value = 0, min = 0),
+          helpText("Select appropriate choice that best describes your condition. For example, if MFJ and both are cover, select 'Both cover' from the dropdown list."),
+          selectInput(ns("IRAcover_2018"), label = "Were you covered by a retirement plan at work or through self-employment",
+                        choices = c("Both not cover", "Self", "Spouse", "Both cover"), selected = "Not cover"),
           numericInput(ns("studentLoan_2018"), label = "Enter your student loan interest(Max $2500):", value = 0, min = 0)
        ),
        column(6, h4("2017"),
@@ -24,9 +27,12 @@ deductionsUI <- function (id){
           column(8,
                  numericInput(ns("W2HSA_2017"), label = "Enter your HSA contribution as reported on all of your W-2", value = 0)
           ),
-          column(4,
-                 selectInput(ns("HSAPlan_2017"), label = "Select your HSA plan", choices = c("Single", "Family"), selected = "Single")),
+          column(4,selectInput(ns("HSAPlan_2017"), label = "Select your HSA plan", choices = c("Single", "Family"), selected = "Single")),
+          
           numericInput(ns("IRA_2017"), label = "Deductible IRA Contribution:", value = 0, min = 0),
+          helpText("Select appropriate choice that best describes your condition. If MFJ and both are cover, select 'Both cover' from the dropdown list."),
+          selectInput(ns("IRAcover_2017"), label = "Were you covered by a retirement plan at work or through self-employment",
+                                choices = c("Both not cover", "Self", "Spouse", "Both cover"), selected = "Not cover"),
           numericInput(ns("studentLoan_2017"), label = "Enter your student loan interest(Max $2500):", value = 0, min = 0)
        )
      ), hr(), #Input for itemize deductions
@@ -71,11 +77,13 @@ deductions <- function (input, output, session){
       updateNumericInput(session, "charitable_2017", label = "Enter your charitable deductions:", value = input$charitable_2018)
       updateNumericInput(session, "W2HSA_2017", label = "Enter your HSA contribution as reported on all of your W-2", value = input$W2HSA_2018)
       updateSelectInput(session, "HSAPlan_2017", label = "Select your HSA plan", choices = c("Single", "Family"), selected = input$HSAPlan_2018)
+      updateSelectInput(session, "IRAcover_2017", label = "Were you covered by a retirement plan at work or through self-employment",
+                        choices = c("Both not cover", "Self", "Spouse", "Both cover"), selected = input$IRAcover_2018)
     }
   })
   deductionDF <- reactive ({
-      rowNames <- c("Educator_Expense", "HSA_Contribution", "HSA Contribution_Per_W2", "HSA_Plan_Type","IRA_Contribution","Student_Loan_Interest", "Medical_Exp",
-                    "State_Local_Taxes", "Real_Estate_Taxes","Personal_Property_Tax", "Mortgage_Interest", 
+      rowNames <- c("Educator_Expense", "HSA_Contribution", "HSA Contribution_Per_W2", "HSA_Plan_Type","IRA_Contribution","Cover_By_Retirement_Plan","Student_Loan_Interest", 
+                    "Medical_Exp","State_Local_Taxes", "Real_Estate_Taxes","Personal_Property_Tax", "Mortgage_Interest", 
                     "Premium_Mortage_Interest","Charitable_Contribution")
       Deduction_2018 <- c(
         ifelse(input$educatorExp_2018>500, 500, input$educatorExp_2018), # Reduce amount above $500 to $500, this won't check if user is MFJ or not
@@ -83,6 +91,7 @@ deductions <- function (input, output, session){
         input$W2HSA_2018,
         input$HSAPlan_2018,
         input$IRA_2018,
+        input$IRAcover_2018,
         ifelse(input$studentLoan_2018>2500, 2500, input$studentLoan_2018), # Max amount allowed are $2500 before checking for limitation based on MAGI
         input$medicalExp_2018,
         input$stateTax_2018,
@@ -99,6 +108,7 @@ deductions <- function (input, output, session){
         input$W2HSA_2017,
         input$HSAPlan_2017,
         input$IRA_2017,
+        input$IRAcover_2017,
         ifelse(input$studentLoan_2017>2500, 2500, input$studentLoan_2017), # Max amount allowed are $2500 before checking for limitation based on MAGI
         input$medicalExp_2017,
         input$stateTax_2017,

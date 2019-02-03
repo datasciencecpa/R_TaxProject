@@ -2,12 +2,15 @@
 # This module will use the help of other modules:
 # -deductionCalculation
 # -creditCalculation
-# to figure out the tax and other things
+# to figure out total income, total deductions above AGI, AGI, standard/itemized deductions, credits, and final tax amount
 
 # Author: Long Nguyen
 # Date Created: 01/28/2019
 source ("deductionCalculation.R")
 totalIncomeCalculation <- function (incomeDF){
+   # This function will sum up total income user entered from the income section.
+   # This function will ignore income with value = 0, assuming that user did not have that type of income in both year.
+   # Special handle for net capital gain/loss so that maximum of -$3000 are allowed. 
    Income_Type <- c("Total_W2_Wages", "Interest", "Dividends", "Taxable_Refunds","Alimony", "Net_Capital_Gain_Loss",
                  "IRA_Distribution", "Unemployment Income")
 
@@ -21,7 +24,7 @@ totalIncomeCalculation <- function (incomeDF){
      incomeDF["TaxableIRA",1],
      incomeDF["Unemployment_Income", 1]
    )
-   #AGI_2018 <- c(AGI_2018, sum(AGI_2018))
+
    AGI_2017 <- c(
      sum(incomeDF[1:4, "Income_Tax_2017"]),
      incomeDF["Interest", 2],
@@ -32,7 +35,7 @@ totalIncomeCalculation <- function (incomeDF){
      incomeDF["TaxableIRA",2],
      incomeDF["Unemployment_Income", 2]
    )
-   valueRow <- AGI_2018 !=0 | AGI_2017 !=0
+   valueRow <- AGI_2018 !=0 | AGI_2017 !=0  # Interested in non-zero value income type.
    AGI_2018 <- AGI_2018[valueRow]
    AGI_2017 <- AGI_2017[valueRow]
    Income_Type <- Income_Type[valueRow]
@@ -40,6 +43,9 @@ totalIncomeCalculation <- function (incomeDF){
    return (data.frame(Income_Type,AGI_2018, AGI_2017))
 }
 totalDeductionToAGI <- function (deductionsDF, statusDF) {
+  valueRow <- deductionsDF$Deduction_2018 !=0 | deductionsDF$Deduction_2017 !=0
+  deductionsDF <- deductionsDF[valueRow,]
+  print (deductionsDF)
   hsaAmt <- HSADeduction(ages = c(statusDF[c("Your_Age", "Spouse_Age"), "Status_2018"]), 
                          contributionAmt = c(deductionsDF["HSA_Contribution", "Deduction_2018"], 
                                              deductionsDF["HSA_Contribution_Per_W2", "Deduction_2018"]),
