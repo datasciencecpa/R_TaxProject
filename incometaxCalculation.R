@@ -49,6 +49,7 @@ totalDeductionToAGI <- function (deductionsDF, statusDF) {
   rowNames <- rownames(deductionsDF)
   # Iterate through rowNames to see which above AGI deductions need to verify
   # Starting with Educator_Expense
+  returnDF <- data.frame (Deduction_2018 = 0, Deduction_2017 = 0, row.names = "No_Deduction") # This is the dataframe that use to hold return values for this function
   if (any(rowNames == Deduction_Type[1])){ # Check if Educator_Expense still in the deductonDF after elimination
       expense_2018 <- ifelse (statusDF["Filing_Status", "Status_2018"] != "MFJ",
                         ifelse (deductionsDF["Educator_Expense", "Deduction_2018"]<=250,deductionsDF["Educator_Expense", "Deduction_2018"], 250 ),
@@ -56,37 +57,38 @@ totalDeductionToAGI <- function (deductionsDF, statusDF) {
       expense_2017 <- ifelse(statusDF["Filing_Status", "Status_2017"] != "MFJ",
                         ifelse (deductionsDF["Educator_Expense", "Deduction_2017"]<=250,deductionsDF["Educator_Expense", "Deduction_2017"], 250 ),
                           deductionsDF["Educator_Expense", "Deduction_2017"])
-      deductionsDF["Educator_Expense",] <- c(expense_2018, expense_2017)
+      returnDF["Educator_Expense",] <- c(expense_2018, expense_2017)
       # print (c(expense_2018, expense_2017))
   } # Finish checking educator expense
   if (any(rowNames == Deduction_Type[2])){ # checking HSA contribution, if no HSA contributon, skip this step
     # check if user enter amount or HSA Contribution per W2
     HSA_Per_W2 <- c(0,0)
+    returnDF["HSA_Contribution",] <- deductionsDF["HSA_Contribution",]
     if (any(rowNames == "HSA_Contribution_Per_W2")) {
-      print ("Per_w2")
       HSA_Per_W2 <- as.numeric(deductionsDF["HSA_Contribution_Per_W2",])
-    } 
-    print(paste("HSA_pEr_W2", HSA_Per_W2))
+    }
+    returnDF["HSA_Contribution_Per_W2",] <- HSA_Per_W2
+    returnDF["HSA_Plan_Type",] <- deductionsDF["HSA_Plan_Type",]
     deduction_2018 <- HSADeduction(ages = as.numeric(statusDF[c("Your_Age", "Spouse_Age"), "Status_2018"]), 
                                    contributionAmt = c(as.numeric(deductionsDF["HSA_Contribution", "Deduction_2018"]), HSA_Per_W2[1]),
                                    hsaPlan = deductionsDF["HSA_Plan_Type", "Deduction_2018"], taxYear = 2018)
     deduction_2017 <- HSADeduction(ages = as.numeric(statusDF[c("Your_Age", "Spouse_Age"), "Status_2017"]),
                                    contributionAmt = c(as.numeric(deductionsDF["HSA_Contribution", "Deduction_2017"]), HSA_Per_W2[2]),
                                    hsaPlan = deductionsDF["HSA_Plan_Type", "Deduction_2017"], taxYear = 2017)
-    deductionsDF["HSA_Contribution",] <- c(deduction_2018, deduction_2017)
+    returnDF["Catchup_Contribution", ] <- c(deduction_2018[2], deduction_2017[2])
+    returnDF["Maximum_Contribution", ] <- c(deduction_2018[3], deduction_2017[3])
+    returnDF["HSA_Deduction_Amt",] <- c(deduction_2018[1], deduction_2017[1])
+    if (any(returnDF["HSA_Contribution", ] > returnDF["HSA_Deduction_Amt",])) {
+      print ("Testing")
+      returnDF["Excess_Contribution",] <- as.numeric(returnDF["HSA_Contribution", ]) - as.numeric(returnDF["HSA_Deduction_Amt",])
+      print (returnDF)
+    }
   }
-  return (deductionsDF) 
-  # This function will calcualte taxpayer eligible deductions before AGI
-  # Deduction_Type <- c ("Educatior_Expense", "HSA_Contribution", "HSA_Excess_Amount","IRA_Contribution", "IRA_Excess_Amount", "Student_Loan_Deduction")
-  # Deductions_2018 <- c(
-  #   ifelse (statusDF["Filing_Status", "Status_2018"] == "MFJ", deductionsDF["Educator_Expense", "Deduction_2018"], 
-  #           ifelse(deductionsDF["Educator_Expense", "Deduction_2018"]<=250,deductionsDF["Educator_Expense", "Deduction_2018"], 250))
-  # )
-  # Deduction_2017 <- c(
-  #   ifelse (statusDF["Filing_Status", "Status_2017"] == "MFJ", deductionsDF["Educator_Expense", "Deduction_2017"], 
-  #           ifelse(deductionsDF["Educator_Expense", "Deduction_2017"]<=250,deductionsDF["Educator_Expense", "Deduction_2017"], 250))
-  # )
-  
+  if (returnDF["HSA_Deduction_Amt", 1]<0) returnDF["HSA_Deduction_Amt", 1] <- 0
+  if (returnDF["HSA_Deduction_Amt",2]<0) returnDF["HSA_Deduction_Amt",2] <- 0
+  if (nrow(returnDF)>1) returnDF <- returnDF[-1,]
+  return (returnDF) 
+
 }
 DFConverter <- function (df){
   # This function is used to convert given dataframe into different format
