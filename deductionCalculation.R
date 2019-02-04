@@ -9,7 +9,7 @@
 
 library (gdata)
 hsaTbl <- read.xls(xls="TaxRates.xls", sheet= 10)
-
+IRATbl <- read.xls(xls = "TaxRates.xls", sheet = 11)
 HSADeduction <- function (ages, contributionAmt, hsaPlan, taxYear) {
   # In order to calculate HSA deduction, this function will need the following information.
   # * Ages - this will be the ages of individual and/or spouses if both contribute to HSA either as Single or Family.
@@ -31,7 +31,11 @@ HSADeduction <- function (ages, contributionAmt, hsaPlan, taxYear) {
   return (c(ifelse (eligibleAmount>employeeContribution, employeeContribution, eligibleAmount), catchupContribution, maxContribution))
 }
 IRADeduction <- function (taxYear, IRAcover, filingStatus, AGI){
-
+  # For IRA, the contribution limit is $5500 for age <50. Catchup contribution is $1000. This information is the same for both 2017 & 2018
+  # IRA contribution rules: Must have earned income, include alimony for purpose of this project. Other earned incomes are not considered
+  # since this app used limited income types.
+  
+  
 }
 studentLoan <- function () {
   

@@ -148,6 +148,7 @@ server <- function(input, output, session) {
     } else show ("totalDeduction")
   })
   #-------------------------------------------------------------------
+
   output$totalIncome <- renderDataTable({
     AGIIncome <- totalIncomeCalculation(income())
     output$totalIncGraph <- renderPlot({
@@ -158,7 +159,7 @@ server <- function(input, output, session) {
     return (AGIIncome)
   })
   output$totalDeduction <- renderDataTable({
-    deductionsToAGI <- totalDeductionToAGI (deductions(), statusInformation())
+    deductionsToAGI <- totalDeductionToAGI (deductions(), statusInformation(),totalIncomeCalculation(income()))
   })
   
   # Testing Code Below ----------------------------------------------
