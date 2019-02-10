@@ -46,7 +46,7 @@ totalDeductionToAGI <- function (deductionsDF, statusDF, AGIIncome) {
   valueRow <- deductionsDF$Deduction_2018 !=0 | deductionsDF$Deduction_2017 !=0
   deductionsDF <- deductionsDF[valueRow,]
   Deduction_Type <- c ("Educator_Expense", "HSA_Contribution","IRA_Contribution", "IRA_Excess_Amount", "Student_Loan_Deduction")
-  rowNames <- rownames(deductionsDF)
+  rowNames <- rownames(deductionsDF) # Get name of rows in DeductionDF that have values.
   # Iterate through rowNames to see which above AGI deductions need to verify
   # Starting with Educator_Expense
   returnDF <- data.frame (Deduction_2018 = 0, Deduction_2017 = 0, row.names = "No_Deduction") # This is the dataframe that use to hold return values for this function
@@ -79,37 +79,26 @@ totalDeductionToAGI <- function (deductionsDF, statusDF, AGIIncome) {
     returnDF["Maximum_Contribution", ] <- c(deduction_2018[3], deduction_2017[3])
     returnDF["HSA_Deduction_Amt",] <- c(deduction_2018[1], deduction_2017[1])
     if (any(returnDF["HSA_Contribution", ] > returnDF["HSA_Deduction_Amt",])) {
-      print ("Testing")
       returnDF["Excess_Contribution",] <- as.numeric(returnDF["HSA_Contribution", ]) - as.numeric(returnDF["HSA_Deduction_Amt",])
-      print (returnDF)
     }
     if (returnDF["HSA_Deduction_Amt", 1]<0) returnDF["HSA_Deduction_Amt", 1] <- 0
     if (returnDF["HSA_Deduction_Amt",2]<0) returnDF["HSA_Deduction_Amt",2] <- 0
   } # Finish checking HSA contribution
   if (any(rowNames == Deduction_Type[3])){ # Checking if user entered any IRA contribution
     # Checking if user has enough earned income (Total Wages + Alimony) to contribute to IRA
-    
     earnedIncome_2018 <- 0
     earnedIncome_2017 <- 0
-    print (AGIIncome)
-  
     if (any(AGIIncome$Income_Type == "Total_W2_Wages")) { # Wages reported
-      print ("Wages enter")
       ind <-  which (AGIIncome$Income_Type == "Total_W2_Wages")
       earnedIncome_2018 <- as.numeric(AGIIncome[ind,"AGI_2018"])
       earnedIncome_2017 <- as.numeric(AGIIncome[ind, "AGI_2017"])
-      print (earnedIncome_2018)
-      print (earnedIncome_2017)
     }
     if (any(AGIIncome$Income_Type == "Alimony")) { # Alimony reported
-      print ("Alimony entered")
       ind <- which (AGIIncome$Income_Type == "Alimony")
       earnedIncome_2018 <- earnedIncome_2018 + as.numeric(AGIIncome[ind,"AGI_2018"])
       earnedIncome_2017 <- earnedIncome_2017 + as.numeric(AGIIncome[ind,"AGI_2017"])
-      print (earnedIncome_2018)
-      print (earnedIncome_2017)
     }
-    
+
   }
   if (nrow(returnDF)>1) returnDF <- returnDF[-1,]
   return (returnDF) 

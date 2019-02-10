@@ -112,7 +112,6 @@ filingInformation <- function (input, output, session){
                       input$youBlind_2018,
                       input$spouseBlind_2018
                       ) 
-  
     Status_2017 <- c( input$filingStatus_2017, 
                       input$numQualifiedChildUnder17_2017,
                       input$numQualifiedChildOver17_2017,

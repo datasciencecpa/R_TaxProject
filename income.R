@@ -152,6 +152,8 @@ incomeUI <- function (id){
 } # finish incomeUI function
 
 income <- function (input, output, session ){
+  
+  
   observeEvent(input$hideWages1_2018,{
       # hide additional wages 1 and reset value to zero, and hide the button after it done
       #session$sendCustomMessage (type = "testmessage", message = "Testing")
@@ -185,9 +187,10 @@ income <- function (input, output, session ){
       updateNumericInput(session, inputId = "addW2Tax2_2017", value = 0)
       hide (id = "hideWages2_2017")
   })
+  
   observe({  # Use this to handle check box checked.
     if(input$same){
-
+      print (input$filingStatus_2018)
       updateNumericInput(session, "yourWages_2017",label = "Enter your wages from W-2, box 1:", value = input$yourWages_2018, min=0)
       updateNumericInput(session, "yourW2Tax_2017", label = "Enter your income tax withheld, box 2:", value = input$yourW2Tax_2018, min =0)
       updateNumericInput(session, "spouseWages_2017",label = "Enter spouse wages from W-2, box 1:", value = input$spouseWages_2018, min=0 )
