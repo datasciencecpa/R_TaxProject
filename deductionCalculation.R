@@ -30,7 +30,7 @@ HSADeduction <- function (ages, contributionAmt, hsaPlan, taxYear) {
   eligibleAmount <- maxContribution - employerContribution # this is the maximum amount of additional HSA contribution employee can contribute
   return (c(ifelse (eligibleAmount>employeeContribution, employeeContribution, eligibleAmount), catchupContribution, maxContribution))
 }
-IRADeduction <- function (taxYear, IRAcover, filingStatus, AGI, IRAAmount){
+IRADeduction <- function (taxYear, IRAcover, filingStatus, ages, AGI, IRAAmount){
   # For IRA, the contribution limit is $5500 for age <50. Catchup contribution is $1000. This information is the same for both 2017 & 2018
   # IRA contribution rules: Must have earned income, include alimony for purpose of this project. Other earned incomes are not considered
   # since this app used limited income types.
@@ -39,7 +39,7 @@ IRADeduction <- function (taxYear, IRAcover, filingStatus, AGI, IRAAmount){
   # Married - One spouse cover - higher deduction limit applied and assume contribution is for non-cover spouse
   # Marreid - Both are cover
   
-  #First, convert IRAcover to appropriate value for IRATbl query
+
   
 }
 studentLoan <- function () {
