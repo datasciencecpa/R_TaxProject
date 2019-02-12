@@ -131,6 +131,8 @@ deductions <- function (input, output, session){
         input$PMI_2017,
         input$charitable_2017
       )
-      return (data.frame(Deduction_2018, Deduction_2017, row.names = rowNames, stringsAsFactors = FALSE))
+      dfDeduction <- data.frame(Deduction_2018, Deduction_2017, row.names = rowNames, stringsAsFactors = FALSE)
+      dfDeduction[is.na.data.frame(dfDeduction)] <- 0
+      return (dfDeduction)
   })
 }

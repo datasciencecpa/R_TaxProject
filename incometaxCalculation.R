@@ -35,21 +35,19 @@ totalIncomeCalculation <- function (incomeDF){
      incomeDF["TaxableIRA",2],
      incomeDF["Unemployment_Income", 2]
    )
-   valueRow <- AGI_2018 !=0 | AGI_2017 !=0  # Interested in non-zero value income type.
-   AGI_2018 <- AGI_2018[valueRow]
-   AGI_2017 <- AGI_2017[valueRow]
-   Income_Type <- Income_Type[valueRow]
    #AGI_2017 <- c (AGI_2017, sum(AGI_2017))
    return (data.frame(Income_Type,AGI_2018, AGI_2017))
 }
 totalDeductionToAGI <- function (deductionsDF, statusDF, AGIIncome) {
   valueRow <- deductionsDF$Deduction_2018 !=0 | deductionsDF$Deduction_2017 !=0
-  deductionsDF <- deductionsDF[valueRow,]
-  Deduction_Type <- c ("Educator_Expense", "HSA_Contribution","IRA_Contribution", "IRA_Excess_Amount", "Student_Loan_Deduction")
-  rowNames <- rownames(deductionsDF) # Get name of rows in DeductionDF that have values.
+  
+  Deduction_Type <- c ("Educator_Expense", "HSA_Contribution","Your_IRA_Contribution", "IRA_Excess_Amount", "Student_Loan_Deduction")
+  rowNames <- rownames(deductionsDF[valueRow,]) # Get name of rows in DeductionDF that have values.
   # Iterate through rowNames to see which above AGI deductions need to verify
   # Starting with Educator_Expense
-  returnDF <- data.frame (Deduction_2018 = 0, Deduction_2017 = 0, row.names = "No_Deduction") # This is the dataframe that use to hold return values for this function
+  returnDF <- data.frame (Deduction_2018 = 0, 
+                          Deduction_2017 = 0, row.names = "No Deduction") # This is the dataframe that use to hold return values for this function
+  returnDF["Educator_Expense",] <- c(0,0)
   if (any(rowNames == Deduction_Type[1])){ # Check if Educator_Expense still in the deductonDF after elimination
       expense_2018 <- ifelse (statusDF["Filing_Status", "Status_2018"] != "MFJ",
                         ifelse (deductionsDF["Educator_Expense", "Deduction_2018"]<=250,deductionsDF["Educator_Expense", "Deduction_2018"], 250 ),
@@ -60,6 +58,7 @@ totalDeductionToAGI <- function (deductionsDF, statusDF, AGIIncome) {
       returnDF["Educator_Expense",] <- c(expense_2018, expense_2017)
       # print (c(expense_2018, expense_2017))
   } # Finish checking educator expense
+  returnDF["HSA_Deduction_Amt",] <- c(0,0)
   if (any(rowNames == Deduction_Type[2])){ # checking HSA contribution, if no HSA contributon, skip this step
     # check if user enter amount or HSA Contribution per W2
     HSA_Per_W2 <- c(0,0)
@@ -84,25 +83,42 @@ totalDeductionToAGI <- function (deductionsDF, statusDF, AGIIncome) {
     if (returnDF["HSA_Deduction_Amt", 1]<0) returnDF["HSA_Deduction_Amt", 1] <- 0
     if (returnDF["HSA_Deduction_Amt",2]<0) returnDF["HSA_Deduction_Amt",2] <- 0
   } # Finish checking HSA contribution
-  if (any(rowNames == Deduction_Type[3])){ # Checking if user entered any IRA contribution
+  if (any(grepl("IRA_Contribution", rowNames))){ # Checking if user entered any IRA contribution
     # Checking if user has enough earned income (Total Wages + Alimony) to contribute to IRA
     earnedIncome_2018 <- 0
     earnedIncome_2017 <- 0
-    if (any(AGIIncome$Income_Type == "Total_W2_Wages")) { # Wages reported
-      ind <-  which (AGIIncome$Income_Type == "Total_W2_Wages")
-      earnedIncome_2018 <- as.numeric(AGIIncome[ind,"AGI_2018"])
-      earnedIncome_2017 <- as.numeric(AGIIncome[ind, "AGI_2017"])
-    }
-    if (any(AGIIncome$Income_Type == "Alimony")) { # Alimony reported
-      ind <- which (AGIIncome$Income_Type == "Alimony")
-      earnedIncome_2018 <- earnedIncome_2018 + as.numeric(AGIIncome[ind,"AGI_2018"])
-      earnedIncome_2017 <- earnedIncome_2017 + as.numeric(AGIIncome[ind,"AGI_2017"])
-    }
+    MAGI_2018 <- sum(as.numeric(AGIIncome$AGI_2018)) - sum(as.numeric(returnDF[c("Educator_Expense", "HSA_Deduction_Amt"), "Deduction_2018"]))
+    MAGI_2017 <- sum(as.numeric(AGIIncome$AGI_2017)) - sum(as.numeric(returnDF[c("Educator_Expense", "HSA_Deduction_Amt"), "Deduction_2017"]))
 
+    returnDF["IRA_Filing_Status",] <- statusDF["Filing_Status",]
+    earnedIncome_2018 <- sum(as.numeric(AGIIncome[c(1,5),"AGI_2018"]))
+    earnedIncome_2017 <- sum(as.numeric(AGIIncome[c(1,5), "AGI_2017"]))
+    returnDF["Your_IRA_Contribution", ] <- deductionsDF["Your_IRA_Contribution",]
+    returnDF["Your_IRA_Cover",] <- deductionsDF["Your_IRA_Cover",]
+    if (any(statusDF["Filing_Status",] == "MFJ")) {
+      returnDF["Spouse_IRA_Contribution",] <- deductionsDF["Spouse_IRA_Contribution",]
+      returnDF["Spouse_IRA_Cover",] <- deductionsDF["Spouse_IRA_Cover", ]
+    }
+    
+    IRA_Deduction_2018 <- IRADeduction(2018, IRAcover = as.character(deductionsDF[c("Your_IRA_Cover", "Spouse_IRA_Cover"),"Deduction_2018"]),
+                                            filingStatus = as.character(statusDF["Filing_Status","Status_2018"]),
+                                            ages = as.numeric(statusDF[c("Your_Age", "Spouse_Age"), "Status_2018"]),
+                                            MAGI = MAGI_2018, earnedIncome = earnedIncome_2018, 
+                                            IRAAmount = as.numeric(deductionsDF[c("Your_IRA_Contribution", "Spouse_IRA_Contribution"), "Deduction_2018"]))
+    print (paste("IRA Deduction 2018:", IRA_Deduction_2018))
+    IRA_Deduction_2017 <- IRADeduction(2017, IRAcover = as.character(deductionsDF[c("Your_IRA_Cover", "Spouse_IRA_Cover"),"Deduction_2017"]),
+                                       filingStatus = as.character(statusDF["Filing_Status","Status_2017"]),
+                                       ages = as.numeric(statusDF[c("Your_Age", "Spouse_Age"), "Status_2017"]),
+                                       MAGI = MAGI_2018, earnedIncome = earnedIncome_2017, 
+                                       IRAAmount = as.numeric(deductionsDF[c("Your_IRA_Contribution", "Spouse_IRA_Contribution"), "Deduction_2017"]))
+    print (paste("IRA Deduction 2017:", IRA_Deduction_2017))
+    returnDF["Your_IRA_Deduction",] <- c(IRA_Deduction_2018[1], IRA_Deduction_2017[1])
+    if (any(statusDF["Filing_Status",] == "MFJ")){
+      returnDF["Your_Spouse_IRA_Deduction", ] <- c(IRA_Deduction_2018[2], IRA_Deduction_2017[2])
+    }
   }
   if (nrow(returnDF)>1) returnDF <- returnDF[-1,]
   return (returnDF) 
-
 }
 DFConverter <- function (df){
   # This function is used to convert given dataframe into different format

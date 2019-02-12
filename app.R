@@ -155,6 +155,8 @@ server <- function(input, output, session) {
 
   output$totalIncome <- renderDataTable({
     AGIIncome <- totalIncomeCalculation(income())
+    valueRow <- AGIIncome$AGI_2018 !=0 | AGIIncome$AGI_2017 !=0  # Interested in non-zero value income type.
+    AGIIncome <- AGIIncome[valueRow,]
     output$totalIncGraph <- renderPlot({
       
       ggplot(data = DFConverter(AGIIncome), aes(x= TaxYear, y = Amount, fill = Income_Type)) +
@@ -164,7 +166,7 @@ server <- function(input, output, session) {
   })
   output$totalDeduction <- renderDataTable({
     deductionsToAGI <- totalDeductionToAGI (deductions(), statusInformation(),totalIncomeCalculation(income()))
-  })
+  },options = list(pageLength = 25))
   
   # Testing Code Below ----------------------------------------------
   output$testingCTC<- renderDataTable({
