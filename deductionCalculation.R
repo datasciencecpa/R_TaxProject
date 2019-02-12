@@ -9,6 +9,7 @@
 
 library (gdata)
 library(plyr)
+SLTbl <- read.xls(xls="TaxRates.xls", sheet=9)
 hsaTbl <- read.xls(xls="TaxRates.xls", sheet= 10)
 IRATbl <- read.xls(xls = "TaxRates.xls", sheet = 11)
 IRATbl$LOWER_AGI <- as.numeric(IRATbl$LOWER_AGI)
@@ -169,6 +170,19 @@ IRADeduction <- function (taxYear, IRAcover, filingStatus, ages, MAGI, earnedInc
   }# End MFJ above the LowerAGI of covered person
   return (IRAAmount)
 }
-studentLoan <- function () {
-  
+studentLoan <- function (interest, MAGI, filingStatus, taxYear) {
+  filingStatus <- toupper(filingStatus)
+  if (filingStatus == "MFS") return (0)
+  rowValues <- SLTbl[SLTbl$YEAR == taxYear & grepl(filingStatus, SLTbl$FILING_STATUS),]
+  print (rowValues)
+  if (MAGI<=rowValues$LOWER_AGI) { # Full student loan deduction
+    return (interest)
+  } else if (MAGI>rowValues$LOWER_AGI & MAGI <=rowValues$UPPER_AGI){
+    print ("Within the range limit")
+    incomeRange <- rowValues$UPPER_AGI - rowValues$LOWER_AGI
+    multiplier <- round((rowValues$UPPER_AGI - MAGI)/incomeRange, digits = 3)
+    return (interest*(1-multiplier))
+  } else {
+    return (0)
+  }
 }
