@@ -30,17 +30,115 @@ HSADeduction <- function (ages, contributionAmt, hsaPlan, taxYear) {
   eligibleAmount <- maxContribution - employerContribution # this is the maximum amount of additional HSA contribution employee can contribute
   return (c(ifelse (eligibleAmount>employeeContribution, employeeContribution, eligibleAmount), catchupContribution, maxContribution))
 }
-IRADeduction <- function (taxYear, IRAcover, filingStatus, ages, AGI, IRAAmount){
+IRADeduction <- function (taxYear, IRAcover, filingStatus, ages, MAGI, earnedIncome, IRAAmount){
   # For IRA, the contribution limit is $5500 for age <50. Catchup contribution is $1000. This information is the same for both 2017 & 2018
   # IRA contribution rules: Must have earned income, include alimony for purpose of this project. Other earned incomes are not considered
   # since this app used limited income types.
-  # This function will be called under the 3 circumstances
-  # Not married, or MFS but living separately for all year AND is covered by a retirement plan
-  # Married - One spouse cover - higher deduction limit applied and assume contribution is for non-cover spouse
-  # Marreid - Both are cover
-  
-
-  
+  # IRA deduction will be calculated as follow:
+  # 1. If user was not covered by retirement plan --> Full deduction amount up to limit
+  # 2a. If user was covered, Single, HOH, or MFS - check with limit.
+  # 2b. If user was covered, MFJ - Both, or only one. Using appropriate AGI limit
+  if (all (ages>70)) return (c(0,0)) # User can contribute to IRA with age greater than 70
+  rowValues <- IRATbl[IRATbl$YEAR == taxYear & grepl(filingStatus, IRATbl$FILING_STATUS) & IRATbl$COVERED == "YES",]
+  print (rowValues)
+  limit <- 0
+  if (all(IRAcover == "NO") | MAGI< rowValues$LOWER_AGI ){
+    print ("Meeting condition")
+    if (grepl(filingStatus, "SINGLE/HOH/MFS/QW")) {
+      if (ages[1]>=50){
+        limit <- ifelse(earnedIncome <=6500,earnedIncome, 6500)
+      } else {
+        limit <- ifelse(earnedIncome <=5500,earnedIncome, 5500)
+      }
+      IRAAmount[1] <- ifelse (IRAAmount[1]<=limit, IRAAmount[1], limit)
+      IRAAmount[2] <- 0
+    } else {
+      if (ages[1]>=50){
+        limit <- ifelse(earnedIncome <=6500,earnedIncome, 6500)
+      } else {
+        limit <- ifelse(earnedIncome <=5500,earnedIncome, 5500)
+      }
+      IRAAmount[1] <- ifelse (IRAAmount[1]<=limit, IRAAmount[1], limit)
+      earnedIncome <- earnedIncome - limit # Reduce earnedIncome for amount of limit that already apply for IRAAmount[1]
+      # Apply for spouse
+      if (ages[2]>=50){
+        limit <- ifelse(earnedIncome <=6500,earnedIncome, 6500)
+      } else {
+        limit <- ifelse(earnedIncome <=5500,earnedIncome, 5500)
+      }
+      IRAAmount[2] <- ifelse (IRAAmount[2]<=limit, IRAAmount[2], limit)
+    }
+  } else if ( (MAGI>rowValues$UPPER_AGI & all(IRAcover =="YES"))| (MAGI>rowValues$UPPER_AGI &grepl(filingStatus, "SINGLE/HOH/MFS/QW"))) {
+    print (paste("Above AGI Limit", rowValues$UPPER_AGI))
+    IRAAmount <- c(0,0)
+  } 
+  else {
+    if (grepl(filingStatus, "SINGLE/HOH/MFS/QW")) {
+      if (ages[1]>=50){
+        limit <- ifelse(earnedIncome <= ((rowValues$UPPER_AGI - MAGI)*0.65), earnedIncome, (rowValues$UPPER_AGI - MAGI)*0.65)
+      } else {
+        limit <- ifelse(earnedIncome <= ((rowValues$UPPER_AGI - MAGI)*0.55), earnedIncome, (rowValues$UPPER_AGI - MAGI)*0.55)
+      }
+      IRAAmount[1]<- ifelse (IRAAmount[1]<=limit, IRAAmount[1], limit)
+      IRAAmount[2] <- 0
+    } 
+    else { # filingStatus = MFJ, two situation can occur: Either users have retirement coverage, or one of them have coverage.
+      rowValues_2 <- IRATbl[IRATbl$YEAR == taxYear & grepl(filingStatus, IRATbl$FILING_STATUS) & IRATbl$COVERED == "ONE",]
+      if (MAGI > rowValues_2$UPPER_AGI) { # None of the IRA Contribution are eligible
+        IRAAmount <- c(0,0)
+      } 
+      else{
+        if (any(IRAcover =="NO")){ # Need to update rowValues to get value with higher AGI limit
+          ind_N <- which(IRAcover =="NO")
+          ind_Y <- which(IRAcover =="YES")
+          if (MAGI<rowValues$UPPER_AGI){
+            # This situation is when MAGI is between the lowerAGI and upperAGI of the covered person
+            # Which, non-covered person would be allowed full deduction
+            print ("MAGI is lower than the covered person UpperAGI")
+            if (ages[ind_N>=50]){
+              limit <- ifelse(earnedIncome <=6500,earnedIncome, 6500)
+            } else {
+              limit <- ifelse(earnedIncome <=5500,earnedIncome, 5500)
+            }
+            IRAAmount[ind_N] <-  ifelse (IRAAmount[ind_N]<=limit, IRAAmount[ind_N], limit)
+            earnedIncome <- earnedIncome -limit
+             if (ages[ind_Y]>=50) {
+               limit <- ifelse(earnedIncome<=(rowValues$UPPER_AGI - MAGI)*0.325, earnedIncome, (rowValues$UPPER_AGI - MAGI)*0.325)
+             } else {
+               limit <- ifelse(earnedIncome<=(rowValues$UPPER_AGI - MAGI)*0.275, earnedIncome, (rowValues$UPPER_AGI - MAGI)*0.275)
+             }
+            IRAAmount[ind_Y]<-  ifelse (IRAAmount[ind_Y]<=limit, IRAAmount[ind_Y], limit)
+          } 
+          else {
+            print ("MAGI is higher than the covered person upperAGI. zero deduction for covered person")
+            IRAAmount[ind_Y] <- 0
+            if (MAGI<rowValues_2$LOWER_AGI) { #Full deduction for non-cover user
+              if (ages[ind_N>=50]){
+                limit <- ifelse(earnedIncome <=6500,earnedIncome, 6500)
+              } else {
+                limit <- ifelse(earnedIncome <=5500,earnedIncome, 5500)
+              }
+            }
+            else {
+              if (ages[ind_N]>=50){
+                limit <- ifelse (earnedIncome<=((rowValues_2$UPPER_AGI - MAGI)*0.65), earnedIncome, 
+                                 (rowValues_2$UPPER_AGI - MAGI)*0.65)
+                
+              } else {
+                limit <- ifelse (earnedIncome<=((rowValues_2$UPPER_AGI - MAGI)*0.55), earnedIncome, 
+                                 (rowValues_2$UPPER_AGI - MAGI)*0.55)
+              }
+            }
+            IRAAmount[ind_N] <-  ifelse (IRAAmount[ind_N]<=limit, IRAAmount[ind_N], limit)
+          }
+        }
+        else { # Both were covered and less than the upper_agi
+          
+        }
+      } 
+        
+    }
+  }
 }
 studentLoan <- function () {
   
