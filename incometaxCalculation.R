@@ -15,7 +15,7 @@ totalIncomeCalculation <- function (incomeDF){
                  "IRA_Distribution", "Unemployment Income")
 
    AGI_2018 <- c(
-     sum(incomeDF[1:4,"Income_Tax_2018"]),
+     sum(incomeDF[c("Your_Wages", "Spouse_Wages", "Additional_Wages_1", "Additional_Wages_2"),"Income_Tax_2018"]),
      incomeDF["Interest", 1],
      incomeDF["Ordinary_Dividends", 1],
      incomeDF["Tax_Refunds", 1],
@@ -26,7 +26,7 @@ totalIncomeCalculation <- function (incomeDF){
    )
 
    AGI_2017 <- c(
-     sum(incomeDF[1:4, "Income_Tax_2017"]),
+     sum(incomeDF[c("Your_Wages", "Spouse_Wages", "Additional_Wages_1", "Additional_Wages_2"), "Income_Tax_2017"]),
      incomeDF["Interest", 2],
      incomeDF["Ordinary_Dividends", 2],
      incomeDF["Tax_Refunds", 2],
@@ -146,6 +146,10 @@ totalDeductionToAGI <- function (deductionsDF, statusDF, AGIIncome) {
   if (nrow(returnDF)>1) returnDF <- returnDF[-1,]
   return (returnDF) 
 }
+totalItemizedDeduction <- function(deductionDF, statusDF, AGI){
+  # This function will determine whether itemized deduction or SD will apply
+  itemizedDeduction (deductionDF, statusDF, AGI) 
+}
 DFConverter <- function (df){
   # This function is used to convert given dataframe into different format
   df_col_names <- colnames(df)
@@ -155,7 +159,6 @@ DFConverter <- function (df){
   df[,3] <- NULL # Delete column with amount from 2017
   colnames(df)[2] <- "Amount"
   df$TaxYear <- "2018"
-  print (rbind(df, df_1))
   return (rbind(df, df_1))
 }
 

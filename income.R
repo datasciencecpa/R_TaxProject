@@ -10,53 +10,85 @@ incomeUI <- function (id){
     # Wages
     fluidRow(  
       column(6, h4("2018"),
-        column(6, 
-           numericInput(ns("yourWages_2018"), label = "Enter your wages from W-2, box 1:", value = 0),
-           numericInput(ns("yourMedicareW2_2018"), label = "Enter your medicare wages from W-2, box 5:", value = 0),
-           numericInput(ns("spouseWages_2018"), label = "Enter spouse wages from W-2, box 1:", value = 0),
-           numericInput(ns("spouseMedicareW2_2018"), label = "Enter your medicare wages from W-2, box 5:", value = 0),
-           numericInput(ns("addWages1_2018"), label = "Enter additional wages from W-2, box 1:", value = 0),
-           numericInput(ns("addMedicare1_2018"), label = "Enter your medicare wages from W-2, box 5:", value = 0),
-           actionButton(ns("hideWages1_2018"), label = "Delete", class="btn btn-danger btn-responsive"),
-           numericInput(ns("addWages2_2018"), label = "Enter additional wages from W-2, box 1:", value = 0),
-           numericInput(ns("addMedicare2_2018"), label = "Enter your medicare wages from W-2, box 5:", value = 0),
-           actionButton(ns("hideWages2_2018"), label = "Delete",class="btn btn-danger btn-responsive")
-           
-        ),
-        column(6, 
-          numericInput(ns("yourW2Tax_2018"), label = "Enter your income tax withheld, box 2:", value = 0),
-          numericInput(ns("yourMedicareTax_2018"), label = "Enter your medicare tax withheld, box 6:", value = 0),
-          numericInput(ns("spouseW2Tax_2018"), label = "Enter spouse income tax withheld, box 2:", value = 0),
-          numericInput(ns("spouseMedicareTax_2018"), label = "Enter your medicare tax withheld, box 6:", value = 0),
-          numericInput(ns("addW2Tax1_2018"), label = "Enter income tax from W-2, box 2:", value = 0),
-          numericInput(ns("addMedicareTax1_2018"), label = "Enter your medicare tax withheld, box 6:", value = 0),
-          numericInput(ns("addW2Tax2_2018"), label = "Enter income tax from W-2, box 2:", value = 0),
-          numericInput(ns("addMedicareTax2_2018"), label = "Enter your medicare tax withheld, box 6:", value = 0)
-      )
-             
+        fluidRow(
+          column(6,numericInput(ns("yourWages_2018"), label = "Enter your wages from W-2, box 1:", value = 0)),
+          column(6,numericInput(ns("yourW2Tax_2018"), label = "Enter your income tax withheld, box 2:", value = 0))
+        ),# Wages row
+        fluidRow(
+          column(6,numericInput(ns("yourMedicareW2_2018"), label = "Enter your medicare wages from W-2, box 5:", value = 0)),
+          column(6,numericInput(ns("yourMedicareTax_2018"), label = "Enter your medicare tax withheld, box 6:", value = 0))
+          
+        ), # Medicare Wage & Tax Row
+        fluidRow(
+          column(6,numericInput(ns("spouseWages_2018"), label = "Enter spouse wages from W-2, box 1:", value = 0)),
+          column(6,numericInput(ns("spouseW2Tax_2018"), label = "Enter spouse income tax withheld, box 2:", value = 0))
+        ), # Spouse Wages
+        fluidRow(
+          column(6,numericInput(ns("spouseMedicareW2_2018"), label = "Enter your medicare wages from W-2, box 5:", value = 0)),
+          column(6,numericInput(ns("spouseMedicareTax_2018"), label = "Enter your medicare tax withheld, box 6:", value = 0))
+        ),# Spouse Medicare 
+        fluidRow(
+          column(6,numericInput(ns("addWages1_2018"), label = "Enter additional wages from W-2, box 1:", value = 0)),
+          column(6,numericInput(ns("addW2Tax1_2018"), label = "Enter income tax from W-2, box 2:", value = 0))
+        ), # Additional wages 1
+        fluidRow(
+          column(6,numericInput(ns("addMedicare1_2018"), label = "Enter your medicare wages from W-2, box 5:", value = 0)),
+          column(6,numericInput(ns("addMedicareTax1_2018"), label = "Enter your medicare tax withheld, box 6:", value = 0))
+                 
+        ), # Additional medicare wages and taxes
+        fluidRow(
+          actionButton(ns("hideWages1_2018"), label = "Delete", class="btn btn-danger btn-responsive")
+        ), # Action Button
+        fluidRow(
+          column(6,numericInput(ns("addWages2_2018"), label = "Enter additional wages from W-2, box 1:", value = 0)),
+          column(6,numericInput(ns("addW2Tax2_2018"), label = "Enter income tax from W-2, box 2:", value = 0))
+        ), # Additional Wages 2
+        fluidRow(
+          column(6,numericInput(ns("addMedicare2_2018"), label = "Enter your medicare wages from W-2, box 5:", value = 0)),
+          column(6,numericInput(ns("addMedicareTax2_2018"), label = "Enter your medicare tax withheld, box 6:", value = 0))
+        ), # Additional Medicare wages and tax 2
+        fluidRow(
+          actionButton(ns("hideWages2_2018"), label = "Delete",class="btn btn-danger btn-responsive")
+        )   
       ),
       column(6,h4("2017"),
-        column(6,
-           numericInput(ns("yourWages_2017"), label = "Enter your wages from W-2, box 1:", value = 0, min=0),
-           numericInput(ns("yourMedicareW2_2017"), label = "Enter your medicare wages from W-2, box 5:", value = 0),
-           numericInput(ns("spouseWages_2017"), label = "Enter spouse wages from W-2, box 1:", value = 0, min=0),
-           numericInput(ns("spouseMedicareW2_2017"), label = "Enter your medicare wages from W-2, box 5:", value = 0),
-           numericInput(ns("addWages1_2017"), label = "Enter additional wages from W-2, box 1:", value = 0, min=0),
-           numericInput(ns("addMedicare1_2017"), label = "Enter your medicare wages from W-2, box 5:", value = 0),
-           actionButton(ns("hideWages1_2017"), label = "Delete",class="btn btn-danger btn-responsive"),
-           numericInput(ns("addWages2_2017"), label = "Enter additional wages from W-2, box 1:", value = 0, min=0),
-           numericInput(ns("addMedicare2_2017"), label = "Enter your medicare wages from W-2, box 5:", value = 0),
-           actionButton(ns("hideWages2_2017"), label = "Delete", class="btn btn-danger btn-responsive")
-        ),
-       column(6,
-          numericInput(ns("yourW2Tax_2017"), label = "Enter your income tax withheld, box 2:", value = 0, min =0),
-          numericInput(ns("yourMedicareTax_2017"), label = "Enter your medicare tax withheld, box 6:", value = 0),
-          numericInput(ns("spouseW2Tax_2017"), label = "Enter spouse income tax withheld, box 2:", value = 0, min= 0),
-          numericInput(ns("spouseMedicareTax_2017"), label = "Enter your medicare tax withheld, box 6:", value = 0),
-          numericInput(ns("addW2Tax1_2017"), label = "Enter income tax from W-2, box 2:", value = 0, min = 0),
-          numericInput(ns("addMedicareTax1_2017"), label = "Enter your medicare tax withheld, box 6:", value = 0),
-          numericInput(ns("addW2Tax2_2017"), label = "Enter income tax from W-2, box 2:", value = 0, min = 0),
-          numericInput(ns("addMedicareTax2_2017"), label = "Enter your medicare tax withheld, box 6:", value = 0)
+        fluidRow(
+          column(6,numericInput(ns("yourWages_2017"), label = "Enter your wages from W-2, box 1:", value = 0)),
+          column(6,numericInput(ns("yourW2Tax_2017"), label = "Enter your income tax withheld, box 2:", value = 0))
+        ), # Your Wages
+        fluidRow(
+          column(6,numericInput(ns("yourMedicareW2_2017"), label = "Enter your medicare wages from W-2, box 5:", value = 0)),
+          column(6,numericInput(ns("yourMedicareTax_2017"), label = "Enter your medicare tax withheld, box 6:", value = 0))
+        ), # Your medicare wages & tax
+        fluidRow(
+          column(6,numericInput(ns("spouseWages_2017"), label = "Enter spouse wages from W-2, box 1:", value = 0)),
+          column(6,numericInput(ns("spouseW2Tax_2017"), label = "Enter spouse income tax withheld, box 2:", value = 0))
+        ), # Spouse Wages
+        fluidRow(
+          column(6,numericInput(ns("spouseMedicareW2_2017"), label = "Enter your medicare wages from W-2, box 5:", value = 0)),
+          column(6,numericInput(ns("spouseMedicareTax_2017"), label = "Enter your medicare tax withheld, box 6:", value = 0))
+        ), # Spouse medicare wages and tax
+        fluidRow(
+          column(6,numericInput(ns("addWages1_2017"), label = "Enter additional wages from W-2, box 1:", value = 0)),
+          column(6,numericInput(ns("addW2Tax1_2017"), label = "Enter income tax from W-2, box 2:", value = 0))
+        ), # Additional wages 1
+        fluidRow(
+          column(6,numericInput(ns("addMedicare1_2017"), label = "Enter your medicare wages from W-2, box 5:", value = 0)),
+          column(6,numericInput(ns("addMedicareTax1_2017"), label = "Enter your medicare tax withheld, box 6:", value = 0))
+        ), # Additional medicare wages and tax
+        fluidRow(
+          actionButton(ns("hideWages1_2017"), label = "Delete",class="btn btn-danger btn-responsive")
+        ), # Action button 1
+        fluidRow(
+          column(6, numericInput(ns("addWages2_2017"), label = "Enter additional wages from W-2, box 1:", value = 0)),
+          column(6,numericInput(ns("addW2Tax2_2017"), label = "Enter income tax from W-2, box 2:", value = 0))
+        ), # Additional Wages 2
+        fluidRow(
+          column(6,numericInput(ns("addMedicare2_2017"), label = "Enter your medicare wages from W-2, box 5:", value = 0)),
+          column(6,numericInput(ns("addMedicareTax2_2017"), label = "Enter your medicare tax withheld, box 6:", value = 0))
+        ), # Additional medicare 2 wages and tax
+        fluidRow(
+          actionButton(ns("hideWages2_2017"), label = "Delete", class="btn btn-danger btn-responsive")
         )
       )
     ),

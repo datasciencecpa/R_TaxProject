@@ -27,18 +27,30 @@ ui <- fluidPage(
          tabPanel("Results",
                   fluidRow(
                     h4("Your Income"),
-                    column(3,checkboxInput("displayIncomeTbl", label="Display Income Table", value = TRUE)),
-                    dataTableOutput("totalIncome"),
+                    column(3,checkboxInput("displayIncomeChb", label="Display Income Table", value = TRUE)),
+                    dataTableOutput("totalIncomeTbl"),
                     column(3,checkboxInput("displayTotalIncGraph",label = "Display Graph", value = TRUE)),
                     column(9,plotOutput("totalIncGraph"))
-                  ), 
+                  ), # End Income section
                   hr(),
                   fluidRow(
-                    h4("Your Deductions"),
-                    column(3,checkboxInput("displayDeductionTbl", label="Display Income Table", value = TRUE)),
-                    dataTableOutput("totalDeduction"),
+                    h4("Your Deductions Above AGI"),
+                    column(3,checkboxInput("displayDeductionChb", label="Display Deduction Table", value = TRUE)),
+                    dataTableOutput("totalDeductionTbl"),
                     column(3, checkboxInput("displayDeductionGraph", label = "Display Graph", value = TRUE)),
                     column(9, plotOutput("deductionGraph"))
+                  ), # End Deduction section
+                  hr(),
+                  fluidRow(
+                    h4("Your Standard Deduction or Itemized Deduction"),
+                    column(3, checkboxInput("displayItemizedChb", label = "Display Deduction Table", value = TRUE)),
+                    dataTableOutput("totalItemizedTbl"),
+                    column(3, checkboxInput("displayTotalItemGraph", label = "Display Graph", value = TRUE)),
+                    column(9, plotOutput("itemizedGraph"))
+                  ), # End Itemized section
+                  hr(),
+                  fluidRow(
+                    h4("Your Tax and Credits")
                   )
          ),
          uiOutput("resultTab"),
@@ -98,6 +110,7 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   # get statusInformation, incomeInformation, and deductions information entered by user.
+
   statusInformation <- callModule(filingInformation, "filingInformation", session = session)
   income <- callModule(income,"income", session = session)
   deductions <- callModule(deductions, "deductions", session = session)
@@ -139,21 +152,21 @@ server <- function(input, output, session) {
     if (!input$displayTotalIncGraph){
       hide("totalIncGraph")
     } else show ("totalIncGraph")
-    if (!input$displayIncomeTbl) { 
-      hide ("totalIncome")  
+    if (!input$displayIncomeChb) { 
+      hide ("totalIncomeTbl")  
     } else {
-      show ("totalIncome")
+      show ("totalIncomeTbl")
     }
     if (!input$displayDeductionGraph){
       hide ("deductionGraph")
     } else show ("deductionGraph")
-    if (!input$displayDeductionTbl) {
-      hide ("totalDeduction")
-    } else show ("totalDeduction")
+    if (!input$displayDeductionChb) {
+      hide ("totalDeductionTbl")
+    } else show ("totalDeductionTbl")
   })
   #-------------------------------------------------------------------
 
-  output$totalIncome <- renderDataTable({
+  output$totalIncomeTbl <- renderDataTable({
     AGIIncome <- totalIncomeCalculation(income())
     valueRow <- AGIIncome$AGI_2018 !=0 | AGIIncome$AGI_2017 !=0  # Interested in non-zero value income type.
     AGIIncome <- AGIIncome[valueRow,]
@@ -164,9 +177,10 @@ server <- function(input, output, session) {
     })
     return (AGIIncome)
   })
-  output$totalDeduction <- renderDataTable({
+  #-----------------------------------------------------------------------
+  output$totalDeductionTbl <- renderDataTable({
     deductionsToAGI <- totalDeductionToAGI (deductions(), statusInformation(),totalIncomeCalculation(income()))
-
+    AGI <- deductionsToAGI["Adjusted_Gross_Income",]
     deductionDF <- deductionsToAGI[c("Educator_Expense", "HSA_Deduction_Amt", "Your_IRA_Deduction", "Your_Spouse_IRA_Deduction",
                                     "Student_Loan_Deduction"), ]
     valueRow <- (deductionDF$Deduction_2018 !=0) | (deductionDF$Deduction_2017 !=0)
@@ -175,13 +189,19 @@ server <- function(input, output, session) {
     Deduction_Type <- rownames(deductionDF)
     deductionDF <- data.frame(Deduction_Type, deductionDF)
     rownames(deductionDF) <- NULL
-    print (deductionDF)
     output$deductionGraph <- renderPlot({
       ggplot(data= DFConverter(deductionDF), aes(x = TaxYear, y= Amount, fill = Deduction_Type)) + geom_bar(stat = "identity")
     })
     return (deductionsToAGI)
   },options = list(pageLength = 25))
-  
+  #---------------------------------------------------------------------------
+  output$totalItemizedTbl <- renderDataTable({
+    itemizedItems <- c("Medical_Exp","State_Local_Taxes", "Real_Estate_Taxes","Personal_Property_Taxes",
+                       "Mortgage_Interest","Premium_Mortage_Interest","Charitable_Contribution")
+    deductionsToAGI <- totalDeductionToAGI (deductions(), statusInformation(),totalIncomeCalculation(income()))
+    print(paste("AGI Amount:", deductionsToAGI["Adjusted_Gross_Income",]))
+    itemizeDF <- totalItemizedDeduction (deductions()[itemizedItems,], statusInformation(),deductionsToAGI["Adjusted_Gross_Income",] )
+  }, options= list(pageLength = 25))
   # Testing Code Below ----------------------------------------------
   output$testingCTC<- renderDataTable({
     filingStatus <- statusInformation()["Filing_Status", "Status_2018"]

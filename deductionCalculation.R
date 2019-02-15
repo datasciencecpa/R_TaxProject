@@ -12,6 +12,7 @@ library(plyr)
 SLTbl <- read.xls(xls="TaxRates.xls", sheet=9)
 hsaTbl <- read.xls(xls="TaxRates.xls", sheet= 10)
 IRATbl <- read.xls(xls = "TaxRates.xls", sheet = 11)
+SDTbl <- read.xls(xls = "TaxRates.xls", sheet = 4)
 IRATbl$LOWER_AGI <- as.numeric(IRATbl$LOWER_AGI)
 IRATbl$UPPER_AGI <- as.numeric(IRATbl$UPPER_AGI)
 HSADeduction <- function (ages, contributionAmt, hsaPlan, taxYear) {
@@ -185,4 +186,19 @@ studentLoan <- function (interest, MAGI, filingStatus, taxYear) {
   } else {
     return (0)
   }
+}
+itemizedDeduction <- function (deductionDF, statusDF, AGI){
+  statusDF["Filing_Status", ] <- toupper(as.character(statusDF["Filing_Status", ]))
+  row_2017 <- SDTbl[SDTbl$YEAR == 2017 & grepl(statusDF["Filing_Status", "Status_2017"], SDTbl$FILING_STATUS),]
+  row_2018 <- SDTbl[SDTbl$YEAR == 2018 & grepl(statusDF["Filing_Status", "Status_2018"], SDTbl$FILING_STATUS),]
+  num_2017 <- sum(as.numeric(statusDF[c("Your_Age", "Spouse_Age"),"Status_2017"])>65) +
+              sum(as.numeric(statusDF[c("You_Blind", "Spouse_Blind"), "Status_2017"]))
+  num_2018  <-  sum(as.numeric(statusDF[c("Your_Age", "Spouse_Age"),"Status_2018"])>65) +
+                sum(as.numeric(statusDF[c("You_Blind", "Spouse_Blind"), "Status_2018"]))
+  print(num_2017)
+  print(num_2018)
+  SD_2017 <- row_2017$AMOUNT + num_2017*row_2017$ADDITIONAL_PER_CONDITION
+  SD_2018 <- row_2018$AMOUNT + num_2018*row_2018$ADDITIONAL_PER_CONDITION
+  print (SD_2017)
+  print (SD_2018)
 }

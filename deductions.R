@@ -8,37 +8,37 @@ deductionsUI <- function (id){
      hr(), # Inputs for above the line deductions
      fluidRow(
        column(6, h4("2018"),
-          numericInput(ns("educatorExp_2018"), label = "Educator Expense ($250/person, up to $500 for MFJ):", value = 0, min = 0),
-          numericInput(ns("HSA_2018"), label = "HSA contributions:", value = 0, min = 0),
+          numericInput(ns("educatorExp_2018"), label = "Educator Expense ($250/person, up to $500 for MFJ):", value = 0),
+          numericInput(ns("HSA_2018"), label = "HSA contributions:", value = 0),
           column(8,
             numericInput(ns("W2HSA_2018"), label = "Enter your HSA contribution as reported on all of your W-2", value = 0)
           ),
           column(4,
             selectInput(ns("HSAPlan_2018"), label = "Select your HSA plan", choices = c("Single", "Family"), selected = "Single")),
-          column(6,numericInput(ns("YourIRA_2018"), label = "Your Deductible IRA Contribution:", value = 0, min = 0)
+          column(6,numericInput(ns("YourIRA_2018"), label = "Your Deductible IRA Contribution:", value = 0)
                  ),
-          column(6,numericInput(ns("SpouseIRA_2018"), label = "Spouse Deductible IRA Contribution:", value = 0, min = 0)),
+          column(6,numericInput(ns("SpouseIRA_2018"), label = "Spouse Deductible IRA Contribution:", value = 0)),
           column(6, radioButtons(ns("YourIRACover_2018"), label = "Were you covered by a retirement plan at work or through self-employment?",
                                  choices = c("YES", "NO"), selected = "NO")),
           column(6, radioButtons(ns("SpouseIRACover_2018"), label ="Were you covered by a retirement plan at work or through self-employment?",
                                  choices = c("YES", "NO"), selected = "NO")),
-          numericInput(ns("studentLoan_2018"), label = "Enter your student loan interest(Max $2500):", value = 0, min = 0)
+          numericInput(ns("studentLoan_2018"), label = "Enter your student loan interest(Max $2500):", value = 0)
        ),
        column(6, h4("2017"),
-          numericInput(ns("educatorExp_2017"), label = "Educator Expense ($250/person, up to $500 for MFJ):", value = 0, min = 0),
-          numericInput(ns("HSA_2017"), label = "HSA contributions:", value = 0, min = 0),
+          numericInput(ns("educatorExp_2017"), label = "Educator Expense ($250/person, up to $500 for MFJ):", value = 0),
+          numericInput(ns("HSA_2017"), label = "HSA contributions:", value = 0),
           column(8,
                  numericInput(ns("W2HSA_2017"), label = "Enter your HSA contribution as reported on all of your W-2", value = 0)
           ),
           column(4,selectInput(ns("HSAPlan_2017"), label = "Select your HSA plan", choices = c("Single", "Family"), selected = "Single")),
-          column(6,numericInput(ns("YourIRA_2017"), label = "Your Deductible IRA Contribution:", value = 0, min = 0)
+          column(6,numericInput(ns("YourIRA_2017"), label = "Your Deductible IRA Contribution:", value = 0)
           ),
-          column(6,numericInput(ns("SpouseIRA_2017"), label = "Spouse Deductible IRA Contribution:", value = 0, min = 0)),
+          column(6,numericInput(ns("SpouseIRA_2017"), label = "Spouse Deductible IRA Contribution:", value = 0)),
           column(6, radioButtons(ns("YourIRACover_2017"), label = "Were you covered by a retirement plan at work or through self-employment?",
                                  choices = c("YES", "NO"), selected = "NO")),
           column(6, radioButtons(ns("SpouseIRACover_2017"), label ="Were you covered by a retirement plan at work or through self-employment?",
                                  choices = c("YES", "NO"), selected = "NO")),
-          numericInput(ns("studentLoan_2017"), label = "Enter your student loan interest(Max $2500):", value = 0, min = 0)
+          numericInput(ns("studentLoan_2017"), label = "Enter your student loan interest(Max $2500):", value = 0)
        )
      ), hr(), #Input for itemize deductions
      fluidRow(
@@ -46,22 +46,22 @@ deductionsUI <- function (id){
      ),
      fluidRow(
        column(6, h4("2018"),
-          numericInput(ns("medicalExp_2018"), label = "Enter eligible medical expenses(Amount exceeds 7.5% of your AGI):", value = 0, min = 0),
-          numericInput(ns("stateTax_2018"), label = "Enter state and local income taxes or general sales tax:", value = 0, min = 0),
-          numericInput(ns("realEstateTax_2018"), label = "Enter real estate taxes:", value = 0, min = 0),
-          numericInput(ns("personalTax_2018"), label = "Enter personal property taxes:", value = 0, min = 0),
-          numericInput(ns("mortgageInterest_2018"), label = "Enter your eligible mortgage interest:", value = 0, min = 0),
-          numericInput(ns("PMI_2018"), label = "Enter your premium mortgage insurance:", value = 0, min = 0),
-          numericInput(ns("charitable_2018"), label = "Enter your charitable deductions:", value = 0, min = 0)
+          numericInput(ns("medicalExp_2018"), label = "Enter eligible medical expenses:", value = 0),
+          numericInput(ns("stateTax_2018"), label = "Enter state and local income taxes or general sales tax:", value = 0),
+          numericInput(ns("realEstateTax_2018"), label = "Enter real estate taxes:", value = 0 ),
+          numericInput(ns("personalTax_2018"), label = "Enter personal property taxes:", value = 0 ),
+          numericInput(ns("mortgageInterest_2018"), label = "Enter your eligible mortgage interest:", value = 0 ),
+          numericInput(ns("PMI_2018"), label = "Enter your premium mortgage insurance:", value = 0 ),
+          numericInput(ns("charitable_2018"), label = "Enter your charitable deductions:", value = 0 )
        ),
        column(6, h4("2018"),
-          numericInput(ns("medicalExp_2017"), label = "Enter eligible medical expenses(Amount exceeds 7.5% of your AGI):", value = 0, min = 0),
-          numericInput(ns("stateTax_2017"), label = "Enter state and local income taxes or general sales tax:", value = 0, min = 0),
-          numericInput(ns("realEstateTax_2017"), label = "Enter real estate taxes:", value = 0, min = 0),
-          numericInput(ns("personalTax_2017"), label = "Enter personal property taxes:", value = 0, min = 0),
-          numericInput(ns("mortgageInterest_2017"), label = "Enter your eligible mortgage interest:", value = 0, min = 0),
-          numericInput(ns("PMI_2017"), label = "Enter your premium mortgage insurance:", value = 0, min = 0),
-          numericInput(ns("charitable_2017"), label = "Enter your charitable deductions:", value = 0, min = 0)
+          numericInput(ns("medicalExp_2017"), label = "Enter eligible medical expenses:", value = 0 ),
+          numericInput(ns("stateTax_2017"), label = "Enter state and local income taxes or general sales tax:", value = 0 ),
+          numericInput(ns("realEstateTax_2017"), label = "Enter real estate taxes:", value = 0 ),
+          numericInput(ns("personalTax_2017"), label = "Enter personal property taxes:", value = 0 ),
+          numericInput(ns("mortgageInterest_2017"), label = "Enter your eligible mortgage interest:", value = 0 ),
+          numericInput(ns("PMI_2017"), label = "Enter your premium mortgage insurance:", value = 0 ),
+          numericInput(ns("charitable_2017"), label = "Enter your charitable deductions:", value = 0 )
        )
      )
   )
@@ -74,7 +74,7 @@ deductions <- function (input, output, session){
       updateNumericInput(session, "YourIRA_2017", label = "Your Deductible IRA Contribution:", value = input$YourIRA_2018)
       updateNumericInput(session, "SpouseIRA_2017", label = "Spouse Deductible IRA Contribution:", value = input$SpouseIRA_2018)
       updateNumericInput(session, "studentLoan_2017", label = "Enter your student loan interest(Max $2500):", value = input$studentLoan_2018)
-      updateNumericInput(session, "medicalExp_2017", label = "Enter eligible medical expenses(Amount exceeds 7.5% of your AGI):", value = input$medicalExp_2018)
+      updateNumericInput(session, "medicalExp_2017", label = "Enter eligible medical expenses:", value = input$medicalExp_2018)
       updateNumericInput(session, "stateTax_2017", label = "Enter state and local income taxes or general sales tax:", value = input$stateTax_2018)
       updateNumericInput(session, "realEstateTax_2017", label = "Enter real estate taxes:", value = input$realEstateTax_2018)
       updateNumericInput(session, "personalTax_2017", label = "Enter personal property taxes:", value = input$personalTax_2018)
