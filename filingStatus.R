@@ -71,6 +71,8 @@ filingInformation <- function (input, output, session){
     if (input$filingStatus_2018 != "MFJ"){
       hide(id = "spouseAge_2018")
       hide(id = "spouseBlind_2018")
+      updateNumericInput(session, "spouseAge_2018", label = "Enter your spouse age:",value = 0)
+      updateCheckboxInput(session, "spouseBlind_2018", label = "Check if you are blind",value = FALSE)
     }
     else {
       show(id = "spouseAge_2018")
@@ -79,6 +81,8 @@ filingInformation <- function (input, output, session){
     if (input$filingStatus_2017 != "MFJ"){
       hide(id = "spouseAge_2017")
       hide(id = "spouseBlind_2017")
+      updateNumericInput(session, "spouseAge_2017", value = 0)
+      updateCheckboxInput(session, "spouseBlind_2017", value = FALSE)
     }
     else {
       show(id = "spouseAge_2017")
@@ -96,6 +100,8 @@ filingInformation <- function (input, output, session){
                          min= 0, max=10)
       updateNumericInput(session, "yourAge_2017", label = "Enter your age:", value = ifelse (input$yourAge_2018>0, input$yourAge_2018-1, input$yourAge_2018))
       updateNumericInput(session, "spouseAge_2017", label = "Enter your spouse age:", value = ifelse(input$spouseAge_2018>0, input$spouseAge_2018-1, input$spouseAge_2018))
+      updateCheckboxInput(session, "youBlind_2017", label = "Check if you are blind", value= input$youBlind_2018)
+      updateCheckboxInput(session, "spouseBlind_2017", label = "Check if you are blind", value = input$spouseBlind_2018)
       
     } 
   }) # Finish cosmetic issues.

@@ -196,7 +196,7 @@ server <- function(input, output, session) {
   },options = list(pageLength = 25))
   #---------------------------------------------------------------------------
   output$totalItemizedTbl <- renderDataTable({
-    itemizedItems <- c("Medical_Exp","State_Local_Taxes", "Real_Estate_Taxes","Personal_Property_Taxes",
+    itemizedItems <- c("Medical_Exp","State_Local_Taxes", "Real_Estate_Taxes","Personal_Property_Tax",
                        "Mortgage_Interest","Premium_Mortage_Interest","Charitable_Contribution")
     deductionsToAGI <- totalDeductionToAGI (deductions(), statusInformation(),totalIncomeCalculation(income()))
     print(paste("AGI Amount:", deductionsToAGI["Adjusted_Gross_Income",]))

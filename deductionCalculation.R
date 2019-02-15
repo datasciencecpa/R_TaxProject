@@ -189,16 +189,19 @@ studentLoan <- function (interest, MAGI, filingStatus, taxYear) {
 }
 itemizedDeduction <- function (deductionDF, statusDF, AGI){
   statusDF["Filing_Status", ] <- toupper(as.character(statusDF["Filing_Status", ]))
+  deductionDF$Deduction_2018 <- as.numeric(deductionDF$Deduction_2018)
+  deductionDF$Deduction_2017 <- as.numeric(deductionDF$Deduction_2017)
   row_2017 <- SDTbl[SDTbl$YEAR == 2017 & grepl(statusDF["Filing_Status", "Status_2017"], SDTbl$FILING_STATUS),]
   row_2018 <- SDTbl[SDTbl$YEAR == 2018 & grepl(statusDF["Filing_Status", "Status_2018"], SDTbl$FILING_STATUS),]
-  num_2017 <- sum(as.numeric(statusDF[c("Your_Age", "Spouse_Age"),"Status_2017"])>65) +
-              sum(as.numeric(statusDF[c("You_Blind", "Spouse_Blind"), "Status_2017"]))
-  num_2018  <-  sum(as.numeric(statusDF[c("Your_Age", "Spouse_Age"),"Status_2018"])>65) +
-                sum(as.numeric(statusDF[c("You_Blind", "Spouse_Blind"), "Status_2018"]))
-  print(num_2017)
-  print(num_2018)
+
+  num_2017 <- sum(as.numeric(statusDF[c("Your_Age", "Spouse_Age"),"Status_2017"])>=65) +
+              sum(as.logical(statusDF[c("You_Blind", "Spouse_Blind"), "Status_2017"]))
+  num_2018  <-  sum(as.numeric(statusDF[c("Your_Age", "Spouse_Age"),"Status_2018"])>=65) +
+                sum(as.logical(statusDF[c("You_Blind", "Spouse_Blind"), "Status_2018"]))
+
   SD_2017 <- row_2017$AMOUNT + num_2017*row_2017$ADDITIONAL_PER_CONDITION
   SD_2018 <- row_2018$AMOUNT + num_2018*row_2018$ADDITIONAL_PER_CONDITION
-  print (SD_2017)
-  print (SD_2018)
+  deductionDF["Medical_Exp", ] <- ifelse ((deductionDF["Medical_Exp",] - AGI *0.075)>0,(deductionDF["Medical_Exp",] - AGI *0.075),0 )
+  print (deductionDF)
+  
 }
