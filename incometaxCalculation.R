@@ -155,6 +155,7 @@ DFConverter <- function (df){
   df[,3] <- NULL # Delete column with amount from 2017
   colnames(df)[2] <- "Amount"
   df$TaxYear <- "2018"
+  print (rbind(df, df_1))
   return (rbind(df, df_1))
 }
 

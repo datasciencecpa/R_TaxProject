@@ -166,6 +166,7 @@ server <- function(input, output, session) {
   })
   output$totalDeduction <- renderDataTable({
     deductionsToAGI <- totalDeductionToAGI (deductions(), statusInformation(),totalIncomeCalculation(income()))
+
     deductionDF <- deductionsToAGI[c("Educator_Expense", "HSA_Deduction_Amt", "Your_IRA_Deduction", "Your_Spouse_IRA_Deduction",
                                     "Student_Loan_Deduction"), ]
     valueRow <- (deductionDF$Deduction_2018 !=0) | (deductionDF$Deduction_2017 !=0)
@@ -173,9 +174,10 @@ server <- function(input, output, session) {
     deductionDF <- deductionDF[valueRow,]
     Deduction_Type <- rownames(deductionDF)
     deductionDF <- data.frame(Deduction_Type, deductionDF)
+    rownames(deductionDF) <- NULL
     print (deductionDF)
     output$deductionGraph <- renderPlot({
-      ggplot(data= DFConverter(deductionDF), aes(x = TaxYear, y= Amount, fill = Deduction_Type))
+      ggplot(data= DFConverter(deductionDF), aes(x = TaxYear, y= Amount, fill = Deduction_Type)) + geom_bar(stat = "identity")
     })
     return (deductionsToAGI)
   },options = list(pageLength = 25))
