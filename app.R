@@ -36,6 +36,7 @@ ui <- fluidPage(
                   fluidRow(
                     h4("Your Deductions Above AGI"),
                     column(3,checkboxInput("displayDeductionChb", label="Display Deduction Table", value = TRUE)),
+                    
                     dataTableOutput("totalDeductionTbl"),
                     column(3, checkboxInput("displayDeductionGraph", label = "Display Graph", value = TRUE)),
                     column(9, plotOutput("deductionGraph"))
@@ -43,8 +44,10 @@ ui <- fluidPage(
                   hr(),
                   fluidRow(
                     h4("Your Standard Deduction or Itemized Deduction"),
-                    column(3, checkboxInput("displayItemizedChb", label = "Display Deduction Table", value = TRUE)),
-                    dataTableOutput("totalItemizedTbl"),
+                    column(3, checkboxInput("displayDeductionBlAGI", label = "Display Deduction Table", value = TRUE)),
+                    column(3,checkboxInput("displayItemizedChb", label="Display Itemized Table", value = FALSE)),
+                    dataTableOutput("belowAGIDeductionTbl"),
+                    dataTableOutput("detailItemizedTbl"),
                     column(3, checkboxInput("displayTotalItemGraph", label = "Display Graph", value = TRUE)),
                     column(9, plotOutput("itemizedGraph"))
                   ), # End Itemized section
@@ -163,6 +166,12 @@ server <- function(input, output, session) {
     if (!input$displayDeductionChb) {
       hide ("totalDeductionTbl")
     } else show ("totalDeductionTbl")
+    if (!input$displayDeductionBlAGI){
+      hide ("belowAGIDeductionTbl")
+    } else show ("belowAGIDeductionTbl")
+    if (!input$displayItemizedChb) {
+      hide ("detailItemizedTbl")
+    } else show ("detailItemizedTbl")
   })
   #-------------------------------------------------------------------
 
@@ -195,14 +204,15 @@ server <- function(input, output, session) {
     return (deductionsToAGI)
   },options = list(pageLength = 25))
   #---------------------------------------------------------------------------
-  output$totalItemizedTbl <- renderDataTable({
+  output$belowAGIDeductionTbl <- renderDataTable({
     itemizedItems <- c("Medical_Exp","State_Local_Taxes", "Real_Estate_Taxes","Personal_Property_Tax",
                        "Mortgage_Interest","Premium_Mortage_Interest","Charitable_Contribution")
     deductionsToAGI <- totalDeductionToAGI (deductions(), statusInformation(),totalIncomeCalculation(income()))
     print(paste("AGI Amount:", deductionsToAGI["Adjusted_Gross_Income",]))
     itemizeDF <- totalItemizedDeduction (deductions()[itemizedItems,], statusInformation(),
                                          as.numeric(deductionsToAGI["Adjusted_Gross_Income",]))
-
+    output$detailItemizedTbl <- renderDataTable(itemizeDF[[2]],options= list(pageLength = 25))
+    return (itemizeDF[[1]])
   }, options= list(pageLength = 25))
   # Testing Code Below ----------------------------------------------
   output$testingCTC<- renderDataTable({

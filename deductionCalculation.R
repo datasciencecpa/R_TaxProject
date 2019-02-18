@@ -246,5 +246,6 @@ itemizedDeduction <- function (deductionDF, statusDF, AGI){
   Below_AGI_Deduction_2018 <- c(SD_2018, totalItemized_2018, maxDeduction_2018)
   Below_AGI_Deduction_2017 <- c(SD_2017, totalItemized_2017, maxDeduction_2017)
   rowNames <- c("Standard_Deduction", "Total_Itemized_Deduction", "Your_Deduction")
-  return (data.frame(Below_AGI_Deduction_2018, Below_AGI_Deduction_2017, row.names = rowNames))
+  return (list(data.frame(Below_AGI_Deduction_2018, Below_AGI_Deduction_2017, row.names = rowNames),
+            data.frame(deductions_2018, deductions_2017, row.names = rownames(deductionDF))))
 }
