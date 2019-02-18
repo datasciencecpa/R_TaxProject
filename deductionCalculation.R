@@ -188,9 +188,27 @@ studentLoan <- function (interest, MAGI, filingStatus, taxYear) {
   }
 }
 itemizedDeduction <- function (deductionDF, statusDF, AGI){
-  statusDF["Filing_Status", ] <- toupper(as.character(statusDF["Filing_Status", ]))
-  deductionDF$Deduction_2018 <- as.numeric(deductionDF$Deduction_2018)
-  deductionDF$Deduction_2017 <- as.numeric(deductionDF$Deduction_2017)
+  PMICalculation <- function (AGI, PMIAmount, filingStatus){
+    # This function is used to calculate eligible PMI deduction for tax year 2017
+    # Currently, PMI was not extended for tax year 2018
+    # Starting phase-out amount was $100,000
+    # Max phase-out amount was $109,000 for MFJ
+    min_phase_out <- ifelse (filingStatus =="MFS", 50000,100000)
+    percentage <- 0 
+    if  (AGI > min_phase_out) { # calculate limitation
+      if (filingStatus == "MFS"){
+        round_to <- 500
+        denominator <- 5000
+      } else {
+        round_to <- 1000
+        denominator <- 10000
+      }  
+      excess_amt <- round_any(AGI - min_phase_out, round_to,f=ceiling)
+      percentage <- round(excess_amt/denominator, digits = 4)
+      percentage <- ifelse (percentage>=1, 1, percentage)
+    }
+    return (PMIAmount - PMIAmount*percentage)
+  } # End Internal function
   row_2017 <- SDTbl[SDTbl$YEAR == 2017 & grepl(statusDF["Filing_Status", "Status_2017"], SDTbl$FILING_STATUS),]
   row_2018 <- SDTbl[SDTbl$YEAR == 2018 & grepl(statusDF["Filing_Status", "Status_2018"], SDTbl$FILING_STATUS),]
 
@@ -201,7 +219,26 @@ itemizedDeduction <- function (deductionDF, statusDF, AGI){
 
   SD_2017 <- row_2017$AMOUNT + num_2017*row_2017$ADDITIONAL_PER_CONDITION
   SD_2018 <- row_2018$AMOUNT + num_2018*row_2018$ADDITIONAL_PER_CONDITION
-  deductionDF["Medical_Exp", ] <- ifelse ((deductionDF["Medical_Exp",] - AGI *0.075)>0,(deductionDF["Medical_Exp",] - AGI *0.075),0 )
-  print (deductionDF)
+
+  deductions_2017 <- deductionDF$Deduction_2017
+  deductions_2018 <- deductionDF$Deduction_2018
+  deductions_2017[1] <- ifelse((deductions_2017[1] - AGI[2]*0.075)>0, (deductions_2017[1] - AGI[2]*0.075),0)
+  deductions_2018[1] <- ifelse((deductions_2018[1] -AGI[1]* 0.075)>0, (deductions_2018[1] -AGI[1]* 0.075),0)
+  deductions_2017[6] <- PMICalculation(AGI[2], deductions_2017[6], as.character(statusDF["Filing_Status", "Status_2017"]))
+  deductions_2018[6] <- 0 # Set this to zero since PMI was not extended for tax year 2018 - as of today.
+  deductions_2017[7] <- ifelse (deductions_2017[7]<=AGI[2]*0.5, deductions_2017[7], AGI[2]*0.5)
+  deductions_2018[7] <- ifelse (deductions_2017[7]<=AGI[1]*0.6, deductions_2017[7], AGI[1]*0.6)
+  excess_SALT_2018 <- 0
+  if (sum(deductions_2018[2:4])>10000) { # New SALT limitation for tax year 2018
+    excess_SALT_2018 <- sum(deductions_2018[2:4]) -10000
+  }
+  totalItemized_2017 <- sum(deductions_2017)
+  totalItemized_2018 <- sum(deductions_2018) - excess_SALT_2018
   
+  maxDeduction_2017 <- ifelse (totalItemized_2017>SD_2017, totalItemized_2017,SD_2017)
+  maxDeduction_2018 <- ifelse(totalItemized_2018>SD_2018, totalItemized_2018, SD_2018)
+  Below_AGI_Deduction_2018 <- c(SD_2018, totalItemized_2018, maxDeduction_2018)
+  Below_AGI_Deduction_2017 <- c(SD_2017, totalItemized_2017, maxDeduction_2017)
+  rowNames <- c("Standard_Deduction", "Total_Itemized_Deduction", "Your_Deduction")
+  return (data.frame(Below_AGI_Deduction_2018, Below_AGI_Deduction_2017, row.names = rowNames))
 }

@@ -200,7 +200,9 @@ server <- function(input, output, session) {
                        "Mortgage_Interest","Premium_Mortage_Interest","Charitable_Contribution")
     deductionsToAGI <- totalDeductionToAGI (deductions(), statusInformation(),totalIncomeCalculation(income()))
     print(paste("AGI Amount:", deductionsToAGI["Adjusted_Gross_Income",]))
-    itemizeDF <- totalItemizedDeduction (deductions()[itemizedItems,], statusInformation(),deductionsToAGI["Adjusted_Gross_Income",] )
+    itemizeDF <- totalItemizedDeduction (deductions()[itemizedItems,], statusInformation(),
+                                         as.numeric(deductionsToAGI["Adjusted_Gross_Income",]))
+
   }, options= list(pageLength = 25))
   # Testing Code Below ----------------------------------------------
   output$testingCTC<- renderDataTable({

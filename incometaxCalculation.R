@@ -148,7 +148,13 @@ totalDeductionToAGI <- function (deductionsDF, statusDF, AGIIncome) {
 }
 totalItemizedDeduction <- function(deductionDF, statusDF, AGI){
   # This function will determine whether itemized deduction or SD will apply
-  itemizedDeduction (deductionDF, statusDF, AGI) 
+  statusDF["Filing_Status", ] <- toupper(as.character(statusDF["Filing_Status", ]))
+  deductionDF$Deduction_2018 <- as.numeric(deductionDF$Deduction_2018)
+  deductionDF$Deduction_2017 <- as.numeric(deductionDF$Deduction_2017)
+  deductions <- itemizedDeduction (deductionDF, statusDF, AGI)
+  print (deductions)
+
+  return (deductions)
 }
 DFConverter <- function (df){
   # This function is used to convert given dataframe into different format
