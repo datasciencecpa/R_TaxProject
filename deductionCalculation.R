@@ -227,13 +227,19 @@ itemizedDeduction <- function (deductionDF, statusDF, AGI){
   deductions_2017[6] <- PMICalculation(AGI[2], deductions_2017[6], as.character(statusDF["Filing_Status", "Status_2017"]))
   deductions_2018[6] <- 0 # Set this to zero since PMI was not extended for tax year 2018 - as of today.
   deductions_2017[7] <- ifelse (deductions_2017[7]<=AGI[2]*0.5, deductions_2017[7], AGI[2]*0.5)
-  deductions_2018[7] <- ifelse (deductions_2017[7]<=AGI[1]*0.6, deductions_2017[7], AGI[1]*0.6)
+  deductions_2018[7] <- ifelse (deductions_2018[7]<=AGI[1]*0.6, deductions_2018[7], AGI[1]*0.6)
+  totalSALTDDeductions <- sum(deductions_2018[2:4])
   excess_SALT_2018 <- 0
-  if (sum(deductions_2018[2:4])>10000) { # New SALT limitation for tax year 2018
-    excess_SALT_2018 <- sum(deductions_2018[2:4]) -10000
+  if (totalSALTDDeductions>10000) { # New SALT limitation for tax year 2018
+    excess_SALT_2018 <- totalSALTDDeductions -10000
+    deductions_2018[2] <- deductions_2018[2] - (deductions_2018[2]/totalSALTDDeductions * excess_SALT_2018)
+    deductions_2018[3] <- deductions_2018[3] - (deductions_2018[3]/totalSALTDDeductions * excess_SALT_2018)
+    deductions_2018[4] <- deductions_2018[4] - (deductions_2018[4]/totalSALTDDeductions * excess_SALT_2018)
   }
+  print (paste("New Deduction:", deductions_2018))
+  print (paste("New Deduction:", deductions_2017))
   totalItemized_2017 <- sum(deductions_2017)
-  totalItemized_2018 <- sum(deductions_2018) - excess_SALT_2018
+  totalItemized_2018 <- sum(deductions_2018) 
   
   maxDeduction_2017 <- ifelse (totalItemized_2017>SD_2017, totalItemized_2017,SD_2017)
   maxDeduction_2018 <- ifelse(totalItemized_2018>SD_2018, totalItemized_2018, SD_2018)
