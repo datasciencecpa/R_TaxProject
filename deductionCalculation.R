@@ -236,16 +236,31 @@ itemizedDeduction <- function (deductionDF, statusDF, AGI){
     deductions_2018[3] <- deductions_2018[3] - (deductions_2018[3]/totalSALTDDeductions * excess_SALT_2018)
     deductions_2018[4] <- deductions_2018[4] - (deductions_2018[4]/totalSALTDDeductions * excess_SALT_2018)
   }
-  print (paste("New Deduction:", deductions_2018))
-  print (paste("New Deduction:", deductions_2017))
+
   totalItemized_2017 <- sum(deductions_2017)
-  totalItemized_2018 <- sum(deductions_2018) 
+  totalItemized_2018 <- sum(deductions_2018)
+  itemizedRows <- rownames(deductionDF)
   
+  # Figure out the itemized deduction amount for AGI above phase-out limit.
+  if (AGI[2]>row_2017$PHASE_OUT) {
+    # Follow instructions from Itemized Deductions Worksheet
+ 
+    if (sum(deductions_2017[c(1,7)]) < totalItemized_2017) { # Step 3, Box Yes checked
+      line_3 <- totalItemized_2017 - sum(deductions_2017[c(1,7)])
+      line_4 <- line_3*0.8
+      line_8 <- (AGI[2] - row_2017$PHASE_OUT)*0.03
+      line_9 <- ifelse(line_4>line_8, line_8, line_4)
+      totalItemized_2017 <- totalItemized_2017 - line_9
+      itemizedRows <- c(itemizedRows, "Itemized_Amount_Limited_By_Income")
+      deductions_2017[8] <- totalItemized_2017
+      deductions_2018[8] <- totalItemized_2018
+    }
+  }
   maxDeduction_2017 <- ifelse (totalItemized_2017>SD_2017, totalItemized_2017,SD_2017)
   maxDeduction_2018 <- ifelse(totalItemized_2018>SD_2018, totalItemized_2018, SD_2018)
   Below_AGI_Deduction_2018 <- c(SD_2018, totalItemized_2018, maxDeduction_2018)
   Below_AGI_Deduction_2017 <- c(SD_2017, totalItemized_2017, maxDeduction_2017)
   rowNames <- c("Standard_Deduction", "Total_Itemized_Deduction", "Your_Deduction")
   return (list(data.frame(Below_AGI_Deduction_2018, Below_AGI_Deduction_2017, row.names = rowNames),
-            data.frame(deductions_2018, deductions_2017, row.names = rownames(deductionDF))))
+            data.frame(deductions_2018, deductions_2017, row.names = itemizedRows)))
 }
