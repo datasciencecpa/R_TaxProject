@@ -7,6 +7,8 @@
 # Author: Long Nguyen
 # Date Created: 01/28/2019
 source ("deductionCalculation.R")
+taxTbl <- read.xls(xls = "TaxRates.xls", sheet = 1)
+LTCapTbl <- read.xls(xls = "TaxRates.xls", sheet = 2)
 totalIncomeCalculation <- function (incomeDF){
    # This function will sum up total income user entered from the income section.
    # This function will ignore income with value = 0, assuming that user did not have that type of income in both year.
@@ -163,6 +165,22 @@ DFConverter <- function (df){
   df[,3] <- NULL # Delete column with amount from 2017
   colnames(df)[2] <- "Amount"
   df$TaxYear <- "2018"
+  print (rbind(df, df_1))
   return (rbind(df, df_1))
 }
+taxCalculation <- function (taxableIncome, incomeDF, filingStatus){
+  # This function will calculate tax based on taxable income
+  # Parameter: taxableIncome is a vector, not a dataframe.
+  filingStatus <- as.character(toupper(filingStatus))
+  taxRow_2017 <- taxTbl[taxTbl$YEAR == 2017 & grepl(filingStatus[2], taxTbl$FILING_STATUS),]
+  taxRow_2018 <- taxTbl[taxTbl$YEAR == 2018 & grepl(filingStatus[1], taxTbl$FILING_STATUS),]
 
+  ind_2017 <- which (taxRow_2017$LOWER_AMT< taxableIncome[2] & taxRow_2017$UPPER_AMT>  taxableIncome[2])
+  ind_2018 <- which (taxRow_2018$LOWER_AMT< taxableIncome[1] & taxRow_2018$UPPER_AMT>  taxableIncome[1])
+  taxRow_2017 <- taxRow_2017[ind_2017,]
+  taxRow_2018 <- taxRow_2018[ind_2018,]
+  print ("Tax Row 2017")
+  print (taxRow_2017)
+  print ("Tax Row 2018")
+  print (taxRow_2018)
+}

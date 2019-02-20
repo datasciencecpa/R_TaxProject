@@ -170,12 +170,9 @@ server <- function(input, output, session) {
       result <- belowAGIDeduction (deductions()[itemizedItems,], statusInformation(),AGI)
       deductionSummary <- result [[1]]
       detailItemized <- result[[2]]
-      print (deductionSummary)
-      print (detailItemized)
-      print (class(deductionSummary))
       output$detailItemizedTbl <- renderDataTable(detailItemized,options= list(pageLength = 25))
       output$belowAGIDeductionTbl <- renderDataTable(deductionSummary)
-      
+      filingStatus <- statusInformation()["Filing_Status",]
       summary_2018 <- c(AGI[1],deductionSummary["Your_Deduction","Below_AGI_Deduction_2018"],
                 deductionSummary["Exemption_Deduction", "Below_AGI_Deduction_2018"])
       summary_2017 <- c(AGI[2],deductionSummary["Your_Deduction", "Below_AGI_Deduction_2017"],
@@ -183,6 +180,7 @@ server <- function(input, output, session) {
       rowNames <- c("AGI", "Deduction", "Exemption" )
       summaryDF <- data.frame(summary_2018, summary_2017, row.names = rowNames)
       summaryDF["Taxable_Income",] = summaryDF[1,] - apply(summaryDF[2:3,], 2, sum)
+      tax <- taxCalculation (as.numeric(summaryDF["Taxable_Income",]), totalIncome, filingStatus )
       return (summaryDF)
   })
   
