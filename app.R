@@ -26,6 +26,10 @@ ui <- fluidPage(
          creditsUI("credits"),
          tabPanel("Results",
                   fluidRow(
+                    h4("Your Tax")
+                  ),
+                  hr(),
+                  fluidRow(
                     h4("Your Income"),
                     column(3,checkboxInput("displayIncomeChb", label="Display Income Table", value = TRUE)),
                     dataTableOutput("totalIncomeTbl"),
@@ -209,7 +213,7 @@ server <- function(input, output, session) {
                        "Mortgage_Interest","Premium_Mortage_Interest","Charitable_Contribution")
     deductionsToAGI <- totalDeductionToAGI (deductions(), statusInformation(),totalIncomeCalculation(income()))
     print(paste("AGI Amount:", deductionsToAGI["Adjusted_Gross_Income",]))
-    itemizeDF <- totalItemizedDeduction (deductions()[itemizedItems,], statusInformation(),
+    itemizeDF <- belowAGIDeduction (deductions()[itemizedItems,], statusInformation(),
                                          as.numeric(deductionsToAGI["Adjusted_Gross_Income",]))
     output$detailItemizedTbl <- renderDataTable(itemizeDF[[2]],options= list(pageLength = 25))
     return (itemizeDF[[1]])

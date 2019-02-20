@@ -13,6 +13,10 @@ SLTbl <- read.xls(xls="TaxRates.xls", sheet=9)
 hsaTbl <- read.xls(xls="TaxRates.xls", sheet= 10)
 IRATbl <- read.xls(xls = "TaxRates.xls", sheet = 11)
 SDTbl <- read.xls(xls = "TaxRates.xls", sheet = 4)
+ExempTbl <- read.xls(xls = "TaxRates.xls", sheet = 3)
+ExempTbl$LOWER_AMT <- as.numeric(ExempTbl$LOWER_AMT)
+ExempTbl$UPPER_AMT <- as.numeric(ExempTbl$UPPER_AMT)
+ExempTbl$AMOUNT <- as.numeric(ExempTbl$AMOUNT)
 IRATbl$LOWER_AGI <- as.numeric(IRATbl$LOWER_AGI)
 IRATbl$UPPER_AGI <- as.numeric(IRATbl$UPPER_AGI)
 HSADeduction <- function (ages, contributionAmt, hsaPlan, taxYear) {
@@ -175,11 +179,11 @@ studentLoan <- function (interest, MAGI, filingStatus, taxYear) {
   filingStatus <- toupper(filingStatus)
   if (filingStatus == "MFS") return (0)
   rowValues <- SLTbl[SLTbl$YEAR == taxYear & grepl(filingStatus, SLTbl$FILING_STATUS),]
-  print (rowValues)
+
   if (MAGI<=rowValues$LOWER_AGI) { # Full student loan deduction
     return (interest)
   } else if (MAGI>rowValues$LOWER_AGI & MAGI <=rowValues$UPPER_AGI){
-    print ("Within the range limit")
+
     incomeRange <- rowValues$UPPER_AGI - rowValues$LOWER_AGI
     multiplier <- round((rowValues$UPPER_AGI - MAGI)/incomeRange, digits = 3)
     return (interest*(1-multiplier))
@@ -187,7 +191,7 @@ studentLoan <- function (interest, MAGI, filingStatus, taxYear) {
     return (0)
   }
 }
-itemizedDeduction <- function (deductionDF, statusDF, AGI){
+SDExemptionDeduction <- function (deductionDF, statusDF, AGI){
   PMICalculation <- function (AGI, PMIAmount, filingStatus){
     # This function is used to calculate eligible PMI deduction for tax year 2017
     # Currently, PMI was not extended for tax year 2018
@@ -209,6 +213,27 @@ itemizedDeduction <- function (deductionDF, statusDF, AGI){
     }
     return (PMIAmount - PMIAmount*percentage)
   } # End Internal function
+  ExemptionAmount <- function (AGI_2017, statusDF) {
+    rowValue <- ExempTbl[grepl(statusDF["Filing_Status", "Status_2017"], ExempTbl$FILING_STATUS),]
+    num <- 1 # Variable to store number of exemptions
+    if (statusDF["Filing_Status", "Status_2017"] == "MFJ") num <- 2
+    num <- num + sum(as.numeric(statusDF$Status_2017[2:4]))
+    print (paste("Number of exemption:", num))
+    ExemptionAmt <- num * rowValue$AMOUNT
+    print (paste("Exemption before phase out:", ExemptionAmt))
+    if ((AGI_2017 > rowValue$LOWER_AMT) & (AGI_2017<rowValue$UPPER_AMT)) {
+      line_5 <- AGI_2017 - rowValue$LOWER_AMT
+      print (paste("Line 5 amount: ", line_5))
+      line_6 <- round_any(line_5/2500, 1, f=ceiling)
+      print (paste("Line 6:", line_6))
+      line_7 <- line_6* 0.02
+      ExemptionAmt <- ExemptionAmt - (ExemptionAmt* line_7)
+    } else if (AGI_2017>rowValue$UPPER_AMT) {
+      print ("Greater than upper amount")
+      ExemptionAmt <- 0
+    }
+    return (ExemptionAmt)
+  }
   row_2017 <- SDTbl[SDTbl$YEAR == 2017 & grepl(statusDF["Filing_Status", "Status_2017"], SDTbl$FILING_STATUS),]
   row_2018 <- SDTbl[SDTbl$YEAR == 2018 & grepl(statusDF["Filing_Status", "Status_2018"], SDTbl$FILING_STATUS),]
 
@@ -258,9 +283,10 @@ itemizedDeduction <- function (deductionDF, statusDF, AGI){
   }
   maxDeduction_2017 <- ifelse (totalItemized_2017>SD_2017, totalItemized_2017,SD_2017)
   maxDeduction_2018 <- ifelse(totalItemized_2018>SD_2018, totalItemized_2018, SD_2018)
-  Below_AGI_Deduction_2018 <- c(SD_2018, totalItemized_2018, maxDeduction_2018)
-  Below_AGI_Deduction_2017 <- c(SD_2017, totalItemized_2017, maxDeduction_2017)
-  rowNames <- c("Standard_Deduction", "Total_Itemized_Deduction", "Your_Deduction")
+  exemptionAmt <- ExemptionAmount(AGI_2017 = AGI[2], statusDF = statusDF)
+  Below_AGI_Deduction_2018 <- c(SD_2018, totalItemized_2018, maxDeduction_2018,0)
+  Below_AGI_Deduction_2017 <- c(SD_2017, totalItemized_2017, maxDeduction_2017, exemptionAmt)
+  rowNames <- c("Standard_Deduction", "Total_Itemized_Deduction", "Your_Deduction", "Exemption_Deduction")
   return (list(data.frame(Below_AGI_Deduction_2018, Below_AGI_Deduction_2017, row.names = rowNames),
             data.frame(deductions_2018, deductions_2017, row.names = itemizedRows)))
 }

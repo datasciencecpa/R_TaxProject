@@ -146,14 +146,12 @@ totalDeductionToAGI <- function (deductionsDF, statusDF, AGIIncome) {
   if (nrow(returnDF)>1) returnDF <- returnDF[-1,]
   return (returnDF) 
 }
-totalItemizedDeduction <- function(deductionDF, statusDF, AGI){
+belowAGIDeduction <- function(deductionDF, statusDF, AGI){
   # This function will determine whether itemized deduction or SD will apply
   statusDF["Filing_Status", ] <- toupper(as.character(statusDF["Filing_Status", ]))
   deductionDF$Deduction_2018 <- as.numeric(deductionDF$Deduction_2018)
   deductionDF$Deduction_2017 <- as.numeric(deductionDF$Deduction_2017)
-  deductions <- itemizedDeduction (deductionDF, statusDF, AGI)
-  print (deductions)
-
+  deductions <- SDExemptionDeduction (deductionDF, statusDF, AGI)
   return (deductions)
 }
 DFConverter <- function (df){
