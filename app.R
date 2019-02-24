@@ -101,6 +101,7 @@ server <- function(input, output, session) {
   income <- callModule(income,"income", session = session)
   deductions <- callModule(deductions, "deductions", session = session)
   credits <- callModule(credits, "credits", session = session)
+  print(credits)
   #--------------------------------------------------------------------------------
   # Display user entered information to information summary tab
   output$FS_Summary <- renderDataTable(statusInformation(), options= list(pageLength = 25), filter = "top")

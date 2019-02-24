@@ -11,7 +11,7 @@ creditsUI <- function (id){
               please skip to the next section."),
      fluidRow(
        column(6, h4("2018"),
-          checkboxInput(ns("MFSException_2018"), label = "Check this box if you meet the MFS exception to claim this credit", value = TRUE),
+          checkboxInput(ns("MFSException_2018"), label = "Married Filing Separately - Uncheck this box if you do not meet the MFS exception to claim this credit", value = TRUE),
           numericInput(ns("numQualifying_2018"), label = "Enter number of qualifying person", value = 0, min= 0),
           numericInput(ns("qualifiedExp_2018"), label = "Enter total of qualified expenses (Max $6000)", value = 0, min = 0),
           column(6,checkboxInput(ns("youFTStudent_2018"), label = "Check this box if you were a full-time student or disabled"),
@@ -21,7 +21,7 @@ creditsUI <- function (id){
             numericInput(ns("spouseMonths_2018"), label = "Enter number of months your spouse were FT student or disabled", value = 0))
        ),
        column(6, h4("2017"),
-          checkboxInput(ns("MFSException_2017"), label = "Check this box if you meet the MFS exception to claim this credit", value = TRUE),
+          checkboxInput(ns("MFSException_2017"), label = "Married Filing Separately - Uncheck this box if you do not meet the MFS exception to claim this credit", value = TRUE),
           numericInput(ns("numQualifying_2017"), label = "Enter number of qualifying person", value = 0, min= 0),
           numericInput(ns("qualifiedExp_2017"), label = "Enter total of qualified expenses (Max $6000)", value = 0, min = 0),
           column(6,checkboxInput(ns("youFTStudent_2017"), label = "Check this box if you were a full-time student or disabled"),
@@ -35,5 +35,78 @@ creditsUI <- function (id){
   )
 }
 credits <- function(input, output, session){
-  
+  # ObserveEvent when user unchecked box MFS Exception. This will hide all box used for the credit. Notify user that they don't qualiy for credit.
+  hideshow <- function (IDs, hide = true){
+    # This function will go through a list of IDs. If hide == TRUE, hide. Otherwise, show element in IDs
+    for (id in IDs){
+      if (hide) {
+        hide(id)
+      } else {
+        show (id)
+      }
+    }
+  }
+  CDCLabel <-  ""
+  observe ({
+    if (!input$MFSException_2018) {
+      hideshow(c("numQualifying_2018", "qualifiedExp_2018","youFTStudent_2018","yourMonths_2018","spouseFTStudent_2018",
+                 "spouseMonths_2018"), hide = TRUE)
+      CDCLabel <- "You do not qualify for this credit. Check this box if you meet the MFS exception to claim this credit"
+      updateCheckboxInput(session, "MFSException_2018", label = CDCLabel)
+      
+    }
+    else {
+      hideshow(c("numQualifying_2018", "qualifiedExp_2018","youFTStudent_2018","yourMonths_2018","spouseFTStudent_2018",
+                 "spouseMonths_2018"), hide = FALSE)
+      CDCLabel <- "Married Filing Separately - Uncheck this box if you do not meet the MFS exception to claim this credit"
+      updateCheckboxInput (session, "MFSException_2018", label = CDCLabel)
+    }
+    if (!input$MFSException_2017) {
+      hideshow(c("numQualifying_2017", "qualifiedExp_2017","youFTStudent_2017","yourMonths_2017","spouseFTStudent_2017",
+                 "spouseMonths_2017"), hide = TRUE)
+      updateCheckboxInput(session, "MFSException_2017", label = "You do not qualify for this credit. Check this box if you meet the MFS exception to claim this credit")
+    } 
+    else {
+      hideshow(c("numQualifying_2017", "qualifiedExp_2017","youFTStudent_2017","yourMonths_2017","spouseFTStudent_2017",
+                 "spouseMonths_2017"), hide = FALSE)
+      updateCheckboxInput (session, "MFSException_2017", label = "Married Filing Separately - Uncheck this box if you do not meet the MFS exception to claim this credit")
+    }
+    
+    observe({
+      if (input$same){
+        updateCheckboxInput(session, "MFSException_2017", label= CDCLabel, value = input$MFSException_2018)
+        updateNumericInput(session, "numQualifying_2017", label = "Enter number of qualifying person", value = input$numQualifying_2018)
+        updateNumericInput(session, "qualifiedExp_2017", label = "Enter total of qualified expenses (Max $6000)", value = input$qualifiedExp_2018)
+        updateCheckboxInput(session, "youFTStudent_2017", label = "Check this box if you were a full-time student or disabled",
+                            value = input$youFTStudent_2018)
+        updateNumericInput(session, "yourMonths_2017", label = "Enter number of months you were full-time student or disabled",
+                           value = input$yourMonths_2018)
+        updateCheckboxInput(session,"spouseFTStudent_2017", label = "Check this box if your spouse were a FT student or disabled",
+                            value = input$spouseFTStudent_2017)
+        updateNumericInput(session, "spouseMonths_2017", label="Enter number of months your spouse were FT student or disabled",
+                           value = input$spouseMonths_2018)
+      }
+    })
+    creditDF <- reactive({
+      Credit_18 <- c (input$MFSException_2018,
+                      input$numQualifying_2018,
+                      input$qualifiedExp_2018,
+                      input$youFTStudent_2018,
+                      input$yourMonths_2018,
+                      input$spouseFTStudent_2018,
+                      input$spouseMonths_2018)
+      Credit_17 <- c (input$MFSException_2017,
+                      input$numQualifying_2017,
+                      input$qualifiedExp_2017,
+                      input$youFTStudent_2017,
+                      input$yourMonths_2017,
+                      input$spouseFTStudent_2017,
+                      input$spouseMonths_2017)
+      rowName <- c("MFS_Exception", "Qualifying_Person", "Expense", "You_FT_Student", "FT_Student_Month",
+                   "Spouse_FT_Student","Spouse_FT_Student_Month")
+      dfCredit <- data.frame(Credit_18, Credit_17, row.names = rowName, stringsAsFactors = FALSE)
+      dfCredit[is.na.data.frame(dfCredit)] <- 0
+      return (dfCredit)
+    })
+  })
 }
