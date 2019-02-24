@@ -231,11 +231,6 @@ income <- function (input, output, session ){
   })
   observe({  # Use this to handle check box checked.
     if(input$same){
-
-      # updateNumericInput(session, "yourWages_2017",label = "Enter your wages from W-2, box 1:", value = input$yourWages_2018)
-      # updateNumericInput(session, "yourW2Tax_2017", label = "Enter your income tax withheld, box 2:", value = input$yourW2Tax_2018)
-      # updateNumericInput(session, "spouseWages_2017",label = "Enter spouse wages from W-2, box 1:", value = input$spouseWages_2018 )
-      # updateNumericInput(session, "spouseW2Tax_2017", label = "Enter spouse income tax withheld, box 2:", value = input$spouseW2Tax_2018)
       updateNumericInput(session, "yourMedicareW2_2017", label = "Enter your medicare wages from W-2, box 5:", value = input$yourMedicareW2_2018)
       updateNumericInput(session, "yourMedicareTax_2017", label ="Enter your medicare tax withheld, box 6:", value = input$yourMedicareTax_2018)
       updateNumericInput(session, "spouseMedicareW2_2017", label = "Enter your medicare wages from W-2, box 5:", value = input$spouseMedicareW2_2018)
