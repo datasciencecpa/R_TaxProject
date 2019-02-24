@@ -43,7 +43,9 @@ childTaxCrd <- function (AGI, filingStatus, taxYear, numQualifyingChild, creditD
 }
 
 dependentCareCrd <- function (){
-  
+  #https://www.irs.gov/pub/irs-pdf/i2441.pdf
+  # Rules: Qualifying child must be under 13 year old/ Or Disabled
+  # 
 }
 
 educationalCrd <- function (){

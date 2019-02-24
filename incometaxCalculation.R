@@ -9,6 +9,67 @@
 source ("deductionCalculation.R")
 taxTbl <- read.xls(xls = "TaxRates.xls", sheet = 1)
 LTCapTbl <- read.xls(xls = "TaxRates.xls", sheet = 2)
+QDCGWorksheet <- function(taxYear, taxableIncome, incomeDF, filingStatus){
+  # Determine if Qualified Dividends and CG Worksheet need to be used
+  # When there are Qualified Div, or LT CapGain, this worksheet needs to be used
+  # To figure out amounts that may be eligible for lower rate
+
+  # Main function below
+  filingStatus <- toupper(filingStatus)
+  # print (paste("IncomeDF:"))
+  # print (incomeDF)
+  # print (paste("Original taxable income: ", taxableIncome))
+  div <- incomeDF[1]
+  LTGain <- incomeDF[2]
+  netGain <- sum(incomeDF[2:3])
+
+  tax_15 <- 0
+  tax_20 <- 0
+  if ((div>0) | (LTGain>0 & netGain>0)){
+    # Perform this calculation only when either conditions above are met
+    rowValuesDF <- LTCapTbl[LTCapTbl$YEAR == taxYear & grepl(filingStatus, LTCapTbl$FILING_STATUS),]
+    # print (rowValuesDF)
+    line_3 <- ifelse(LTGain<netGain, LTGain, netGain)
+    # print (paste("Line 3 amount: ", line_3))
+    line_4 <- div + line_3
+    # print (paste("Line 4 amount: ", line_4))
+    line_7 <- ifelse ((taxableIncome - line_4)>0, taxableIncome - line_4,0)
+    line_8 <- rowValuesDF[1,"UPPER_AMT"]
+    line_15 <- rowValuesDF[2, "UPPER_AMT"]
+    # print (paste("Line 8 amount: ", line_8))
+    # print (paste("Line 15 amount: ", line_15))
+    # If amount from line_7 above is lower than the 0% limit, some or all of the line_4 amount may be taxed at 0%
+    if (line_7< line_8){ # Some amount of line 4 will be taxed at 0%
+      if (taxableIncome>line_8) { # Some amount of line 4 will be taxed at 0%
+        line_14 <- line_4 -(line_8 - line_7)
+        # print (paste("Line 14 to be tax at 15%", line_14))
+        tax_15 <- line_14*0.15
+      }  
+    } else if ((line_7 < line_15) & (line_7>=line_8)){ # some or all of line 4 will be taxed at 15%
+      if (taxableIncome > line_15){
+        line_22 <- line_4 -(line_15 - line_7)
+        # print (paste("Line 22 to be tax at 20%%", line_22))
+        tax_15 <- (line_15 - line_7) *0.15
+        tax_20 <- line_22 * 0.2
+      } else { # Entire line 4 will be taxed at 15%
+        tax_15 <- line_4 *0.15
+      }
+    } else { # Entire amount of line 4 wil be taxed at 20%
+      tax_20 <- line_4 *0.2
+      # print (paste("Entire amount taxed at 20%", tax_20))
+    }
+    taxableIncome <- line_7
+  }
+  # print (paste("Net taxable income: ", taxableIncome))
+  taxRow <- taxTbl[taxTbl$YEAR == taxYear & grepl(filingStatus, taxTbl$FILING_STATUS),]
+  ind <- which (taxRow$LOWER_AMT< taxableIncome & taxRow$UPPER_AMT>  taxableIncome)
+  taxRow <- taxRow[ind,]
+  # print (taxRow)
+  taxAmount <- (taxableIncome - taxRow$LOWER_AMT) * taxRow$TAX_RATE + taxRow$ADD_ON + tax_15 + tax_20
+  # print (paste("Tax Amount base on rate:", (taxableIncome - taxRow$LOWER_AMT) * taxRow$TAX_RATE))
+  # print (paste("Addon: ", taxRow$ADD_ON))
+  return (taxAmount)
+}
 totalIncomeCalculation <- function (incomeDF){
    # This function will sum up total income user entered from the income section.
    # This function will ignore income with value = 0, assuming that user did not have that type of income in both year.
@@ -22,7 +83,7 @@ totalIncomeCalculation <- function (incomeDF){
      incomeDF["Ordinary_Dividends", 1],
      incomeDF["Tax_Refunds", 1],
      incomeDF["Alimony",1],
-     ifelse (sum(incomeDF[c("Long_Term_Gains","Short_Term_Gains"),1])<0,-3000,sum(incomeDF[c("Long_Term_Gains","Short_Term_Gains"),1])),
+     ifelse (sum(incomeDF[c("Long_Term_Gains","Short_Term_Gains"),1])< -3000,-3000,sum(incomeDF[c("Long_Term_Gains","Short_Term_Gains"),1])),
      incomeDF["TaxableIRA",1],
      incomeDF["Unemployment_Income", 1]
    )
@@ -33,12 +94,12 @@ totalIncomeCalculation <- function (incomeDF){
      incomeDF["Ordinary_Dividends", 2],
      incomeDF["Tax_Refunds", 2],
      incomeDF["Alimony",2],
-     ifelse (sum(incomeDF[c("Long_Term_Gains","Short_Term_Gains"),2])<0,-3000,sum(incomeDF[c("Long_Term_Gains","Short_Term_Gains"),2])),
+     ifelse (sum(incomeDF[c("Long_Term_Gains","Short_Term_Gains"),2])< -3000,-3000,sum(incomeDF[c("Long_Term_Gains","Short_Term_Gains"),2])),
      incomeDF["TaxableIRA",2],
      incomeDF["Unemployment_Income", 2]
    )
    #AGI_2017 <- c (AGI_2017, sum(AGI_2017))
-   return (data.frame(Income_Type,AGI_2018, AGI_2017))
+   return (data.frame(AGI_2018, AGI_2017, row.names = Income_Type))
 }
 totalDeductionToAGI <- function (deductionsDF, statusDF, AGIIncome) {
   valueRow <- deductionsDF$Deduction_2018 !=0 | deductionsDF$Deduction_2017 !=0
@@ -165,22 +226,19 @@ DFConverter <- function (df){
   df[,3] <- NULL # Delete column with amount from 2017
   colnames(df)[2] <- "Amount"
   df$TaxYear <- "2018"
-  print (rbind(df, df_1))
+  # print (rbind(df, df_1))
   return (rbind(df, df_1))
 }
 taxCalculation <- function (taxableIncome, incomeDF, filingStatus){
   # This function will calculate tax based on taxable income
   # Parameter: taxableIncome is a vector, not a dataframe.
-  filingStatus <- as.character(toupper(filingStatus))
-  taxRow_2017 <- taxTbl[taxTbl$YEAR == 2017 & grepl(filingStatus[2], taxTbl$FILING_STATUS),]
-  taxRow_2018 <- taxTbl[taxTbl$YEAR == 2018 & grepl(filingStatus[1], taxTbl$FILING_STATUS),]
 
-  ind_2017 <- which (taxRow_2017$LOWER_AMT< taxableIncome[2] & taxRow_2017$UPPER_AMT>  taxableIncome[2])
-  ind_2018 <- which (taxRow_2018$LOWER_AMT< taxableIncome[1] & taxRow_2018$UPPER_AMT>  taxableIncome[1])
-  taxRow_2017 <- taxRow_2017[ind_2017,]
-  taxRow_2018 <- taxRow_2018[ind_2018,]
-  print ("Tax Row 2017")
-  print (taxRow_2017)
-  print ("Tax Row 2018")
-  print (taxRow_2018)
+  tax_2018 <- QDCGWorksheet(2018, taxableIncome = taxableIncome[1], 
+                            incomeDF[c("Qualified_Dividends", "Long_Term_Gains", "Short_Term_Gains"),"Income_Tax_2018"],
+                            filingStatus[1])
+  tax_2017 <- QDCGWorksheet(2017, taxableIncome = taxableIncome[2],
+                            incomeDF[c("Qualified_Dividends", "Long_Term_Gains", "Short_Term_Gains"),"Income_Tax_2017"],
+                            filingStatus[2])
+  return (c(tax_2018, tax_2017))
+  
 }

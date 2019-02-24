@@ -100,6 +100,7 @@ server <- function(input, output, session) {
   statusInformation <- callModule(filingInformation, "filingInformation", session = session)
   income <- callModule(income,"income", session = session)
   deductions <- callModule(deductions, "deductions", session = session)
+  credits <- callModule(credits, "credits", session = session)
   #--------------------------------------------------------------------------------
   # Display user entered information to information summary tab
   output$FS_Summary <- renderDataTable(statusInformation(), options= list(pageLength = 25), filter = "top")
@@ -138,15 +139,18 @@ server <- function(input, output, session) {
       #------------------------------------------------------------------
       # Step 1: Get income by calling function totalIncomeCalculation
       totalIncome <- totalIncomeCalculation(income())
+      # Income_Type <- c("Total_W2_Wages", "Interest", "Dividends", "Taxable_Refunds","Alimony", "Qualified_Dividends",
+                       # "Long_Term_Gains", "Short_Term_Gains","IRA_Distribution", "Unemployment Income")
+      # Step 2: Plot totalIncome out to graph
       valueRow <- totalIncome$AGI_2018 !=0 | totalIncome$AGI_2017 !=0  # Interested in non-zero value income type.
-      AGIIncome <- totalIncome[valueRow,]
-      # Step 2: Plot AGIIncome out to graph
-      output$totalIncomeTbl <- renderDataTable(AGIIncome, options = list(pageLength = 25))
+      totalIncome <- totalIncome[valueRow,]
+      output$totalIncomeTbl <- renderDataTable(totalIncome, options = list(pageLength = 25))
       output$totalIncGraph <- renderPlot({
+        Income_Type = rownames(totalIncome)
+        AGIIncome <- data.frame(Income_Type, totalIncome, row.names = NULL)
         ggplot(data = DFConverter(AGIIncome), aes(x= TaxYear, y = Amount, fill = Income_Type)) +
           geom_bar(stat = "identity")
       })
-      
       #------------------------------------------------------------------
       # Step 2: Calculate deductions above AGI
       deductionsToAGI <- totalDeductionToAGI (deductions(), statusInformation(),totalIncome)
@@ -172,7 +176,7 @@ server <- function(input, output, session) {
       detailItemized <- result[[2]]
       output$detailItemizedTbl <- renderDataTable(detailItemized,options= list(pageLength = 25))
       output$belowAGIDeductionTbl <- renderDataTable(deductionSummary)
-      filingStatus <- statusInformation()["Filing_Status",]
+      filingStatus <- as.character(statusInformation()["Filing_Status",])
       summary_2018 <- c(AGI[1],deductionSummary["Your_Deduction","Below_AGI_Deduction_2018"],
                 deductionSummary["Exemption_Deduction", "Below_AGI_Deduction_2018"])
       summary_2017 <- c(AGI[2],deductionSummary["Your_Deduction", "Below_AGI_Deduction_2017"],
@@ -180,7 +184,9 @@ server <- function(input, output, session) {
       rowNames <- c("AGI", "Deduction", "Exemption" )
       summaryDF <- data.frame(summary_2018, summary_2017, row.names = rowNames)
       summaryDF["Taxable_Income",] = summaryDF[1,] - apply(summaryDF[2:3,], 2, sum)
-      tax <- taxCalculation (as.numeric(summaryDF["Taxable_Income",]), totalIncome, filingStatus )
+      # Step 4 --- Calculate Tax Amount
+      tax <- taxCalculation (as.numeric(summaryDF["Taxable_Income",]), income(), filingStatus)
+      summaryDF["Tax_Amount",] <- tax
       return (summaryDF)
   })
   

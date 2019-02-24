@@ -218,18 +218,14 @@ SDExemptionDeduction <- function (deductionDF, statusDF, AGI){
     num <- 1 # Variable to store number of exemptions
     if (statusDF["Filing_Status", "Status_2017"] == "MFJ") num <- 2
     num <- num + sum(as.numeric(statusDF$Status_2017[2:4]))
-    print (paste("Number of exemption:", num))
     ExemptionAmt <- num * rowValue$AMOUNT
-    print (paste("Exemption before phase out:", ExemptionAmt))
     if ((AGI_2017 > rowValue$LOWER_AMT) & (AGI_2017<rowValue$UPPER_AMT)) {
       line_5 <- AGI_2017 - rowValue$LOWER_AMT
-      print (paste("Line 5 amount: ", line_5))
       line_6 <- round_any(line_5/2500, 1, f=ceiling)
       print (paste("Line 6:", line_6))
       line_7 <- line_6* 0.02
       ExemptionAmt <- ExemptionAmt - (ExemptionAmt* line_7)
     } else if (AGI_2017>rowValue$UPPER_AMT) {
-      print ("Greater than upper amount")
       ExemptionAmt <- 0
     }
     return (ExemptionAmt)

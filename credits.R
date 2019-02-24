@@ -7,7 +7,7 @@ creditsUI <- function (id){
      ), 
      hr(),
      h3("Child and Dependent Care Expenses - See ", a(href = "https://www.irs.gov/pub/irs-pdf/i2441.pdf", "IRS link")," for more information"),
-     helpText("Currently, this form does not support calculation if you received dependent care benefits from employers. If you have dependent care benefits,\n
+     helpText("Currently, this form does not support calculation if you received dependent care benefits from employers. If you don't have dependent care benefits,\n
               please skip to the next section."),
      fluidRow(
        column(6, h4("2018"),
@@ -34,4 +34,6 @@ creditsUI <- function (id){
      h3("Education Credits - See ", a(href= "https://www.irs.gov/pub/irs-pdf/p970.pdf", "IRS Publication 970"), " for more information")
   )
 }
-
+credits <- function(input, output, session){
+  
+}
