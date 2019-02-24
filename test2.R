@@ -1,5 +1,0 @@
-library(ggplot2)
-a <- c("Long", "Ha")
-b <- c(200000, 555000)
-k <- data.frame(a,b)
-ggplot(data = k, aes(x = a, y = b, fill = a)) + geom_bar(stat = "identity")

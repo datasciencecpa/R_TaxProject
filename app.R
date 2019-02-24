@@ -11,6 +11,7 @@ source ("income.R")
 source ("deductions.R")
 source ("credits.R")
 source ("Instructions.R")
+source ("helper.R")
 #source ("creditCalculation.R")
 source ("incometaxCalculation.R")
 ui <- fluidPage(

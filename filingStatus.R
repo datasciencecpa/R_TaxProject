@@ -69,24 +69,20 @@ filingInformation <- function (input, output, session){
   observe({
     
     if (input$filingStatus_2018 != "MFJ"){
-      hide(id = "spouseAge_2018")
-      hide(id = "spouseBlind_2018")
+      hideshow(c("spouseAge_2018","spouseBlind_2018"), hide = TRUE)
       updateNumericInput(session, "spouseAge_2018", label = "Enter your spouse age:",value = 0)
       updateCheckboxInput(session, "spouseBlind_2018", label = "Check if you are blind",value = FALSE)
     }
     else {
-      show(id = "spouseAge_2018")
-      show(id = "spouseBlind_2018")
+      hideshow(c("spouseAge_2018", "spouseBlind_2018"), hide = FALSE)
     }
     if (input$filingStatus_2017 != "MFJ"){
-      hide(id = "spouseAge_2017")
-      hide(id = "spouseBlind_2017")
+      hideshow(c("spouseAge_2017", "spouseBlind_2017"), hide = TRUE)
       updateNumericInput(session, "spouseAge_2017", value = 0)
       updateCheckboxInput(session, "spouseBlind_2017", value = FALSE)
     }
     else {
-      show(id = "spouseAge_2017")
-      show(id = "spouseBlind_2017")
+      hideshow(c("spouseAge_2017", "spouseBlind_2017"), hide = FALSE)
     }
     if (input$same) {
       updateRadioButtons(session,"filingStatus_2017", choices = c(Single = "Single", Married_Filing_Jointly = "MFJ", 

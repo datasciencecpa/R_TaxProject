@@ -205,60 +205,37 @@ income <- function (input, output, session ){
   
   observeEvent(input$hideWages1_2018,{
       # hide additional wages 1 and reset value to zero, and hide the button after it done
-      #session$sendCustomMessage (type = "testmessage", message = "Testing")
-      hide (id= "addWages1_2018")
-      hide (id= "addW2Tax1_2018")
-      hide (id= "addMedicare1_2018")
-      hide (id= "addMedicareTax1_2018")
-      updateNumericInput(session, inputId = "addWages1_2018", value = 0)
-      updateNumericInput(session, inputId = "addW2Tax1_2018", value = 0)
-      updateNumericInput(session, inputId = "addMedicare1_2018", value = 0)
-      updateNumericInput(session, inputId = "addMedicareTax1_2018", value = 0)
-      hide (id = "hideWages1_2018")
+      hideshow(c("addWages1_2018", "addW2Tax1_2018", "addMedicare1_2018", "addMedicareTax1_2018","hideWages1_2018"), hide = TRUE)
+      updateNumInput(session, c("addWages1_2018", "addW2Tax1_2018","addMedicare1_2018", "addMedicareTax1_2018"),
+                     values = c(0,0,0,0))
   })
   observeEvent(input$hideWages2_2018, {
       # hide additional wages 2 and reset value to zero, and hide the button after it done
-      hide (id= "addWages2_2018")
-      hide (id= "addW2Tax2_2018")
-      hide (id= "addMedicare2_2018")
-      hide (id= "addMedicareTax2_2018")
-      updateNumericInput(session, inputId ="addWages2_2018", value = 0)
-      updateNumericInput(session, inputId = "addW2Tax2_2018", value = 0)
-      updateNumericInput(session, inputId = "addMedicare2_2018", value = 0)
-      updateNumericInput(session, inputId = "addMedicareTax2_2018", value = 0)
-      hide (id = "hideWages2_2018")
+
+      hideshow(c("addWages2_2018", "addW2Tax2_2018", "addMedicare2_2018","addMedicareTax2_2018","hideWages2_2018"), hide = TRUE)
+      updateNumInput(session, c("addWages2_2018","addW2Tax2_2018","addMedicare2_2018","addMedicareTax2_2018"),
+                     c(0,0,0,0))
   })
   observeEvent(input$hideWages1_2017,{
       # hide additional wages 1 and reset value to zero, and hide the button after it done
-      hide (id= "addWages1_2017")
-      hide (id= "addW2Tax1_2017")
-      hide (id= "addMedicare1_2017")
-      hide (id= "addMedicareTax1_2017")
-      updateNumericInput(session, inputId = "addWages1_2017", value = 0)
-      updateNumericInput(session, inputId = "addW2Tax1_2017", value = 0)
-      updateNumericInput(session, inputId = "addMedicare1_2017", value = 0)
-      updateNumericInput(session, inputId = "addMedicareTax1_2017", value = 0)
-      hide (id = "hideWages1_2017")
+  
+      hideshow(c("addWages1_2017", "addW2Tax1_2017", "addMedicare1_2017", "addMedicareTax1_2017","hideWages1_2017"), hide = TRUE)
+      updateNumInput(session, c("addWages1_2017","addW2Tax1_2017","addMedicare1_2017","addMedicareTax1_2017"),
+                     c(0,0,0,0))
   })
   observeEvent (input$hideWages2_2017, {
       # hide additional wages 2 and reset value to zero, and hide the button after it done
-      hide (id= "addWages2_2017")
-      hide (id= "addW2Tax2_2017")
-      hide (id= "addMedicare2_2017")
-      hide (id= "addMedicareTax2_2017")
-      updateNumericInput(session,inputId = "addWages2_2017", value = 0)
-      updateNumericInput(session, inputId = "addW2Tax2_2017", value = 0)
-      updateNumericInput(session, inputId = "addMedicare2_2017", value = 0)
-      updateNumericInput(session, inputId = "addMedicareTax2_2017", value = 0)
-      hide (id = "hideWages2_2017")
+      hideshow(c("addWages2_2017", "addW2Tax2_2017","addMedicare2_2017", "addMedicareTax2_2017","hideWages2_2017"), hide = TRUE)
+      updateNumInput(session, c("addWages2_2017","addW2Tax2_2017","addMedicare2_2017","addMedicareTax2_2017"),
+                     c(0,0,0,0))
   })
   observe({  # Use this to handle check box checked.
     if(input$same){
 
-      updateNumericInput(session, "yourWages_2017",label = "Enter your wages from W-2, box 1:", value = input$yourWages_2018)
-      updateNumericInput(session, "yourW2Tax_2017", label = "Enter your income tax withheld, box 2:", value = input$yourW2Tax_2018)
-      updateNumericInput(session, "spouseWages_2017",label = "Enter spouse wages from W-2, box 1:", value = input$spouseWages_2018 )
-      updateNumericInput(session, "spouseW2Tax_2017", label = "Enter spouse income tax withheld, box 2:", value = input$spouseW2Tax_2018)
+      # updateNumericInput(session, "yourWages_2017",label = "Enter your wages from W-2, box 1:", value = input$yourWages_2018)
+      # updateNumericInput(session, "yourW2Tax_2017", label = "Enter your income tax withheld, box 2:", value = input$yourW2Tax_2018)
+      # updateNumericInput(session, "spouseWages_2017",label = "Enter spouse wages from W-2, box 1:", value = input$spouseWages_2018 )
+      # updateNumericInput(session, "spouseW2Tax_2017", label = "Enter spouse income tax withheld, box 2:", value = input$spouseW2Tax_2018)
       updateNumericInput(session, "yourMedicareW2_2017", label = "Enter your medicare wages from W-2, box 5:", value = input$yourMedicareW2_2018)
       updateNumericInput(session, "yourMedicareTax_2017", label ="Enter your medicare tax withheld, box 6:", value = input$yourMedicareTax_2018)
       updateNumericInput(session, "spouseMedicareW2_2017", label = "Enter your medicare wages from W-2, box 5:", value = input$spouseMedicareW2_2018)
@@ -294,7 +271,11 @@ income <- function (input, output, session ){
       updateNumericInput(session, "alimony_2017", label = "Alimony received", value = input$alimony_2018)
       updateNumericInput(session, "unemployment_2017", label = "Unemployment income received", value = input$unemployment_2018)
       updateNumericInput(session, "unemploymentTax_2017", label = "Unemployment income tax withheld", value = input$unemploymentTax_2018)
-      
+      updateNumInput(session, c("yourWages_2017","yourW2Tax_2017","spouseWages_2017","spouseW2Tax_2017"),
+                     values = c(input$yourWages_2018,input$yourW2Tax_2018,input$spouseWages_2018,input$spouseW2Tax_2018),
+                     labels = c("Enter your wages from W-2, box 1:", "Enter your income tax withheld, box 2:",
+                                "Enter spouse wages from W-2, box 1:","Enter spouse income tax withheld, box 2:")
+      )
     }
   })
   incomeDF <- reactive({

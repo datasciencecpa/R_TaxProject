@@ -35,17 +35,6 @@ creditsUI <- function (id){
   )
 }
 credits <- function(input, output, session){
-  # ObserveEvent when user unchecked box MFS Exception. This will hide all box used for the credit. Notify user that they don't qualiy for credit.
-  hideshow <- function (IDs, hide = true){
-    # This function will go through a list of IDs. If hide == TRUE, hide. Otherwise, show element in IDs
-    for (id in IDs){
-      if (hide) {
-        hide(id)
-      } else {
-        show (id)
-      }
-    }
-  }
   CDCLabel <-  ""
   observe ({
     if (!input$MFSException_2018) {
