@@ -7,6 +7,7 @@
 # Author: Long Nguyen
 # Date Created: 01/28/2019
 source ("deductionCalculation.R")
+source ("creditCalculation.R")
 taxTbl <- read.xls(xls = "TaxRates.xls", sheet = 1)
 LTCapTbl <- read.xls(xls = "TaxRates.xls", sheet = 2)
 QDCGWorksheet <- function(taxYear, taxableIncome, incomeDF, filingStatus){
@@ -15,7 +16,7 @@ QDCGWorksheet <- function(taxYear, taxableIncome, incomeDF, filingStatus){
   # To figure out amounts that may be eligible for lower rate
 
   # Main function below
-  filingStatus <- toupper(filingStatus)
+  # filingStatus <- toupper(filingStatus)
   # print (paste("IncomeDF:"))
   # print (incomeDF)
   # print (paste("Original taxable income: ", taxableIncome))
@@ -232,13 +233,41 @@ DFConverter <- function (df){
 taxCalculation <- function (taxableIncome, incomeDF, filingStatus){
   # This function will calculate tax based on taxable income
   # Parameter: taxableIncome is a vector, not a dataframe.
-
-  tax_2018 <- QDCGWorksheet(2018, taxableIncome = taxableIncome[1], 
-                            incomeDF[c("Qualified_Dividends", "Long_Term_Gains", "Short_Term_Gains"),"Income_Tax_2018"],
-                            filingStatus[1])
-  tax_2017 <- QDCGWorksheet(2017, taxableIncome = taxableIncome[2],
-                            incomeDF[c("Qualified_Dividends", "Long_Term_Gains", "Short_Term_Gains"),"Income_Tax_2017"],
-                            filingStatus[2])
+  if (taxableIncome[1]>0){
+    tax_2018 <- QDCGWorksheet(2018, taxableIncome = taxableIncome[1], 
+                              incomeDF[c("Qualified_Dividends", "Long_Term_Gains", "Short_Term_Gains"),"Income_Tax_2018"],
+                              filingStatus[1])
+  } else {
+    tax_2018 <- 0
+  }
+  if (taxableIncome[2]>0){
+    tax_2017 <- QDCGWorksheet(2017, taxableIncome = taxableIncome[2],
+                              incomeDF[c("Qualified_Dividends", "Long_Term_Gains", "Short_Term_Gains"),"Income_Tax_2017"],
+                              filingStatus[2])
+  } else{
+    tax_2017 <- 0
+  }
   return (c(tax_2018, tax_2017))
   
+}
+creditCalculation <- function (summaryDF, incomeDF, filingStatus, creditDF){
+  # This function will calculate available credits:
+  # Child and Dependent Care Credit
+  # Child Tax Credit/ Additional CTC
+  # Education Credit
+  # Saver Credit
+  # It will return a dataframe with all available credits
+  
+  # Calcualte Child and DC Expenses Credit
+  print (creditDF)
+
+  credit_18 <-creditDF$Credit_18
+  credit_17 <- creditDF$Credit_17
+  if (credit_18[2]>0 & credit_18[3]>0){
+    print ("Qualifying for CTC 18")
+    dependentCareCrd(summaryDF, filingStatus[1],incomeDF$Income_Tax_2018, creditDF$Credit_18 )
+  }
+  if (credit_17[2]>0 & credit_17[3]>0){
+    print ("Qualifying for CTC 17")
+  }
 }

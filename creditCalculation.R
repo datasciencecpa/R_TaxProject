@@ -42,10 +42,53 @@ childTaxCrd <- function (AGI, filingStatus, taxYear, numQualifyingChild, creditD
   return (data.frame(resultDF)) 
 }
 
-dependentCareCrd <- function (){
+dependentCareCrd <- function (summaryDF, filingStatus, incomeDF, creditDF ){
   #https://www.irs.gov/pub/irs-pdf/i2441.pdf
   # Rules: Qualifying child must be under 13 year old/ Or Disabled
-  # 
+  # Rules: Expense can't be more than $3000 for one child, or 6000 for 2 or more child
+  if (creditDF[2]==1){
+    creditDF[3] <- ifelse(creditDF[3]>3000, 3000, creditDF[3])
+  } else {
+    creditDF[3] <- ifelse(creditDF[3]>6000, 6000, creditDF[3])
+    creditDF[2] <- 2
+  }
+  print (creditDF)
+
+  # Rules: Caclualte earning for FT Students or Disable Spouse
+  # Rules: Earned $250/Child for each month being FT Student or Disabled
+  # Rules: If both are ST or disabled, sum of month can't be more than 12
+  # Assumption: If user has both earned income, and some months as FTStudent, add both together
+  line_4 <- incomeDF[1]
+  if (creditDF[4]==1){
+    line_4 <- line_4 + 250* creditDF[5]* creditDF[2]
+    print (line_4)
+  }
+  line_5 <- line_4
+  if (filingStatus == "MFJ"){
+    line_5 <-  incomeDF[3]
+    if (creditDF[6]==1){
+      line_5 <- line_5 + 250 * creditDF[7]* creditDF[2]
+      print (paste("Line_5:", line_5))
+    }
+    if (creditDF[4]== 1 & creditDF[6]==1){
+      if ((creditDF[5] + creditDF[7])>12){
+        # this is the case when both are students and both sum of months is more than 12
+        # Reduce income of the higher one, eithe line 4 or 5 by the extra months above 12
+        reductionAmt <- 250*creditDF[2]*(creditDF[5] + creditDF[7]-12)
+        if (line_4> line_5){
+          line_4 <- line_4 - reductionAmt
+          print (paste("Line_4 afte reduction:", line_4))
+        } else {
+          line_5 <- line_5 - reductionAmt
+          print (paste("Line_5 after reduction:", line_5))
+        }
+      } # else: no need to do anything
+    }
+  }
+  print ("Line 4:")
+  print(line_4)
+  print ("Line 5:")
+  print(line_5)
 }
 
 educationalCrd <- function (){

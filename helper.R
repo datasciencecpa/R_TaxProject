@@ -8,10 +8,10 @@ hideshow <- function (IDs, hide = true){
     }
   }
 }
-updateNumInput <- function(session, IDs, values, labels = list()) {
+updateNumInput <- function(session, values = list()) {
   # This helper function is use to help with updateNumericInput where there are 3 or more
-  # updates needed. Reduce code on module.
-  for (i in 1: length(IDs)){
-    updateNumericInput(session, IDs[i], value = values[i], label = labels[i])
+  # updates needed. Reduce redundance codes on module.
+  for (value in values){
+    updateNumericInput(session, value[1], label = value[2], value = value[3])
   }
 }

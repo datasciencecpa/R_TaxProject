@@ -12,7 +12,6 @@ source ("deductions.R")
 source ("credits.R")
 source ("Instructions.R")
 source ("helper.R")
-#source ("creditCalculation.R")
 source ("incometaxCalculation.R")
 ui <- fluidPage(
   useShinyjs(),
@@ -102,7 +101,7 @@ server <- function(input, output, session) {
   income <- callModule(income,"income", session = session)
   deductions <- callModule(deductions, "deductions", session = session)
   credits <- callModule(credits, "credits", session = session)
-  print(credits)
+  
   #--------------------------------------------------------------------------------
   # Display user entered information to information summary tab
   output$FS_Summary <- renderDataTable(statusInformation(), options= list(pageLength = 25), filter = "top")
@@ -178,17 +177,23 @@ server <- function(input, output, session) {
       detailItemized <- result[[2]]
       output$detailItemizedTbl <- renderDataTable(detailItemized,options= list(pageLength = 25))
       output$belowAGIDeductionTbl <- renderDataTable(deductionSummary)
-      filingStatus <- as.character(statusInformation()["Filing_Status",])
+      filingStatus <- as.character(toupper(statusInformation()["Filing_Status",]))
       summary_2018 <- c(AGI[1],deductionSummary["Your_Deduction","Below_AGI_Deduction_2018"],
                 deductionSummary["Exemption_Deduction", "Below_AGI_Deduction_2018"])
       summary_2017 <- c(AGI[2],deductionSummary["Your_Deduction", "Below_AGI_Deduction_2017"],
                 deductionSummary["Exemption_Deduction", "Below_AGI_Deduction_2017"])
       rowNames <- c("AGI", "Deduction", "Exemption" )
       summaryDF <- data.frame(summary_2018, summary_2017, row.names = rowNames)
-      summaryDF["Taxable_Income",] = summaryDF[1,] - apply(summaryDF[2:3,], 2, sum)
+      summaryDF["Taxable_Income",] <- summaryDF[1,] - apply(summaryDF[2:3,], 2, sum)
+      summaryDF["Taxable_Income",1] <- ifelse(summaryDF["Taxable_Income",1]<0,0, summaryDF["Taxable_Income",1])
+      summaryDF["Taxable_Income",2] <- ifelse(summaryDF["Taxable_Income",2]<0,0, summaryDF["Taxable_Income",2])
+      print (summaryDF)
       # Step 4 --- Calculate Tax Amount
       tax <- taxCalculation (as.numeric(summaryDF["Taxable_Income",]), income(), filingStatus)
+
       summaryDF["Tax_Amount",] <- tax
+      # Step 5 - Calculate Credits if applicable.
+      taxCredits <- creditCalculation(summaryDF, income(), filingStatus, credits()) 
       return (summaryDF)
   })
   

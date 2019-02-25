@@ -231,46 +231,39 @@ income <- function (input, output, session ){
   })
   observe({  # Use this to handle check box checked.
     if(input$same){
-      updateNumericInput(session, "yourMedicareW2_2017", label = "Enter your medicare wages from W-2, box 5:", value = input$yourMedicareW2_2018)
-      updateNumericInput(session, "yourMedicareTax_2017", label ="Enter your medicare tax withheld, box 6:", value = input$yourMedicareTax_2018)
-      updateNumericInput(session, "spouseMedicareW2_2017", label = "Enter your medicare wages from W-2, box 5:", value = input$spouseMedicareW2_2018)
-      updateNumericInput(session, "spouseMedicareTax_2017", label = "Enter your medicare tax withheld, box 6:", value = input$spouseMedicareTax_2018)
-      updateNumericInput(session, "addMedicare1_2017", label = "Enter your medicare wages from W-2, box 5:", value = input$addMedicare1_2018)
-      updateNumericInput(session, "addMedicareTax1_2017", label = "Enter your medicare tax withheld, box 6::", value = input$addMedicareTax1_2018)
-      updateNumericInput(session, "addWages1_2017",label = "Enter additional wages from W-2, box 1:", value = input$addWages1_2018 )
-      updateNumericInput(session, "addW2Tax1_2017", label = "Enter income tax from W-2, box 2:", value = input$addW2Tax1_2018)
-      updateNumericInput(session, "addWages2_2017",label = "Enter additional wages from W-2, box 1:", value = input$addWages2_2018 )
-      updateNumericInput(session, "addW2Tax2_2017", label = "Enter income tax from W-2, box 2:", value = input$addW2Tax2_2018)
-      updateNumericInput(session, "addMedicare2_2017", label = "Enter your medicare wages from W-2, box 5:", value = input$addMedicare2_2018)
-      updateNumericInput(session, "addMedicareTax2_2017", label = "Enter your medicare tax withheld, box 6::", value = input$addMedicareTax2_2018)
-      updateNumericInput(session, "interest_2017",label = "Enter your taxable interest income: (Form 1099-Int, Box 1)", 
-                         value = input$interest_2018)
-      updateNumericInput(session, "interestTax_2017", label = "Income tax withheld from interest income", value = input$interestTax_2018)
-      updateNumericInput(session, "ordinaryDividends_2017",label = "Enter your ordinary dividends income: (Form 1099-DIV)", 
-                         value = input$ordinaryDividends_2018)
-      updateNumericInput(session, "dividendTax_2017", label = "Enter your dividend income tax withheld: (Form 1099-DIV)", value = input$dividendTax_2018)
-      
-      updateNumericInput(session, "qualifiedDividends_2017",label = "Enter your qualified dividends income: (Form 1099-DIV)", 
-                         value = input$qualifiedDividends_2018)
-      updateNumericInput(session, "LTGain_2017",label = "Enter your long-term capital gains (loss):", 
-                        value = input$LTGain_2018)
-      updateNumericInput(session, "STGain_2017",label = "Enter your long-term capital gains (loss):", 
-                         value = input$STGain_2018)
-      updateNumericInput(session, "capitalTax_2017", label = "Enter your income tax withheld:", value = input$capitalTax_2018)
-      updateNumericInput(session, "IRADist_2017",label = "Enter your taxable distribution IRA:", 
-                         value = input$IRADist_2018)
-      updateNumericInput(session, "IRATax_2017", label = "Enter your income tax withheld:", value = input$IRATax_2018)
       updateCheckboxInput(session, "IRAException_2017", label = "Check if you meet exception to 10% additional tax", value = input$IRAException_2018 )
-      updateNumericInput(session, "taxRefund_2017", label = "Taxable refunds, credits, or offsets of state and local income taxes",
-                         value = input$taxRefund_2018)
-      updateNumericInput(session, "alimony_2017", label = "Alimony received", value = input$alimony_2018)
-      updateNumericInput(session, "unemployment_2017", label = "Unemployment income received", value = input$unemployment_2018)
-      updateNumericInput(session, "unemploymentTax_2017", label = "Unemployment income tax withheld", value = input$unemploymentTax_2018)
-      updateNumInput(session, c("yourWages_2017","yourW2Tax_2017","spouseWages_2017","spouseW2Tax_2017"),
-                     values = c(input$yourWages_2018,input$yourW2Tax_2018,input$spouseWages_2018,input$spouseW2Tax_2018),
-                     labels = c("Enter your wages from W-2, box 1:", "Enter your income tax withheld, box 2:",
-                                "Enter spouse wages from W-2, box 1:","Enter spouse income tax withheld, box 2:")
-      )
+      updateNumInput(session, values= list(c("yourWages_2017", "Enter your wages from W-2, box 1:", input$yourWages_2018),
+                                            c("yourW2Tax_2017", "Enter your income tax withheld, box 2:",input$yourW2Tax_2018),
+                                            c("spouseWages_2017","Enter spouse wages from W-2, box 1:",input$spouseWages_2018),
+                                            c("spouseW2Tax_2017","Enter spouse income tax withheld, box 2:",input$spouseW2Tax_2018),
+                                            c("yourMedicareW2_2017", "Enter your medicare wages from W-2, box 5:",input$yourMedicareW2_2018 ),
+                                            c("yourMedicareTax_2017","Enter your medicare tax withheld, box 6:",input$yourMedicareTax_2018),
+                                            c("spouseMedicareW2_2017","Enter your medicare wages from W-2, box 5:",input$spouseMedicareW2_2018),
+                                            c("spouseMedicareTax_2017", "Enter your medicare tax withheld, box 6:", input$spouseMedicareTax_2018),
+                                            c("addMedicare1_2017","Enter your medicare wages from W-2, box 5:", input$addMedicare1_2018),
+                                            c("addMedicareTax1_2017","Enter your medicare tax withheld, box 6:", input$addMedicareTax1_2018),
+                                            c("addWages1_2017", "Enter additional wages from W-2, box 1:", input$addWages1_2018),
+                                            c("addW2Tax1_2017", "Enter income tax from W-2, box 2:", input$addW2Tax1_2018),
+                                            c("addWages2_2017", "Enter additional wages from W-2, box 1:", input$addWages2_2018),
+                                            c("addW2Tax2_2017", "Enter income tax from W-2, box 2:", input$addW2Tax2_2018),
+                                            c("addMedicare2_2017", "Enter your medicare wages from W-2, box 5:", input$addMedicare2_2018),
+                                            c("addMedicareTax2_2017", "Enter your medicare tax withheld, box 6:", input$addMedicareTax2_2018),
+                                            c("interest_2017", "Enter your taxable interest income: (Form 1099-Int, Box 1)", input$interest_2018),
+                                            c("interestTax_2017", "Income tax withheld from interest income", input$interestTax_2018),
+                                            c("ordinaryDividends_2017", "Enter your ordinary dividends income: (Form 1099-DIV)", input$ordinaryDividends_2018),
+                                            c("dividendTax_2017", "Enter your dividend income tax withheld: (Form 1099-DIV)", input$dividendTax_2018),
+                                            c("qualifiedDividends_2017","Enter your qualified dividends income: (Form 1099-DIV)", input$qualifiedDividends_2018),
+                                            c("LTGain_2017","Enter your long-term capital gains (loss):", input$LTGain_2018),
+                                            c("STGain_2017", "Enter your long-term capital gains (loss):", input$STGain_2018),
+                                            c("capitalTax_2017", "Enter your income tax withheld:", input$capitalTax_2018),
+                                            c("IRADist_2017", "Enter your taxable distribution IRA:", input$IRADist_2018),
+                                            c("IRATax_2017","Enter your income tax withheld:", input$IRATax_2018),
+                                            c("taxRefund_2017", "Taxable refunds, credits, or offsets of state and local income taxes", input$taxRefund_2018),
+                                            c("alimony_2017", "Alimony received", input$alimony_2018),
+                                            c("unemployment_2017","Unemployment income received", input$unemployment_2018),
+                                            c("unemploymentTax_2017","Unemployment income tax withheld", input$unemploymentTax_2018)
+                      ))
+      
     }
   })
   incomeDF <- reactive({
