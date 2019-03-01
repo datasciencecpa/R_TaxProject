@@ -194,6 +194,8 @@ server <- function(input, output, session) {
       summaryDF["Tax_Amount",] <- tax
       # Step 5 - Calculate Credits if applicable.
       taxCredits <- creditCalculation(summaryDF, income(), filingStatus, credits()) 
+      print (paste("taxCredits: ", taxCredits))
+      summaryDF <- rbind(summaryDF, taxCredits)
       return (summaryDF)
   })
   

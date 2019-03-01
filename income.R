@@ -214,27 +214,27 @@ income <- function (input, output, session ){
   observeEvent(input$hideWages1_2018,{
       # hide additional wages 1 and reset value to zero, and hide the button after it done
       hideshow(c("addWages1_2018", "addW2Tax1_2018", "addMedicare1_2018", "addMedicareTax1_2018","hideWages1_2018"), hide = TRUE)
-      updateNumInput(session, c("addWages1_2018", "addW2Tax1_2018","addMedicare1_2018", "addMedicareTax1_2018"),
+      updateNumInput_2(session, c("addWages1_2018", "addW2Tax1_2018","addMedicare1_2018", "addMedicareTax1_2018"),
                      values = c(0,0,0,0))
   })
   observeEvent(input$hideWages2_2018, {
       # hide additional wages 2 and reset value to zero, and hide the button after it done
 
       hideshow(c("addWages2_2018", "addW2Tax2_2018", "addMedicare2_2018","addMedicareTax2_2018","hideWages2_2018"), hide = TRUE)
-      updateNumInput(session, c("addWages2_2018","addW2Tax2_2018","addMedicare2_2018","addMedicareTax2_2018"),
+      updateNumInput_2(session, c("addWages2_2018","addW2Tax2_2018","addMedicare2_2018","addMedicareTax2_2018"),
                      c(0,0,0,0))
   })
   observeEvent(input$hideWages1_2017,{
       # hide additional wages 1 and reset value to zero, and hide the button after it done
   
       hideshow(c("addWages1_2017", "addW2Tax1_2017", "addMedicare1_2017", "addMedicareTax1_2017","hideWages1_2017"), hide = TRUE)
-      updateNumInput(session, c("addWages1_2017","addW2Tax1_2017","addMedicare1_2017","addMedicareTax1_2017"),
+      updateNumInput_2(session, c("addWages1_2017","addW2Tax1_2017","addMedicare1_2017","addMedicareTax1_2017"),
                      c(0,0,0,0))
   })
   observeEvent (input$hideWages2_2017, {
       # hide additional wages 2 and reset value to zero, and hide the button after it done
       hideshow(c("addWages2_2017", "addW2Tax2_2017","addMedicare2_2017", "addMedicareTax2_2017","hideWages2_2017"), hide = TRUE)
-      updateNumInput(session, c("addWages2_2017","addW2Tax2_2017","addMedicare2_2017","addMedicareTax2_2017"),
+      updateNumInput_2(session, c("addWages2_2017","addW2Tax2_2017","addMedicare2_2017","addMedicareTax2_2017"),
                      c(0,0,0,0))
   })
   observe({  # Use this to handle check box checked.

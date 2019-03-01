@@ -260,20 +260,31 @@ creditCalculation <- function (summaryDF, incomeDF, filingStatus, creditDF){
   
   # Calcualte Child and DC Expenses Credit
   print (creditDF)
-  vNames <- rownames(creditDF)
- 
   credit_18 <-creditDF$Credit_18 # Vector that contains information user enter on Credit tab
   credit_17 <- creditDF$Credit_17 # Vector that contains information user enter on Credit tab
-  names(credit_18) <- vNames
-  names(credit_17) <- vNames
+  names(credit_18) <- rownames(creditDF)
+  names(credit_17) <- rownames(creditDF)
+  returnDF <- data.frame(summary_2018 = c(0,0),summary_2017 =c(0,0), row.names = c("Child_Dependent_Care_Credit", "Child_Tax_Credit")) # original DF.
+  print (returnDF)
+  # addCDC <- FALSE # Use as a switch. If CDC is available in any year, switch to TRUE
   if (credit_18["Qualifying_Person"]>0 & credit_18["Expense"]>0){ # Calculate CDC for tax year 2018
-
     CDC_18 <- dependentCareCrd(summaryDF$summary_2018, filingStatus[1],incomeDF$Income_Tax_2018, credit_18 )
     print (paste("CDC_18:", CDC_18))
+    # if (CDC_18>0) addCDC <- TRUE
+    returnDF["Child_Dependent_Care_Credit",1] <- CDC_18
   }
   if (credit_17["Qualifying_Person"]>0 & credit_17["Expense"]>0){ # Calculate CDC for tax year 2017
-    print ("Qualifying for CTC 17")
+    # print ("Qualifying for CTC 17")
     CDC_17 <- dependentCareCrd(summaryDF$summary_2017, filingStatus[2],incomeDF$Income_Tax_2017, credit_17 )
     print (paste("CDC_17:", CDC_17))
+    # if (CDC_17>0) addCDC <- TRUE
+    returnDF["Child_Dependent_Care_Credit",2] <- CDC_17
   }
+
+  
+  
+  
+  
+  print (returnDF)
+  return (returnDF)
 }
