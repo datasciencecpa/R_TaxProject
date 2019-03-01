@@ -48,7 +48,7 @@ filingInformationUI <- function (id){
      fluidRow(
        column(6, h4("2018"),
               numericInput(ns("yourAge_2018"), label = "Enter your age:",
-                           min= 0, max=200, value = 30),
+                           min= 0, max=200, value = 0),
               checkboxInput(ns("youBlind_2018"), label = "Check if you are blind", value = FALSE),
               numericInput(ns("spouseAge_2018"), label = "Enter your spouse age:",
                            min= 0, max=200, value = 0),
@@ -56,7 +56,7 @@ filingInformationUI <- function (id){
        ), 
        column(6, h4("2017"),
               numericInput(ns( "yourAge_2017"), label = "Enter your age:",
-                           min= 0, max=200, value = 30),
+                           min= 0, max=200, value = 0),
               checkboxInput(ns("youBlind_2017"), label = "Check if you are blind", value = FALSE),
               numericInput(ns( "spouseAge_2017"), label = "Enter your spouse age:",
                            min= 0, max=200, value = 0),

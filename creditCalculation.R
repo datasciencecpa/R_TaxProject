@@ -5,6 +5,7 @@
 ## This module will use to calcualte credits.
 library(gdata)
 library(plyr)
+LLTbl <- read.xls("TaxRates.xls", sheet = 8)
 childTaxCrd <- function (AGI, filingStatus, taxYear, numQualifyingChild, creditDF,taxBeforeCredit, 
                          nonRefundableCredits = c(childDependentCareCredit = 0, educationCredit = 0, saverCredit = 0), numQualifyingRelative = 0){
   # Link to IRS website, pub 972: https://www.irs.gov/publications/p972
@@ -57,7 +58,7 @@ dependentCareCrd <- function (summaryDF, filingStatus, incomeDF, creditDF ){
     creditDF["Expense"] <- ifelse(creditDF["Expense"]>6000, 6000, creditDF["Expense"])
     creditDF["Qualifying_Person"] <- 2
   }
-  print (creditDF)
+  # print (creditDF)
 
   # Rules: Caclualte earning for FT Students or Disable Spouse
   # Rules: Earned $250/Child for each month being FT Student or Disabled
@@ -113,9 +114,98 @@ dependentCareCrd <- function (summaryDF, filingStatus, incomeDF, creditDF ){
   return (min(line_9, line_10))
 }
 
-educationalCrd <- function (){
+educationalCrd <- function (taxYear, summaryDF, filingStatus, creditDF, otherCrdDF){
   
-}
+  # This function will a dataframe that contains Part1 & Part2 calculation of form 8863
+  # Rule1: MFS cannot claim the credit
+  UPPER_MAGI <- ifelse (filingStatus=="MFJ", 180000, 90000)
+  DENOMINATOR <- ifelse (filingStatus=="MFJ", 20000, 10000)
+  educationDF <- data.frame(c(0,0,0,0,0,0,0,0,0,0,
+                              0,0,0,0,0,0,0,0,0),
+                            row.names = c("Part_1_Line_1","Line_2","Line_3_MAGI", "Line_4",
+                                          "Line_5","Line_6","Line_7","Refundable_AOC", "Line_9",
+                                          "Line_10", "Line_11", "Line_12","Line_13", "Line_14",
+                                          "Line_15", "Line_16","Line_17","Line_18", "Line_19"))
+  colnames(educationDF) <- taxYear
+  rowValue <- LLTbl[LLTbl$YEAR == taxYear & grepl(filingStatus, LLTbl$FILING_STATUS),]
+  print (paste("Row Values:", rowValue))
+  line_30 <- 0 # Use for Part 3, calcualte AOC
+  line_31 <- 0 # Use for part 3, calculate LL. Both amount will change if Expense >0
+  if (filingStatus == "MFS") return (educationDF)
+  if (creditDF["Expense_1"]>0){ # Complete part 3
+    if ((creditDF["Claimed_AOC_4Yrs_1"] == 0) & (creditDF["Complete_Post_4Yrs_1"] == 0) & (creditDF["At_least_half-time_student_1"] ==1)){
+      # Student1 met the AOC requirements
+      maxExpense <- creditDF["Number_Student_1"]*4000 
+      creditDF["Expense_1"] <- min(creditDF["Expense_1"], maxExpense)
+      print (paste("Max Expense:", creditDF["Expense_1"]))
+      line_28 <- creditDF["Expense_1"] - 2000*creditDF["Number_Student_1"]
+      print (paste("Line 28 amount", line_28))
+      line_28 <- ifelse(line_28>0, line_28, 0)
+      line_29 <- line_28*0.25
+      line_30 <- line_30 + ifelse (line_28==0, creditDF["Expense_1"], line_29 + 2000*creditDF["Number_Student_1"])
+      # print (paste("Line 30:", line_30))
+    }
+    else {
+      # Student 1 did not meet the AOC requirements, calculate LL credit for this student
+      line_31 <- line_31 + creditDF["Expense_1"]
+      # print (paste("Line 31:", line_31))
+    }
+  }
+  if (creditDF["Expense_2"]>0){ # Complete part 3 of form 8863
+  
+    if ((creditDF["Claimed_AOC_4Yrs_2"] == 0) & (creditDF["Complete_Post_4Yrs_2"] == 0) & (creditDF["At_least_half-time_student_2"] ==1)){
+      # Student2 met the AOC requirements
+      maxExpense <- creditDF["Number_Student_2"]*4000 
+      creditDF["Expense_2"] <- min(creditDF["Expense_2"], maxExpense)
+      print (paste("Max Expense:", creditDF["Expense_2"]))
+      line_28 <- creditDF["Expense_2"] - 2000*creditDF["Number_Student_2"]
+      print (paste("Line 28 amount", line_28))
+      line_28 <- ifelse(line_28>0, line_28, 0)
+      line_29 <- line_28*0.25
+      line_30 <- line_30 + ifelse (line_28==0, creditDF["Expense_2"], line_29 + 2000*creditDF["Number_Student_2"])
+      # print (paste("Line 30:", line_30))
+    } else {
+      # Student 1 did not meet the AOC requirements, calculate LL credit for this student
+      line_31 <- line_31 + creditDF["Expense_2"]
+      # print (paste("Line 31:", line_31))
+    }
+  }
+  # ------- Calculate refundable AOC - Part 1 of form 8863
+  educationDF["Part_1_Line_1",] <- line_30
+  educationDF["Line_2", ] <- UPPER_MAGI
+  educationDF["Line_3_MAGI", ] <- summaryDF[1] # Equal AGI
+  educationDF["Line_4", ] <- educationDF["Line_2",] -educationDF["Line_3_MAGI",]
+  educationDF["Line_4", ] <- ifelse(educationDF["Line_4", ]>=0, educationDF["Line_4", ], 0)
+  educationDF["Line_5", ] <- DENOMINATOR
+  line_6 <- ifelse (educationDF["Line_4",] >= educationDF["Line_5",], 1, round(educationDF["Line_4",]/educationDF["Line_5",], digits = 3))
+  educationDF["Line_6", ] <- line_6
+  educationDF["Line_7", ] <- educationDF["Part_1_Line_1",] * educationDF["Line_6", ]
+  educationDF["Refundable_AOC",] <- educationDF["Line_7", ] *0.4
+  # print (paste("Refundable AOC", educationDF["Refundable_AOC",]))
+  #-------- Calculate nonrefundable - Part 2 of form 8863
+  educationDF["Line_9",] <- educationDF["Line_7", ] - educationDF["Refundable_AOC",]
+  educationDF["Line_10", ] <- line_31
+  educationDF["Line_11", ] <- min(educationDF["Line_10",], 10000)
+  educationDF["Line_12", ] <- educationDF["Line_11",] * 0.2
+  educationDF["Line_13", ] <- rowValue$UPPER_MAGI
+  educationDF["Line_14", ] <- summaryDF[1]
+  line_15 <- educationDF["Line_13", ] - educationDF["Line_14", ]
+  line_15 <- ifelse(line_15>0, line_15, 0)
+  educationDF["Line_15", ] <- line_15
+  educationDF["Line_16", ] <- DENOMINATOR
+  line_17 <- ifelse(line_15>=DENOMINATOR, 1, round(line_15/DENOMINATOR, digits = 3))
+  # print(paste("Line 17:", line_17))
+  educationDF["Line_17", ] <- line_17
+  educationDF["Line_18", ] <- educationDF["Line_12", ] * line_17 # This amount is LL Nonrefundable credit amount
+  #----- Calculate Credit limit at showed on page 7 of form 8863
+  nonRefundableEducationCrd <- educationDF["Line_9",] + educationDF["Line_18",]
+  line_6 <- summaryDF[5] - otherCrdDF[1] # This is equivalent of Tax_Amount - CDC Credit
+  # print (paste("Line 6 -Remaining Tax:", line_6))
+  educationDF["Line_19", ] <- min(nonRefundableEducationCrd, line_6)
+  # print ("Final educationDF:")
+  # print(educationDF)
+  return (educationDF)
+}# End Educaiton Credit
 
 saverCrd <- function(){
   

@@ -253,8 +253,8 @@ taxCalculation <- function (taxableIncome, incomeDF, filingStatus){
 creditCalculation <- function (summaryDF, incomeDF, filingStatus, creditDF){
   # This function will calculate available credits:
   # Child and Dependent Care Credit
-  # Child Tax Credit/ Additional CTC
   # Education Credit
+  # Child Tax Credit/ Additional CTC
   # Saver Credit
   # It will return a dataframe with all available credits
   
@@ -264,8 +264,9 @@ creditCalculation <- function (summaryDF, incomeDF, filingStatus, creditDF){
   credit_17 <- creditDF$Credit_17 # Vector that contains information user enter on Credit tab
   names(credit_18) <- rownames(creditDF)
   names(credit_17) <- rownames(creditDF)
-  returnDF <- data.frame(summary_2018 = c(0,0),summary_2017 =c(0,0), row.names = c("Child_Dependent_Care_Credit", "Child_Tax_Credit")) # original DF.
-  print (returnDF)
+  rowNames <- c("Child_Dependent_Care_Credit","Nonrefundable_Education_Credit", "Child_Tax_Credit")
+  returnDF <- data.frame(summary_2018 = c(0,0,0),summary_2017 =c(0,0,0), row.names = rowNames) # original DF.
+  # print (returnDF)
   # addCDC <- FALSE # Use as a switch. If CDC is available in any year, switch to TRUE
   if (credit_18["Qualifying_Person"]>0 & credit_18["Expense"]>0){ # Calculate CDC for tax year 2018
     CDC_18 <- dependentCareCrd(summaryDF$summary_2018, filingStatus[1],incomeDF$Income_Tax_2018, credit_18 )
@@ -280,8 +281,17 @@ creditCalculation <- function (summaryDF, incomeDF, filingStatus, creditDF){
     # if (CDC_17>0) addCDC <- TRUE
     returnDF["Child_Dependent_Care_Credit",2] <- CDC_17
   }
-
-  
+  #---------- Testing if Educational Credit need to be calculated-----------------------
+  if (credit_18["Expense_1"]>0 | credit_18["Expense_2"]>0) {# Calculate only when expenses are greater than zero
+    print ("Calculate Educational credit for 2018")
+    EDC_18 <- educationalCrd("2018",summaryDF$summary_2018, filingStatus[1], credit_18, returnDF$summary_2018)
+    returnDF["Nonrefundable_Education_Credit",1] <- EDC_18["Line_19",]
+  }
+  if (credit_17["Expense_1"]>0 | credit_17["Expense_2"]>0) {# Calculate only when expenses are greater than zero
+    print ("Calculate Educational credit for 2017")
+    EDC_17 <- educationalCrd("2017",summaryDF$summary_2017, filingStatus[2], credit_17, returnDF$summary_2017)
+    returnDF["Nonrefundable_Education_Credit",2] <-  EDC_17["Line_19", ]
+  }
   
   
   

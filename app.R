@@ -187,11 +187,11 @@ server <- function(input, output, session) {
       summaryDF["Taxable_Income",] <- summaryDF[1,] - apply(summaryDF[2:3,], 2, sum)
       summaryDF["Taxable_Income",1] <- ifelse(summaryDF["Taxable_Income",1]<0,0, summaryDF["Taxable_Income",1])
       summaryDF["Taxable_Income",2] <- ifelse(summaryDF["Taxable_Income",2]<0,0, summaryDF["Taxable_Income",2])
-      print (summaryDF)
+      
       # Step 4 --- Calculate Tax Amount
       tax <- taxCalculation (as.numeric(summaryDF["Taxable_Income",]), income(), filingStatus)
-
       summaryDF["Tax_Amount",] <- tax
+      print (summaryDF)
       # Step 5 - Calculate Credits if applicable.
       taxCredits <- creditCalculation(summaryDF, income(), filingStatus, credits()) 
       print (paste("taxCredits: ", taxCredits))
