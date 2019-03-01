@@ -83,7 +83,7 @@ ui <- fluidPage(
                     "This project is part my self-learning R-Shiny and Data-Science."),
                  p(strong("How this app comes about:"), "I deal with tax every day in my day job. Therefore, my first app would have something to do with the thing that everyone love to hate:Taxxxx!
                    Though, my goal is to make this less painful and fun while exercising my programming skills."),
-                 p(strong("Source code:"), a(href = "https://github.com/datasciencecpa/R_TaxProject", "R_TaxProject on github")),
+                 # p(strong("Source code:"), a(href = "https://github.com/datasciencecpa/R_TaxProject", "R_TaxProject on github")),
                  h5("This is me and my wife - Hanna!"),
                  tags$img(src = "img1.JPG",height = "1000", width = "700")
                  

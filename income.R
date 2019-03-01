@@ -27,6 +27,8 @@ incomeUI <- function (id){
           column(6,numericInput(ns("spouseMedicareW2_2018"), label = "Enter your medicare wages from W-2, box 5:", value = 0)),
           column(6,numericInput(ns("spouseMedicareTax_2018"), label = "Enter your medicare tax withheld, box 6:", value = 0))
         ),# Spouse Medicare 
+        hr(),
+        h4("Your Additional W-2:"),
         fluidRow(
           column(6,numericInput(ns("addWages1_2018"), label = "Enter additional wages from W-2, box 1:", value = 0)),
           column(6,numericInput(ns("addW2Tax1_2018"), label = "Enter income tax from W-2, box 2:", value = 0))
@@ -37,8 +39,10 @@ incomeUI <- function (id){
                  
         ), # Additional medicare wages and taxes
         fluidRow(
-          actionButton(ns("hideWages1_2018"), label = "Delete", class="btn btn-danger btn-responsive")
+          actionButton(ns("hideWages1_2018"), label = "Delete this W-2", class="btn btn-danger btn-responsive")
         ), # Action Button
+        hr(),
+        h4("Spouse Additional W-2:"),
         fluidRow(
           column(6,numericInput(ns("addWages2_2018"), label = "Enter additional wages from W-2, box 1:", value = 0)),
           column(6,numericInput(ns("addW2Tax2_2018"), label = "Enter income tax from W-2, box 2:", value = 0))
@@ -48,7 +52,7 @@ incomeUI <- function (id){
           column(6,numericInput(ns("addMedicareTax2_2018"), label = "Enter your medicare tax withheld, box 6:", value = 0))
         ), # Additional Medicare wages and tax 2
         fluidRow(
-          actionButton(ns("hideWages2_2018"), label = "Delete",class="btn btn-danger btn-responsive")
+          actionButton(ns("hideWages2_2018"), label = "Delete this W-2",class="btn btn-danger btn-responsive")
         )   
       ),
       column(6,h4("2017"),
@@ -68,6 +72,8 @@ incomeUI <- function (id){
           column(6,numericInput(ns("spouseMedicareW2_2017"), label = "Enter your medicare wages from W-2, box 5:", value = 0)),
           column(6,numericInput(ns("spouseMedicareTax_2017"), label = "Enter your medicare tax withheld, box 6:", value = 0))
         ), # Spouse medicare wages and tax
+        hr(),
+        h4("Your Additional W-2:"),
         fluidRow(
           column(6,numericInput(ns("addWages1_2017"), label = "Enter additional wages from W-2, box 1:", value = 0)),
           column(6,numericInput(ns("addW2Tax1_2017"), label = "Enter income tax from W-2, box 2:", value = 0))
@@ -77,8 +83,10 @@ incomeUI <- function (id){
           column(6,numericInput(ns("addMedicareTax1_2017"), label = "Enter your medicare tax withheld, box 6:", value = 0))
         ), # Additional medicare wages and tax
         fluidRow(
-          actionButton(ns("hideWages1_2017"), label = "Delete",class="btn btn-danger btn-responsive")
+          actionButton(ns("hideWages1_2017"), label = "Delete this W-2",class="btn btn-danger btn-responsive")
         ), # Action button 1
+        hr(),
+        h4("Spouse Additional W-2:"),
         fluidRow(
           column(6, numericInput(ns("addWages2_2017"), label = "Enter additional wages from W-2, box 1:", value = 0)),
           column(6,numericInput(ns("addW2Tax2_2017"), label = "Enter income tax from W-2, box 2:", value = 0))
@@ -88,7 +96,7 @@ incomeUI <- function (id){
           column(6,numericInput(ns("addMedicareTax2_2017"), label = "Enter your medicare tax withheld, box 6:", value = 0))
         ), # Additional medicare 2 wages and tax
         fluidRow(
-          actionButton(ns("hideWages2_2017"), label = "Delete", class="btn btn-danger btn-responsive")
+          actionButton(ns("hideWages2_2017"), label = "Delete this W-2", class="btn btn-danger btn-responsive")
         )
       )
     ),

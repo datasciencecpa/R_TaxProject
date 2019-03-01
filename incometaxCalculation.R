@@ -260,14 +260,20 @@ creditCalculation <- function (summaryDF, incomeDF, filingStatus, creditDF){
   
   # Calcualte Child and DC Expenses Credit
   print (creditDF)
+  vNames <- rownames(creditDF)
+ 
+  credit_18 <-creditDF$Credit_18 # Vector that contains information user enter on Credit tab
+  credit_17 <- creditDF$Credit_17 # Vector that contains information user enter on Credit tab
+  names(credit_18) <- vNames
+  names(credit_17) <- vNames
+  if (credit_18["Qualifying_Person"]>0 & credit_18["Expense"]>0){ # Calculate CDC for tax year 2018
 
-  credit_18 <-creditDF$Credit_18
-  credit_17 <- creditDF$Credit_17
-  if (credit_18[2]>0 & credit_18[3]>0){
-    print ("Qualifying for CTC 18")
-    dependentCareCrd(summaryDF, filingStatus[1],incomeDF$Income_Tax_2018, creditDF$Credit_18 )
+    CDC_18 <- dependentCareCrd(summaryDF$summary_2018, filingStatus[1],incomeDF$Income_Tax_2018, credit_18 )
+    print (paste("CDC_18:", CDC_18))
   }
-  if (credit_17[2]>0 & credit_17[3]>0){
+  if (credit_17["Qualifying_Person"]>0 & credit_17["Expense"]>0){ # Calculate CDC for tax year 2017
     print ("Qualifying for CTC 17")
+    CDC_17 <- dependentCareCrd(summaryDF$summary_2017, filingStatus[2],incomeDF$Income_Tax_2017, credit_17 )
+    print (paste("CDC_17:", CDC_17))
   }
 }
