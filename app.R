@@ -150,6 +150,8 @@ server <- function(input, output, session) {
       show ("CreditTbl")
       show ("creditsSelect")
     } 
+    if(!input$displaySummaryGraph) hide("summaryGraph")
+    else  show("summaryGraph")
   })
   #-------------------------------------------------------------------
   output$taxSummaryTbl <- renderDataTable({
@@ -157,8 +159,8 @@ server <- function(input, output, session) {
       hide("viewCreditChb") # Hide this until some credit are available.
       # Step 1: Get income by calling function totalIncomeCalculation
       totalIncome <- totalIncomeCalculation(income())
-      # Income_Type <- c("Total_W2_Wages", "Interest", "Dividends", "Taxable_Refunds","Alimony", "Qualified_Dividends",
-                       # "Long_Term_Gains", "Short_Term_Gains","IRA_Distribution", "Unemployment Income")
+      deductionsToAGI <- totalDeductionToAGI (deductions(), statusInformation(),totalIncome)
+
       # Step 2: Plot totalIncome out to graph
       valueRow <- totalIncome$AGI_2018 !=0 | totalIncome$AGI_2017 !=0  # Interested in non-zero value income type.
       totalIncome <- totalIncome[valueRow,]
@@ -171,7 +173,7 @@ server <- function(input, output, session) {
       })
       #------------------------------------------------------------------
       # Step 2: Calculate deductions above AGI
-      deductionsToAGI <- totalDeductionToAGI (deductions(), statusInformation(),totalIncome)
+      
       AGI <- as.numeric(deductionsToAGI["Adjusted_Gross_Income",]) # Getting adjusted gross income for 2 years
       deductionDF <- deductionsToAGI[c("Educator_Expense", "HSA_Deduction_Amt", "Your_IRA_Deduction", "Your_Spouse_IRA_Deduction",
                                        "Student_Loan_Deduction"), ]
@@ -209,6 +211,7 @@ server <- function(input, output, session) {
       tax <- taxCalculation (as.numeric(summaryDF["Taxable_Income",]), income(), filingStatus)
       summaryDF["Tax_Amount",] <- tax
       print (summaryDF)
+      
       # Step 5 - Calculate Credits if applicable.
       taxCredits <- creditCalculation(summaryDF, income(), filingStatus, credits()) 
       creditNames <- names(taxCredits)
@@ -217,14 +220,21 @@ server <- function(input, output, session) {
       creditNames <- creditNames[creditLogical]
       print (paste("Credit Names with Logical filter: ", creditNames))
       if (sum(creditLogical)>0){
+        #------- Step 1: Show Credit Table checkbox and update selectInput with choices = creditNames[Logical]
         show("viewCreditChb")
+        updateSelectInput(session,inputId = "creditsSelect",label = "Select Credit:", choices = creditNames, selected = creditNames[1])
+        output$CreditTbl <- renderDataTable({
+          creditSelected <- input$creditsSelect
+          print (paste("Credit Selected:", creditSelected))
+          return (taxCredits[[creditSelected]])
+        }, options = list(pageLength = 25))
         # --------- Determine which credit is available through list of credit logical ------------
         if (is.data.frame(taxCredits[["CDC"]])) { # CDC is dataframe, CDC credit available
           if (length(colnames(taxCredits[["CDC"]])) == 2){
-            print ("Two year credit")
+            # print ("Two year credit")
             summaryDF["Child_Dependent_Care_Credit", ] <- taxCredits[["CDC"]]["Child_Dependent_Care_Credit",]
           } else {
-            print("One year credit")
+            # print("One year credit")
             taxYear <- colnames(taxCredits[["CDC"]])
             if (taxYear =="2018"){
               summaryDF["Child_Dependent_Care_Credit",1] <- taxCredits[["CDC"]]["Child_Dependent_Care_Credit",]
@@ -235,10 +245,10 @@ server <- function(input, output, session) {
         }
         if(is.data.frame(taxCredits[["Education"]])){
           if (length(colnames(taxCredits[["Education"]]))==2){
-            print ("Two year credit")
+            # print ("Two year credit")
             summaryDF["Nonrefundable_Educational_Credit", ] <- taxCredits[["Education"]]["Line_19",]
           }else {
-            print("One year credit")
+            # print("One year credit")
             taxYear <- colnames(taxCredits[["Education"]])
             if (taxYear=="2018"){
               summaryDF["Nonrefundable_Education_Credit",1] <- taxCredits[["Education"]]["Line_19",]
@@ -248,13 +258,9 @@ server <- function(input, output, session) {
             }
           }
         }
+        # 
       }
-      updateSelectInput(session,inputId = "creditsSelect",label = "Select Credit:", choices = creditNames, selected = creditNames[1])
-      output$CreditTbl <- renderDataTable({
-        creditSelected <- input$creditsSelect
-        print (paste("Credit Selected:", creditSelected))
-        return (taxCredits[[creditSelected]])
-      }, options = list(pageLength = 25))
+      
       summaryDF[is.na.data.frame(summaryDF)] <- 0
       return (summaryDF)
   })

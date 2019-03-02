@@ -13,23 +13,23 @@ creditsUI <- function (id){
      fluidRow(
        column(6, h4("2018"),
           checkboxInput(ns("MFSException_2018"), label = "Married Filing Separately - Uncheck this box if you do not meet the MFS exception to claim this credit", value = TRUE),
-          numericInput(ns("numQualifying_2018"), label = "Enter number of qualifying person", value = 0, min= 0),
-          numericInput(ns("qualifiedExp_2018"), label = "Enter total of qualified expenses (Max $6000)", value = 0, min = 0),
+          numericInput(ns("numQualifying_2018"), label = "Enter number of qualifying person", value = 0, min= 0, max = 2),
+          numericInput(ns("qualifiedExp_2018"), label = "Enter total of qualified expenses (Max $6000)", value = 0, min = 0, max = 6000),
           column(6,checkboxInput(ns("youFTStudent_2018"), label = "You were a full-time student or disabled and did not have any earned income"),
-            numericInput(ns("yourMonths_2018"), label = "Enter number of months you were full-time student or disabled", value = 0)
+            numericInput(ns("yourMonths_2018"), label = "Enter number of months you were full-time student or disabled", value = 0, min=0, max = 12)
           ),
           column(6,checkboxInput(ns("spouseFTStudent_2018"), label = "You were a full-time student or disabled and did not have any earned income"),
-            numericInput(ns("spouseMonths_2018"), label = "Enter number of months your spouse were FT student or disabled", value = 0))
+            numericInput(ns("spouseMonths_2018"), label = "Enter number of months your spouse were FT student or disabled", value = 0, min = 0, max = 12))
        ),
        column(6, h4("2017"),
           checkboxInput(ns("MFSException_2017"), label = "Married Filing Separately - Uncheck this box if you do not meet the MFS exception to claim this credit", value = TRUE),
-          numericInput(ns("numQualifying_2017"), label = "Enter number of qualifying person", value = 0, min= 0),
-          numericInput(ns("qualifiedExp_2017"), label = "Enter total of qualified expenses (Max $6000)", value = 0, min = 0),
+          numericInput(ns("numQualifying_2017"), label = "Enter number of qualifying person", value = 0, min= 0, max=2),
+          numericInput(ns("qualifiedExp_2017"), label = "Enter total of qualified expenses (Max $6000)", value = 0, min = 0, max = 6000),
           column(6,checkboxInput(ns("youFTStudent_2017"), label = "You were a full-time student or disabled and did not have any earned income"),
-                 numericInput(ns("yourMonths_2017"), label = "Enter number of months you were full-time student or disabled", value = 0)
+                 numericInput(ns("yourMonths_2017"), label = "Enter number of months you were full-time student or disabled", value = 0, min=0, max=12)
           ),
           column(6,checkboxInput(ns("spouseFTStudent_2017"), label = "You were a full-time student or disabled and did not have any earned income"),
-                 numericInput(ns("spouseMonths_2017"), label = "Enter number of months your spouse were FT student or disabled", value = 0))
+                 numericInput(ns("spouseMonths_2017"), label = "Enter number of months your spouse were FT student or disabled", value = 0, min=0, max = 12))
        )
      ), hr(),
      h3("Education Credits - See ", a(href= "https://www.irs.gov/pub/irs-pdf/p970.pdf", "IRS Publication 970"), " for more information"),
@@ -115,12 +115,12 @@ credits <- function(input, output, session){
     }
     if (input$same){
       updateCheckboxInput(session, "MFSException_2017", label= CDCLabel, value = input$MFSException_2018)
-      updateNumericInput(session, "numQualifying_2017", label = "Enter number of qualifying person", value = input$numQualifying_2018)
-      updateNumericInput(session, "qualifiedExp_2017", label = "Enter total of qualified expenses (Max $6000)", value = input$qualifiedExp_2018)
+      updateNumericInput(session, "numQualifying_2017", label = "Enter number of qualifying person", value = input$numQualifying_2018, min=0, max=2)
+      updateNumericInput(session, "qualifiedExp_2017", label = "Enter total of qualified expenses (Max $6000)", value = input$qualifiedExp_2018, min=0, max = 6000)
       updateCheckboxInput(session, "youFTStudent_2017", label = "You were a full-time student or disabled and did not have any earned income",
                           value = input$youFTStudent_2018)
       updateNumericInput(session, "yourMonths_2017", label = "Enter number of months you were full-time student or disabled",
-                         value = input$yourMonths_2018)
+                         value = input$yourMonths_2018, min=0, max = 12)
       updateCheckboxInput(session,"spouseFTStudent_2017", label = "You were a full-time student or disabled and did not have any earned income",
                           value = input$spouseFTStudent_2018)
       updateNumericInput(session, "spouseMonths_2017", label="Enter number of months your spouse were FT student or disabled",

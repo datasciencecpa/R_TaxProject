@@ -16,10 +16,7 @@ QDCGWorksheet <- function(taxYear, taxableIncome, incomeDF, filingStatus){
   # To figure out amounts that may be eligible for lower rate
 
   # Main function below
-  # filingStatus <- toupper(filingStatus)
-  # print (paste("IncomeDF:"))
-  # print (incomeDF)
-  # print (paste("Original taxable income: ", taxableIncome))
+
   div <- incomeDF[1]
   LTGain <- incomeDF[2]
   netGain <- sum(incomeDF[2:3])
@@ -148,8 +145,10 @@ totalDeductionToAGI <- function (deductionsDF, statusDF, AGIIncome) {
     if (returnDF["HSA_Deduction_Amt", 1]<0) returnDF["HSA_Deduction_Amt", 1] <- 0
     if (returnDF["HSA_Deduction_Amt",2]<0) returnDF["HSA_Deduction_Amt",2] <- 0
   } # Finish checking HSA contribution
+  
   returnDF["Your_IRA_Deduction",] <- c(0,0)
   returnDF["Your_Spouse_IRA_Deduction", ] <- c(0,0)
+  
   if (any(grepl("IRA_Contribution", rowNames))){ # Checking if user entered any IRA contribution
     # Checking if user has enough earned income (Total Wages + Alimony) to contribute to IRA
     earnedIncome_2018 <- 0
@@ -170,7 +169,8 @@ totalDeductionToAGI <- function (deductionsDF, statusDF, AGIIncome) {
     IRA_Deduction_2018 <- IRADeduction(2018, IRAcover = as.character(deductionsDF[c("Your_IRA_Cover", "Spouse_IRA_Cover"),"Deduction_2018"]),
                                             filingStatus = as.character(filingStatus[1]),
                                             ages = as.numeric(statusDF[c("Your_Age", "Spouse_Age"), "Status_2018"]),
-                                            MAGI = MAGI_2018, earnedIncome = earnedIncome_2018, 
+                                            MAGI = MAGI_2018, 
+                                            earnedIncome = earnedIncome_2018, 
                                             IRAAmount = as.numeric(deductionsDF[c("Your_IRA_Contribution", "Spouse_IRA_Contribution"), "Deduction_2018"]))
     print (paste("IRA Deduction 2018:", IRA_Deduction_2018))
     IRA_Deduction_2017 <- IRADeduction(2017, IRAcover = as.character(deductionsDF[c("Your_IRA_Cover", "Spouse_IRA_Cover"),"Deduction_2017"]),
@@ -256,7 +256,7 @@ creditCalculation <- function (summaryDF, incomeDF, filingStatus, creditDF){
   # Education Credit
   # Child Tax Credit/ Additional CTC
   # Saver Credit
-  # It will return a dataframe with all available credits
+  # It will return a list of dataframe with all available credits
   
   # Calcualte Child and DC Expenses Credit
   print (creditDF)
@@ -269,24 +269,26 @@ creditCalculation <- function (summaryDF, incomeDF, filingStatus, creditDF){
   #----------Calculate CDC Credit ------------------------------------------------------
   returnList[["CDC"]] <- 0 # initialize list that will contain CDC dataframe.
   if (credit_18["Qualifying_Person"]>0 & credit_18["Expense"]>0){ # Calculate CDC for tax year 2018
-    CDC_18 <- dependentCareCrd("2018",summaryDF$summary_2018, filingStatus[1],incomeDF$Income_Tax_2018, credit_18 )
-    returnList[["CDC"]] <- CDC_18
-    otherCredits["CDC",1] <- CDC_18["Child_Dependent_Care_Credit",]
-    
+    CDC_18 <- dependentCareCrd("2018",summaryDF$summary_2018, filingStatus[1],incomeDF$Income_Tax_2018, credit_18)
+    if (CDC_18["Child_Dependent_Care_Credit",]>0){
+      returnList[["CDC"]] <- CDC_18
+      otherCredits["CDC",1] <- CDC_18["Child_Dependent_Care_Credit",]
+    }
   }
   if (credit_17["Qualifying_Person"]>0 & credit_17["Expense"]>0){ # Calculate CDC for tax year 2017
     CDC_17 <- dependentCareCrd("2017",summaryDF$summary_2017, filingStatus[2],incomeDF$Income_Tax_2017, credit_17 )
-    otherCredits["CDC",2] <- CDC_17["Child_Dependent_Care_Credit",]
-    print (otherCredits)
-    if (!is.data.frame(returnList[["CDC"]])){
-      returnList[["CDC"]] <- CDC_17
-    } else {
-      returnList[["CDC"]] <- cbind(returnList[["CDC"]], CDC_17)
+    if (CDC_17["Child_Dependent_Care_Credit",]>0){
+      if (!is.data.frame(returnList[["CDC"]])){
+        returnList[["CDC"]] <- CDC_17
+      } else {
+        returnList[["CDC"]] <- cbind(returnList[["CDC"]], CDC_17)
+      }
+      otherCredits["CDC",2] <- CDC_17["Child_Dependent_Care_Credit",]
     }
   }
   print(otherCredits)
-  print ("Testing CDC_DF")
-  print (returnList[["CDC"]])
+  # print ("Testing CDC_DF")
+  # print (returnList[["CDC"]])
   
   #---------- Testing if Educational Credit need to be calculated-----------------------
   returnList[["Education"]] <- 0
@@ -294,18 +296,22 @@ creditCalculation <- function (summaryDF, incomeDF, filingStatus, creditDF){
     print ("Calculate Educational credit for 2018")
     CDC_18 
     EDC_18 <- educationalCrd("2018",summaryDF$summary_2018, filingStatus[1], credit_18, otherCredits["CDC",1])
-    otherCredits["Education",1] <- EDC_18["Line_19",]
-    returnList[["Education"]] <- EDC_18
+    if (EDC_18["Line_19",]>0 | EDC_18["Refundable_AOC",]>0){
+      otherCredits["Education",1] <- EDC_18["Line_19",]
+      returnList[["Education"]] <- EDC_18
+    }
   }
   if (credit_17["Expense_1"]>0 | credit_17["Expense_2"]>0) {# Calculate only when expenses are greater than zero
     print ("Calculate Educational credit for 2017")
     EDC_17 <- educationalCrd("2017",summaryDF$summary_2017, filingStatus[2], credit_17, otherCredits["CDC",2])
-    otherCredits["Education",2] <- EDC_17["Line_19",]
-    if (!is.data.frame(returnList[["Education"]])) returnList[["Education"]] <- EDC_17
-    else returnList[["Education"]] <- cbind(returnList[["Education"]], EDC_17)
+    if (EDC_17["Line_19",]>0 | EDC_17["Refundable_AOC",]>0){
+      otherCredits["Education",2] <- EDC_17["Line_19",]
+      if (!is.data.frame(returnList[["Education"]])) returnList[["Education"]] <- EDC_17
+      else returnList[["Education"]] <- cbind(returnList[["Education"]], EDC_17)
+    }
   }
   print(otherCredits)
-  print ("Testing Education")
-  print (returnList[["Education"]])
+  # print ("Testing Education")
+  # print (returnList[["Education"]])
   return (returnList)
 }

@@ -147,7 +147,7 @@ educationalCrd <- function (taxYear, summaryDF, filingStatus, creditDF, otherCrd
       creditDF["Expense_1"] <- min(creditDF["Expense_1"], maxExpense)
       # print (paste("Max Expense:", creditDF["Expense_1"]))
       line_28 <- creditDF["Expense_1"] - 2000*creditDF["Number_Student_1"]
-      print (paste("Line 28 amount", line_28))
+      # print (paste("Line 28 amount", line_28))
       line_28 <- ifelse(line_28>0, line_28, 0)
       line_29 <- line_28*0.25
       line_30 <- line_30 + ifelse (line_28==0, creditDF["Expense_1"], line_29 + 2000*creditDF["Number_Student_1"])
@@ -167,7 +167,7 @@ educationalCrd <- function (taxYear, summaryDF, filingStatus, creditDF, otherCrd
       creditDF["Expense_2"] <- min(creditDF["Expense_2"], maxExpense)
       # print (paste("Max Expense:", creditDF["Expense_2"]))
       line_28 <- creditDF["Expense_2"] - 2000*creditDF["Number_Student_2"]
-      print (paste("Line 28 amount", line_28))
+      # print (paste("Line 28 amount", line_28))
       line_28 <- ifelse(line_28>0, line_28, 0)
       line_29 <- line_28*0.25
       line_30 <- line_30 + ifelse (line_28==0, creditDF["Expense_2"], line_29 + 2000*creditDF["Number_Student_2"])
