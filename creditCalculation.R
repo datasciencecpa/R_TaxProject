@@ -43,7 +43,7 @@ childTaxCrd <- function (AGI, filingStatus, taxYear, numQualifyingChild, creditD
   return (data.frame(resultDF)) 
 }
 
-dependentCareCrd <- function (summaryDF, filingStatus, incomeDF, creditDF ){
+dependentCareCrd <- function (taxYear,summaryDF, filingStatus, incomeDF, creditDF ){
   #https://www.irs.gov/pub/irs-pdf/i2441.pdf
   # Rules: Qualifying child must be under 13 year old/ Or Disabled
   # Rules: Expense can't be more than $3000 for one child, or 6000 for 2 or more child
@@ -52,13 +52,16 @@ dependentCareCrd <- function (summaryDF, filingStatus, incomeDF, creditDF ){
   MAX_RATE <- 0.35
   MIN_RATE <- 0.2
   INCREMENT <- 2000
+  returnDF <- data.frame(Number_Of_Qualifying_Person =creditDF["Qualifying_Person"])
+  colnames(returnDF) <- taxYear
+  # returnDF["Number_Of_Qualifying_Person",] <- creditDF["Qualifying_Person"]
   if (creditDF["Qualifying_Person"]==1){
     creditDF["Expense"] <- ifelse(creditDF["Expense"]>3000, 3000, creditDF["Expense"])
   } else {
     creditDF["Expense"] <- ifelse(creditDF["Expense"]>6000, 6000, creditDF["Expense"])
     creditDF["Qualifying_Person"] <- 2
   }
-  # print (creditDF)
+  returnDF["Max_Expense",] <- creditDF["Expense"] # Step 2, this equal to line 2, part 2 of form 2441
 
   # Rules: Caclualte earning for FT Students or Disable Spouse
   # Rules: Earned $250/Child for each month being FT Student or Disabled
@@ -69,11 +72,14 @@ dependentCareCrd <- function (summaryDF, filingStatus, incomeDF, creditDF ){
     line_4 <- line_4 + 250* creditDF["FT_Student_Month"]* creditDF["Qualifying_Person"]
   }
   line_5 <- line_4
+  returnDF["Line_4", ] <- line_4
+  returnDF["Line_5", ] <- line_5
   if (filingStatus == "MFJ"){
     line_5 <-  incomeDF[3] + incomeDF[7] # W-2 income of spouse
     if (creditDF["Spouse_FT_Student"]==1){
       line_5 <- line_5 + 250 * creditDF["Spouse_FT_Student_Month"]* creditDF["Qualifying_Person"]
     }
+    returnDF["Line_5", ] <- line_5 # Change line 5 to spouse income
     if (creditDF["You_FT_Student"]== 1 & creditDF["Spouse_FT_Student"]==1){ # if both are full-time student, can allow additional income for the same month
       # I am making assumption that if the total of months being student are more than 12
       # I will deduct the excess out from income of the higher one.
@@ -86,32 +92,34 @@ dependentCareCrd <- function (summaryDF, filingStatus, incomeDF, creditDF ){
         if (line_4> line_5){
           line_4 <- line_4 - reductionAmt
           # print (paste("Line_4 afte reduction:", line_4))
+          returnDF["Line_4", ] <- line_4
         } else {
           line_5 <- line_5 - reductionAmt
           # print (paste("Line_5 after reduction:", line_5))
+          returnDF["Line_5", ] <- line_5
         }
       } # else: no need to do anything
     }
   }
-  # print ("Line 4:")
-  # print(line_4)
-  # print ("Line 5:")
-  # print(line_5)
+
   line_6 <- min(c(line_4, line_5, creditDF["Expense"])) # getting the smallest
-  # print (paste("Smallest: ", line_6))
-  # print (paste("Summary DF:", summaryDF))
+  returnDF["Line_6_Smallest_Of_3_4_5_Above", ] <- line_6
   AGI <- summaryDF[1] # AGI
+  returnDF["Line_7_AGI", ] <- AGI
   # print (paste("AGI:",AGI))
   if (AGI<LOWER_LIMIT) rate <- MAX_RATE
   else if (AGI>UPPER_LIMIT) rate <- MIN_RATE
   else {
     rate <- MAX_RATE -(round_any((AGI - LOWER_LIMIT)/2000,1, f= ceiling)/100)
   }
-  # print(paste("Rate:", rate))
+  returnDF["Rate", ] <- rate #Step 8
+  
   line_9 <- round(line_6 * rate, digits = 4)
-  # print(paste("Eligible credit:", line_9))
+  returnDF["Line_9", ] <- line_9
   line_10 <- summaryDF[5] # Tax_Amount
-  return (min(line_9, line_10))
+  returnDF["Line_10",] <- line_10
+  returnDF["Child_Dependent_Care_Credit",] <- min(line_9, line_10)
+  return (returnDF)
 }
 
 educationalCrd <- function (taxYear, summaryDF, filingStatus, creditDF, otherCrdDF){
@@ -137,7 +145,7 @@ educationalCrd <- function (taxYear, summaryDF, filingStatus, creditDF, otherCrd
       # Student1 met the AOC requirements
       maxExpense <- creditDF["Number_Student_1"]*4000 
       creditDF["Expense_1"] <- min(creditDF["Expense_1"], maxExpense)
-      print (paste("Max Expense:", creditDF["Expense_1"]))
+      # print (paste("Max Expense:", creditDF["Expense_1"]))
       line_28 <- creditDF["Expense_1"] - 2000*creditDF["Number_Student_1"]
       print (paste("Line 28 amount", line_28))
       line_28 <- ifelse(line_28>0, line_28, 0)
@@ -157,7 +165,7 @@ educationalCrd <- function (taxYear, summaryDF, filingStatus, creditDF, otherCrd
       # Student2 met the AOC requirements
       maxExpense <- creditDF["Number_Student_2"]*4000 
       creditDF["Expense_2"] <- min(creditDF["Expense_2"], maxExpense)
-      print (paste("Max Expense:", creditDF["Expense_2"]))
+      # print (paste("Max Expense:", creditDF["Expense_2"]))
       line_28 <- creditDF["Expense_2"] - 2000*creditDF["Number_Student_2"]
       print (paste("Line 28 amount", line_28))
       line_28 <- ifelse(line_28>0, line_28, 0)
@@ -199,7 +207,7 @@ educationalCrd <- function (taxYear, summaryDF, filingStatus, creditDF, otherCrd
   educationDF["Line_18", ] <- educationDF["Line_12", ] * line_17 # This amount is LL Nonrefundable credit amount
   #----- Calculate Credit limit at showed on page 7 of form 8863
   nonRefundableEducationCrd <- educationDF["Line_9",] + educationDF["Line_18",]
-  line_6 <- summaryDF[5] - otherCrdDF[1] # This is equivalent of Tax_Amount - CDC Credit
+  line_6 <- summaryDF[5] - otherCrdDF # This is equivalent of Tax_Amount - CDC Credit
   # print (paste("Line 6 -Remaining Tax:", line_6))
   educationDF["Line_19", ] <- min(nonRefundableEducationCrd, line_6)
   # print ("Final educationDF:")

@@ -264,37 +264,48 @@ creditCalculation <- function (summaryDF, incomeDF, filingStatus, creditDF){
   credit_17 <- creditDF$Credit_17 # Vector that contains information user enter on Credit tab
   names(credit_18) <- rownames(creditDF)
   names(credit_17) <- rownames(creditDF)
-  rowNames <- c("Child_Dependent_Care_Credit","Nonrefundable_Education_Credit", "Child_Tax_Credit")
-  returnDF <- data.frame(summary_2018 = c(0,0,0),summary_2017 =c(0,0,0), row.names = rowNames) # original DF.
-  # print (returnDF)
-  # addCDC <- FALSE # Use as a switch. If CDC is available in any year, switch to TRUE
+  otherCredits <- data.frame(c(0,0),c(0,0), row.names = c("CDC", "Education")) # Use to store other Nonrefundable credits for quick access
+  returnList <- list() # Use to store list of dataframe that will return to App.R
+  #----------Calculate CDC Credit ------------------------------------------------------
+  returnList[["CDC"]] <- 0 # initialize list that will contain CDC dataframe.
   if (credit_18["Qualifying_Person"]>0 & credit_18["Expense"]>0){ # Calculate CDC for tax year 2018
-    CDC_18 <- dependentCareCrd(summaryDF$summary_2018, filingStatus[1],incomeDF$Income_Tax_2018, credit_18 )
-    print (paste("CDC_18:", CDC_18))
-    # if (CDC_18>0) addCDC <- TRUE
-    returnDF["Child_Dependent_Care_Credit",1] <- CDC_18
+    CDC_18 <- dependentCareCrd("2018",summaryDF$summary_2018, filingStatus[1],incomeDF$Income_Tax_2018, credit_18 )
+    returnList[["CDC"]] <- CDC_18
+    otherCredits["CDC",1] <- CDC_18["Child_Dependent_Care_Credit",]
+    
   }
   if (credit_17["Qualifying_Person"]>0 & credit_17["Expense"]>0){ # Calculate CDC for tax year 2017
-    # print ("Qualifying for CTC 17")
-    CDC_17 <- dependentCareCrd(summaryDF$summary_2017, filingStatus[2],incomeDF$Income_Tax_2017, credit_17 )
-    print (paste("CDC_17:", CDC_17))
-    # if (CDC_17>0) addCDC <- TRUE
-    returnDF["Child_Dependent_Care_Credit",2] <- CDC_17
+    CDC_17 <- dependentCareCrd("2017",summaryDF$summary_2017, filingStatus[2],incomeDF$Income_Tax_2017, credit_17 )
+    otherCredits["CDC",2] <- CDC_17["Child_Dependent_Care_Credit",]
+    print (otherCredits)
+    if (!is.data.frame(returnList[["CDC"]])){
+      returnList[["CDC"]] <- CDC_17
+    } else {
+      returnList[["CDC"]] <- cbind(returnList[["CDC"]], CDC_17)
+    }
   }
+  print(otherCredits)
+  print ("Testing CDC_DF")
+  print (returnList[["CDC"]])
+  
   #---------- Testing if Educational Credit need to be calculated-----------------------
+  returnList[["Education"]] <- 0
   if (credit_18["Expense_1"]>0 | credit_18["Expense_2"]>0) {# Calculate only when expenses are greater than zero
     print ("Calculate Educational credit for 2018")
-    EDC_18 <- educationalCrd("2018",summaryDF$summary_2018, filingStatus[1], credit_18, returnDF$summary_2018)
-    returnDF["Nonrefundable_Education_Credit",1] <- EDC_18["Line_19",]
+    CDC_18 
+    EDC_18 <- educationalCrd("2018",summaryDF$summary_2018, filingStatus[1], credit_18, otherCredits["CDC",1])
+    otherCredits["Education",1] <- EDC_18["Line_19",]
+    returnList[["Education"]] <- EDC_18
   }
   if (credit_17["Expense_1"]>0 | credit_17["Expense_2"]>0) {# Calculate only when expenses are greater than zero
     print ("Calculate Educational credit for 2017")
-    EDC_17 <- educationalCrd("2017",summaryDF$summary_2017, filingStatus[2], credit_17, returnDF$summary_2017)
-    returnDF["Nonrefundable_Education_Credit",2] <-  EDC_17["Line_19", ]
+    EDC_17 <- educationalCrd("2017",summaryDF$summary_2017, filingStatus[2], credit_17, otherCredits["CDC",2])
+    otherCredits["Education",2] <- EDC_17["Line_19",]
+    if (!is.data.frame(returnList[["Education"]])) returnList[["Education"]] <- EDC_17
+    else returnList[["Education"]] <- cbind(returnList[["Education"]], EDC_17)
   }
-  
-  
-  
-  print (returnDF)
-  return (returnDF)
+  print(otherCredits)
+  print ("Testing Education")
+  print (returnList[["Education"]])
+  return (returnList)
 }

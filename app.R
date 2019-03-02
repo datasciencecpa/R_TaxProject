@@ -29,7 +29,10 @@ ui <- fluidPage(
                     h4("Your Tax Summary"),
                     checkboxInput("taxSummary", label = "Your Tax Summary", value = TRUE),
                     dataTableOutput("taxSummaryTbl"),
-                    column(3, checkboxInput("displaySummaryGraph", label = "Display Graph", value = TRUE)),
+                    checkboxInput("viewCreditChb", label = "Detail Credit Calculation", value = FALSE),
+                    selectInput("creditsSelect", label = "Select Credit:", choices = list()),
+                    dataTableOutput("CreditTbl"),
+                    column(3, checkboxInput("displaySummaryGraph", label = "Display Graph", value = FALSE)),
                     plotOutput("summaryGraph")
                   ),
                   hr(),
@@ -37,7 +40,7 @@ ui <- fluidPage(
                     h4("Your Income"),
                     checkboxInput("displayIncomeChb", label="Display Income Table", value = TRUE),
                     dataTableOutput("totalIncomeTbl"),
-                    checkboxInput("displayTotalIncGraph",label = "Display Graph", value = TRUE),
+                    checkboxInput("displayTotalIncGraph",label = "Display Graph", value = FALSE),
                     plotOutput("totalIncGraph")
                   ), # End Income section
                   hr(),
@@ -45,7 +48,7 @@ ui <- fluidPage(
                     h4("Your Deductions Above AGI"),
                     checkboxInput("displayDeductionChb", label="Display Deduction Table", value = TRUE),
                     dataTableOutput("totalDeductionTbl"),
-                    checkboxInput("displayDeductionGraph", label = "Display Graph", value = TRUE),
+                    checkboxInput("displayDeductionGraph", label = "Display Graph", value = FALSE),
                     plotOutput("deductionGraph")
                   ), # End Deduction section
                   hr(),
@@ -134,10 +137,24 @@ server <- function(input, output, session) {
     if (!input$displayItemizedChb) { # Display detailed itemized deduction
       hide ("detailItemizedTbl")
     } else show ("detailItemizedTbl")
+    if (!input$taxSummary){
+      hide ("taxSummaryTbl")
+    } else {
+      show("taxSummaryTbl")
+    }
+    if (!input$viewCreditChb) {
+      hide ("CreditTbl")
+      hide ("creditsSelect")
+    }
+    else{
+      show ("CreditTbl")
+      show ("creditsSelect")
+    } 
   })
   #-------------------------------------------------------------------
   output$taxSummaryTbl <- renderDataTable({
-      #------------------------------------------------------------------
+      #------------------------------------------------------------------+
+      hide("viewCreditChb") # Hide this until some credit are available.
       # Step 1: Get income by calling function totalIncomeCalculation
       totalIncome <- totalIncomeCalculation(income())
       # Income_Type <- c("Total_W2_Wages", "Interest", "Dividends", "Taxable_Refunds","Alimony", "Qualified_Dividends",
@@ -194,8 +211,51 @@ server <- function(input, output, session) {
       print (summaryDF)
       # Step 5 - Calculate Credits if applicable.
       taxCredits <- creditCalculation(summaryDF, income(), filingStatus, credits()) 
-      print (paste("taxCredits: ", taxCredits))
-      summaryDF <- rbind(summaryDF, taxCredits)
+      creditNames <- names(taxCredits)
+      print (paste("Credit Names: ", creditNames))
+      creditLogical <- sapply(taxCredits, is.data.frame)
+      creditNames <- creditNames[creditLogical]
+      print (paste("Credit Names with Logical filter: ", creditNames))
+      if (sum(creditLogical)>0){
+        show("viewCreditChb")
+        # --------- Determine which credit is available through list of credit logical ------------
+        if (is.data.frame(taxCredits[["CDC"]])) { # CDC is dataframe, CDC credit available
+          if (length(colnames(taxCredits[["CDC"]])) == 2){
+            print ("Two year credit")
+            summaryDF["Child_Dependent_Care_Credit", ] <- taxCredits[["CDC"]]["Child_Dependent_Care_Credit",]
+          } else {
+            print("One year credit")
+            taxYear <- colnames(taxCredits[["CDC"]])
+            if (taxYear =="2018"){
+              summaryDF["Child_Dependent_Care_Credit",1] <- taxCredits[["CDC"]]["Child_Dependent_Care_Credit",]
+            }else {
+              summaryDF["Child_Dependent_Care_Credit",2] <- taxCredits[["CDC"]]["Child_Dependent_Care_Credit",]
+            }
+          }
+        }
+        if(is.data.frame(taxCredits[["Education"]])){
+          if (length(colnames(taxCredits[["Education"]]))==2){
+            print ("Two year credit")
+            summaryDF["Nonrefundable_Educational_Credit", ] <- taxCredits[["Education"]]["Line_19",]
+          }else {
+            print("One year credit")
+            taxYear <- colnames(taxCredits[["Education"]])
+            if (taxYear=="2018"){
+              summaryDF["Nonrefundable_Education_Credit",1] <- taxCredits[["Education"]]["Line_19",]
+            }
+            else {
+              summaryDF["Nonrefundable_Education_Credit",2] <- taxCredits[["Education"]]["Line_19",]
+            }
+          }
+        }
+      }
+      updateSelectInput(session,inputId = "creditsSelect",label = "Select Credit:", choices = creditNames, selected = creditNames[1])
+      output$CreditTbl <- renderDataTable({
+        creditSelected <- input$creditsSelect
+        print (paste("Credit Selected:", creditSelected))
+        return (taxCredits[[creditSelected]])
+      }, options = list(pageLength = 25))
+      summaryDF[is.na.data.frame(summaryDF)] <- 0
       return (summaryDF)
   })
   
