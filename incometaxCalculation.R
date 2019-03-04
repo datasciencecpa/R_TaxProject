@@ -96,7 +96,7 @@ totalIncomeCalculation <- function (incomeDF){
      incomeDF["TaxableIRA",2],
      incomeDF["Unemployment_Income", 2]
    )
-   #AGI_2017 <- c (AGI_2017, sum(AGI_2017))
+
    return (data.frame(AGI_2018, AGI_2017, row.names = Income_Type))
 }
 totalDeductionToAGI <- function (deductionsDF, statusDF, AGIIncome) {
@@ -313,5 +313,8 @@ creditCalculation <- function (summaryDF, incomeDF, filingStatus, creditDF){
   print(otherCredits)
   # print ("Testing Education")
   # print (returnList[["Education"]])
+  
+  #-----------netstep - calculate child tax credit
+  
   return (returnList)
 }

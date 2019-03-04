@@ -230,6 +230,8 @@ SDExemptionDeduction <- function (deductionDF, statusDF, AGI){
     }
     return (ExemptionAmt)
   }
+  # ------------ Function begin ----------------------#
+  # Step 1: Calculate amount of SD based on filing status, conditions (ages, blinds)
   row_2017 <- SDTbl[SDTbl$YEAR == 2017 & grepl(statusDF["Filing_Status", "Status_2017"], SDTbl$FILING_STATUS),]
   row_2018 <- SDTbl[SDTbl$YEAR == 2018 & grepl(statusDF["Filing_Status", "Status_2018"], SDTbl$FILING_STATUS),]
 
@@ -240,15 +242,15 @@ SDExemptionDeduction <- function (deductionDF, statusDF, AGI){
 
   SD_2017 <- row_2017$AMOUNT + num_2017*row_2017$ADDITIONAL_PER_CONDITION
   SD_2018 <- row_2018$AMOUNT + num_2018*row_2018$ADDITIONAL_PER_CONDITION
-
+  # End Step 1 ------------------------------------------------------------------------------------------
   deductions_2017 <- deductionDF$Deduction_2017
-  deductions_2018 <- deductionDF$Deduction_2018
-  deductions_2017[1] <- ifelse((deductions_2017[1] - AGI[2]*0.075)>0, (deductions_2017[1] - AGI[2]*0.075),0)
-  deductions_2018[1] <- ifelse((deductions_2018[1] -AGI[1]* 0.075)>0, (deductions_2018[1] -AGI[1]* 0.075),0)
+  deductions_2018 <- deductionDF$Deduction_2018 # Save information into a vector
+  deductions_2017[1] <- ifelse((deductions_2017[1] - AGI[2]*0.075)>0, (deductions_2017[1] - AGI[2]*0.075),0) # Eligible medical expense
+  deductions_2018[1] <- ifelse((deductions_2018[1] -AGI[1]* 0.075)>0, (deductions_2018[1] -AGI[1]* 0.075),0) # Eligible medical expense
   deductions_2017[6] <- PMICalculation(AGI[2], deductions_2017[6], as.character(statusDF["Filing_Status", "Status_2017"]))
   deductions_2018[6] <- 0 # Set this to zero since PMI was not extended for tax year 2018 - as of today.
-  deductions_2017[7] <- ifelse (deductions_2017[7]<=AGI[2]*0.5, deductions_2017[7], AGI[2]*0.5)
-  deductions_2018[7] <- ifelse (deductions_2018[7]<=AGI[1]*0.6, deductions_2018[7], AGI[1]*0.6)
+  deductions_2017[7] <- ifelse (deductions_2017[7]<=AGI[2]*0.5, deductions_2017[7], AGI[2]*0.5) # Calculate donation limitation
+  deductions_2018[7] <- ifelse (deductions_2018[7]<=AGI[1]*0.6, deductions_2018[7], AGI[1]*0.6) # Calculate donation limitation
   totalSALTDDeductions <- sum(deductions_2018[2:4])
   excess_SALT_2018 <- 0
   if (totalSALTDDeductions>10000) { # New SALT limitation for tax year 2018
