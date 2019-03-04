@@ -1,209 +1,121 @@
 incomeUI <- function (id){
   ns <- NS(id)
-  tabPanel("Income",
-    # Header
+  tabPanel("Incomes",
 
+    # --Wages section------------------------------------------------------------------------------------------------------------
+    h3("Your W-2 Wages"),
     fluidRow(
-      column(6,checkboxInput(ns("same"), label = "Applied everything from 2018 to 2017", value = TRUE )),
-      column(5, helpText("Check this box if you want to apply the same inputs from 2018 to 2017. Uncheck this box if you would like to make change to 2017"))
-    ), hr(),
-    # Wages
-    fluidRow(  
-      column(6, h4("2018"),
-        fluidRow(
-          column(6,numericInput(ns("yourWages_2018"), label = "Enter your wages from W-2, box 1:", value = 0)),
-          column(6,numericInput(ns("yourW2Tax_2018"), label = "Enter your income tax withheld, box 2:", value = 0))
-        ),# Wages row
-        fluidRow(
-          column(6,numericInput(ns("yourMedicareW2_2018"), label = "Enter your medicare wages from W-2, box 5:", value = 0)),
-          column(6,numericInput(ns("yourMedicareTax_2018"), label = "Enter your medicare tax withheld, box 6:", value = 0))
-          
-        ), # Medicare Wage & Tax Row
-        fluidRow(
-          column(6,numericInput(ns("spouseWages_2018"), label = "Enter spouse wages from W-2, box 1:", value = 0)),
-          column(6,numericInput(ns("spouseW2Tax_2018"), label = "Enter spouse income tax withheld, box 2:", value = 0))
-        ), # Spouse Wages
-        fluidRow(
-          column(6,numericInput(ns("spouseMedicareW2_2018"), label = "Enter your medicare wages from W-2, box 5:", value = 0)),
-          column(6,numericInput(ns("spouseMedicareTax_2018"), label = "Enter your medicare tax withheld, box 6:", value = 0))
-        ),# Spouse Medicare 
-        hr(),
-        h4("Your Additional W-2:"),
-        fluidRow(
-          column(6,numericInput(ns("addWages1_2018"), label = "Enter additional wages from W-2, box 1:", value = 0)),
-          column(6,numericInput(ns("addW2Tax1_2018"), label = "Enter income tax from W-2, box 2:", value = 0))
-        ), # Additional wages 1
-        fluidRow(
-          column(6,numericInput(ns("addMedicare1_2018"), label = "Enter your medicare wages from W-2, box 5:", value = 0)),
-          column(6,numericInput(ns("addMedicareTax1_2018"), label = "Enter your medicare tax withheld, box 6:", value = 0))
-                 
-        ), # Additional medicare wages and taxes
-        fluidRow(
-          actionButton(ns("hideWages1_2018"), label = "Delete this W-2", class="btn btn-danger btn-responsive")
-        ), # Action Button
-        hr(),
-        h4("Spouse Additional W-2:"),
-        fluidRow(
-          column(6,numericInput(ns("addWages2_2018"), label = "Enter additional wages from W-2, box 1:", value = 0)),
-          column(6,numericInput(ns("addW2Tax2_2018"), label = "Enter income tax from W-2, box 2:", value = 0))
-        ), # Additional Wages 2
-        fluidRow(
-          column(6,numericInput(ns("addMedicare2_2018"), label = "Enter your medicare wages from W-2, box 5:", value = 0)),
-          column(6,numericInput(ns("addMedicareTax2_2018"), label = "Enter your medicare tax withheld, box 6:", value = 0))
-        ), # Additional Medicare wages and tax 2
-        fluidRow(
-          actionButton(ns("hideWages2_2018"), label = "Delete this W-2",class="btn btn-danger btn-responsive")
-        )   
-      ),
-      column(6,h4("2017"),
-        fluidRow(
-          column(6,numericInput(ns("yourWages_2017"), label = "Enter your wages from W-2, box 1:", value = 0)),
-          column(6,numericInput(ns("yourW2Tax_2017"), label = "Enter your income tax withheld, box 2:", value = 0))
-        ), # Your Wages
-        fluidRow(
-          column(6,numericInput(ns("yourMedicareW2_2017"), label = "Enter your medicare wages from W-2, box 5:", value = 0)),
-          column(6,numericInput(ns("yourMedicareTax_2017"), label = "Enter your medicare tax withheld, box 6:", value = 0))
-        ), # Your medicare wages & tax
-        fluidRow(
-          column(6,numericInput(ns("spouseWages_2017"), label = "Enter spouse wages from W-2, box 1:", value = 0)),
-          column(6,numericInput(ns("spouseW2Tax_2017"), label = "Enter spouse income tax withheld, box 2:", value = 0))
-        ), # Spouse Wages
-        fluidRow(
-          column(6,numericInput(ns("spouseMedicareW2_2017"), label = "Enter your medicare wages from W-2, box 5:", value = 0)),
-          column(6,numericInput(ns("spouseMedicareTax_2017"), label = "Enter your medicare tax withheld, box 6:", value = 0))
-        ), # Spouse medicare wages and tax
-        hr(),
-        h4("Your Additional W-2:"),
-        fluidRow(
-          column(6,numericInput(ns("addWages1_2017"), label = "Enter additional wages from W-2, box 1:", value = 0)),
-          column(6,numericInput(ns("addW2Tax1_2017"), label = "Enter income tax from W-2, box 2:", value = 0))
-        ), # Additional wages 1
-        fluidRow(
-          column(6,numericInput(ns("addMedicare1_2017"), label = "Enter your medicare wages from W-2, box 5:", value = 0)),
-          column(6,numericInput(ns("addMedicareTax1_2017"), label = "Enter your medicare tax withheld, box 6:", value = 0))
-        ), # Additional medicare wages and tax
-        fluidRow(
-          actionButton(ns("hideWages1_2017"), label = "Delete this W-2",class="btn btn-danger btn-responsive")
-        ), # Action button 1
-        hr(),
-        h4("Spouse Additional W-2:"),
-        fluidRow(
-          column(6, numericInput(ns("addWages2_2017"), label = "Enter additional wages from W-2, box 1:", value = 0)),
-          column(6,numericInput(ns("addW2Tax2_2017"), label = "Enter income tax from W-2, box 2:", value = 0))
-        ), # Additional Wages 2
-        fluidRow(
-          column(6,numericInput(ns("addMedicare2_2017"), label = "Enter your medicare wages from W-2, box 5:", value = 0)),
-          column(6,numericInput(ns("addMedicareTax2_2017"), label = "Enter your medicare tax withheld, box 6:", value = 0))
-        ), # Additional medicare 2 wages and tax
-        fluidRow(
-          actionButton(ns("hideWages2_2017"), label = "Delete this W-2", class="btn btn-danger btn-responsive")
-        )
-      )
-    ),
+      column(6,numericInput(ns("yourWages"), label = "Enter your wages from W-2, box 1:", value = 0)),
+      column(6,numericInput(ns("yourW2Tax"), label = "Enter your income tax withheld, box 2:", value = 0))
+    ),# Your Wages row
+    fluidRow(
+      column(6,numericInput(ns("yourMedicareW2"), label = "Enter your medicare wages from W-2, box 5:", value = 0)),
+      column(6,numericInput(ns("yourMedicareTax"), label = "Enter your medicare tax withheld, box 6:", value = 0))
+    ), # Medicare Wage & Tax Row
+    fluidRow(
+      column(6,numericInput(ns("spouseWages"), label = "Enter spouse wages from W-2, box 1:", value = 0)),
+      column(6,numericInput(ns("spouseW2Tax"), label = "Enter spouse income tax withheld, box 2:", value = 0))
+    ), # Spouse Wages
+    fluidRow(
+      column(6,numericInput(ns("spouseMedicareW2"), label = "Enter your medicare wages from W-2, box 5:", value = 0)),
+      column(6,numericInput(ns("spouseMedicareTax"), label = "Enter your medicare tax withheld, box 6:", value = 0))
+    ),# Spouse Medicare 
     hr(),
-    # Interest
+    h3("Your Additional W-2:"),
     fluidRow(
-      column(6, h4("2018"), 
-        column(6,
-            numericInput(ns("interest_2018"), label = "Enter your taxable interest income: (Form 1099-Int, Box 1)",
-                            value = 0, min=0)
-        ), 
-        column(6,
-            numericInput(ns("interestTax_2018"), label = "Income tax withheld from interest income:", value = 0, min=0)
-        )
-      ),
-      column(6,h4("2017"), 
-        column(6,
-            numericInput(ns("interest_2017"), label = "Enter your taxable interest income: (Form 1099-Int, Box 1)",
-                          value = 0, min=0)
-        ),
-        column(6,
-            numericInput(ns("interestTax_2017"), label = "Income tax withheld from interest income:", value = 0, min=0)     
-        )
-      )       
-    ),
+      column(6,numericInput(ns("addWages1"), label = "Enter additional wages from W-2, box 1:", value = 0)),
+      column(6,numericInput(ns("addW2Tax1"), label = "Enter income tax from W-2, box 2:", value = 0))
+    ), # Additional wages 1
+    fluidRow(
+      column(6,numericInput(ns("addMedicare1"), label = "Enter your medicare wages from W-2, box 5:", value = 0)),
+      column(6,numericInput(ns("addMedicareTax1"), label = "Enter your medicare tax withheld, box 6:", value = 0))
+    ), # Additional medicare wages and taxes
+    fluidRow(
+      actionButton(ns("hideWages1"), label = "Delete this W-2", class="btn btn-danger btn-responsive")
+    ), # Action Button
     hr(),
-    # Ordinary and Qualified Dividends
+    h3("Spouse Additional W-2:"),
     fluidRow(
-      column(6, h4("2018"),
-           numericInput(ns("ordinaryDividends_2018"), label = "Enter your ordinary dividends income: (Form 1099-DIV)",
-                        value = 0, min=0),
-           numericInput(ns("qualifiedDividends_2018"), label = "Enter your qualified dividends income: (Form 1099-DIV)",
-                        value = 0, min=0),
-           
-           numericInput(ns("dividendTax_2018"), label = "Enter your dividend income tax withheld: (Form 1099-DIV)",
-                        value = 0, min=0)
-      ),
-      column(6, h4("2017"),
-           numericInput(ns("ordinaryDividends_2017"), label = "Enter your ordinary dividends income: (Form 1099-DIV)",
-                        value = 0, min=0),
-           numericInput(ns("qualifiedDividends_2017"), label = "Enter your qualified dividends income: (Form 1099-DIV)",
-                        value = 0, min=0),
-           numericInput(ns("dividendTax_2017"), label = "Enter your dividend income tax withheld: (Form 1099-DIV)",
-                        value = 0, min=0)
-      )      
+      column(6,numericInput(ns("addWages2"), label = "Enter additional wages from W-2, box 1:", value = 0)),
+      column(6,numericInput(ns("addW2Tax2"), label = "Enter income tax from W-2, box 2:", value = 0))
+    ), # Additional Wages 2
+    fluidRow(
+      column(6,numericInput(ns("addMedicare2"), label = "Enter your medicare wages from W-2, box 5:", value = 0)),
+      column(6,numericInput(ns("addMedicareTax2"), label = "Enter your medicare tax withheld, box 6:", value = 0))
+    ), # Additional Medicare wages and tax 2
+    fluidRow(
+      actionButton(ns("hideWages2"), label = "Delete this W-2",class="btn btn-danger btn-responsive")
+    ),   
+    #-- End Wages Section ------------------------------------------------------------------------------------------------------------
+    hr(),
+    # Interest Section --------------------------------------------------------------------------------------------------------------------
+    fluidRow(
+        column(6,
+            numericInput(ns("interest"), label = "Enter your taxable interest income: (Form 1099-Int, Box 1)",
+                            value = 0, min=0)), 
+        column(6,
+            numericInput(ns("interestTax"), label = "Income tax withheld from interest income:", value = 0, min=0))
     ),
+    # End Interest Section -----------------------------------------------------------------------------------------------------------------
+    hr(),
+    # Ordinary and Qualified Dividends------------------------------------------------------------------------
+    fluidRow(
+      column(4, 
+           numericInput(ns("ordinaryDividends"), label = "Enter your ordinary dividends income: (Form 1099-DIV)",
+                        value = 0, min=0)),
+      column(4,
+           numericInput(ns("qualifiedDividends"), label = "Enter your qualified dividends income: (Form 1099-DIV)",
+                        value = 0, min=0)),
+      column(4,
+           numericInput(ns("dividendTax"), label = "Enter your dividend income tax withheld: (Form 1099-DIV)",
+                        value = 0, min=0))
+    ),
+    # - End Dividends section-------------------------------------------------------------------------------------------------------------
     hr(), #Taxable Refunds
     helpText("Report taxable refunds, credits, or offsets of State and Local Income Taxes only if they are taxable.
              If you did not itemize deductions, or elected to deduct state and local general sales taxes instead of state and local income taxes -
              your refund is not taxable. Enter zero below if this applied to you."),
     fluidRow(
-      column(6, h4("2018"),
-             numericInput(ns("taxRefund_2018"), label = "Taxable refunds, credits, or offsets of state and local income taxes", value = 0)),
-      column(6, h4("2017"),
-             numericInput(ns("taxRefund_2017"), label = "Taxable refunds, credits, or offsets of state and local income taxes", value = 0))
-    ), hr(), #Alimony received
+       numericInput(ns("taxRefund"), label = "Taxable refunds, credits, or offsets of state and local income taxes", value = 0)
+    ),
+    # - End Taxable Refunds section ------------------------------------------------------------------------------------------------------------
+    hr(), #Alimony received
     helpText("Your alimony income may not be taxable in 2018. If this is the case, enter zero for 2018 below. See ", 
              a(href="https://www.irs.gov/forms-pubs/about-publication-504", "IRS Publication 504"), " for detail."),
-    fluidRow(
-      column(6, h4("2018"),
-             numericInput(ns("alimony_2018"), label = "Alimony received", value = 0)),
-      column(6, h4("2017"),
-             numericInput(ns("alimony_2017"), label = "Alimony received", value = 0))
-    ), hr(),
-    # Capital Gain
-    helpText("Enter amount of net short-term and/or long-term capital gain/loss as showed on Schedule D to box below.
-             This app won't calculate special capital gain such as section 1250 gain or collectible gain."),
-    fluidRow(
-      column(4, h4("2018"),
-            numericInput(ns("LTGain_2018"), label = "Enter your long-term capital gains (loss):", value=0 ),
-            numericInput(ns("STGain_2018"), label = "Enter your short-term capital gains (loss)", value = 0),
-            numericInput(ns("capitalTax_2018"), label = "Enter your income tax withheld:", value = 0)
-      ),
-      column(4,h4("2017"),
-            numericInput(ns("LTGain_2017"), label = "Enter your long-term capital gains (loss):", value=0),
-            numericInput(ns("STGain_2017"), label = "Enter your short-term capital gains (loss):", value = 0),
-            numericInput(ns("capitalTax_2017"), label = "Enter your income tax withheld:", value = 0)
-      ), 
-      column(4,tags$strong("Help:"), a(href= "https://www.irs.gov/taxtopics/tc409", "Topic No. 409 - Capital Gains and Losses"))
+    fluidRow(numericInput(ns("alimony"), label = "Alimony received", value = 0)
     ),
+    #-- End Alimony section ---------------------------------------------------------------------------------------------------------------------
+    hr(),
+    # Capital Gains
+    helpText("Enter amount of net short-term and/or long-term capital gains/losses as showed on Schedule D to boxes below.
+             This app won't calculate special capital gains such as section 1250 gain or collectible gain."),
+    fluidRow(
+      column(9, 
+            numericInput(ns("LTGain"), label = "Enter your long-term capital gains (loss):", value=0 ),
+            numericInput(ns("STGain"), label = "Enter your short-term capital gains (loss)", value = 0),
+            numericInput(ns("capitalTax"), label = "Enter your income tax withheld:", value = 0)
+      ),
+      column(3,tags$strong("Help:"), a(href= "https://www.irs.gov/taxtopics/tc409", "Topic No. 409 - Capital Gains and Losses"))
+    ),
+    # --- End Capital Gains section------------------------------------------------------------------------------------------------------------
     hr(),
     # IRA Distributions
     fluidRow(
-      column(4, h4("2018"),
-            numericInput(ns("IRADist_2018"), label = "Enter your taxable distribution IRA:", value = 0, min= 0),
-            numericInput(ns("IRATax_2018"), label = "Enter your income tax withheld:", value = 0),
-            checkboxInput(ns("IRAException_2018"), label = "Check if you meet exception to 10% additional tax", value = FALSE)
+      column(9,
+            numericInput(ns("IRADist"), label = "Enter your taxable distribution IRA:", value = 0, min= 0),
+            numericInput(ns("IRATax"), label = "Enter your income tax withheld:", value = 0),
+            checkboxInput(ns("IRAException"), label = "Check if you meet exception to 10% additional tax", value = FALSE)
       ),
-      column(4, h4("2017"),
-            numericInput(ns("IRADist_2017"), label = "Enter your taxable distribution IRA:", value = 0, min= 0),
-            numericInput(ns("IRATax_2017"), label = "Enter your income tax withheld:", value = 0),
-            checkboxInput(ns("IRAException_2017"), label = "Check if you meet exception to 10% additional tax", value = FALSE)
-      ),
-      column(4, tags$strong("Help:"), 
+      column(3, tags$strong("Help:"), 
              a(href="https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-tax-on-early-distributions",
               "Exception to Tax on Early Distributions")
       )
-    ), hr(), # Unemployment income 
+    ), 
+    # End IRA Distributions -------------------------------------------------------------------------------------------------------------------
+    hr(), # Unemployment income 
     fluidRow(
-      column(6, h4("2018"),
-        column(6, numericInput(ns("unemployment_2018"), label= "Unemployment income received", value = 0)),
-        column(6, numericInput(ns("unemploymentTax_2018"), label= "Unemployment income tax withheld", value = 0))
-      ),
-      column(6, h4("2017"),
-             column(6, numericInput(ns("unemployment_2017"), label= "Unemployment income received", value = 0)),
-             column(6, numericInput(ns("unemploymentTax_2017"), label= "Unemployment income tax withheld", value = 0))
-      )
+        column(6, numericInput(ns("unemployment"), label= "Unemployment income received", value = 0)),
+        column(6, numericInput(ns("unemploymentTax"), label= "Unemployment income tax withheld", value = 0))
     )
   )
 } # finish incomeUI function
@@ -211,139 +123,60 @@ incomeUI <- function (id){
 income <- function (input, output, session ){
   
   
-  observeEvent(input$hideWages1_2018,{
+  observeEvent(input$hideWages1,{
       # hide additional wages 1 and reset value to zero, and hide the button after it done
-      hideshow(c("addWages1_2018", "addW2Tax1_2018", "addMedicare1_2018", "addMedicareTax1_2018","hideWages1_2018"), hide = TRUE)
-      updateNumInput_2(session, c("addWages1_2018", "addW2Tax1_2018","addMedicare1_2018", "addMedicareTax1_2018"),
+      hideshow(c("addWages1", "addW2Tax1", "addMedicare1", "addMedicareTax1","hideWages1"), hide = TRUE)
+      updateNumInput_2(session, c("addWages1", "addW2Tax1","addMedicare1", "addMedicareTax1"),
                      values = c(0,0,0,0))
   })
-  observeEvent(input$hideWages2_2018, {
+  observeEvent(input$hideWages2, {
       # hide additional wages 2 and reset value to zero, and hide the button after it done
 
-      hideshow(c("addWages2_2018", "addW2Tax2_2018", "addMedicare2_2018","addMedicareTax2_2018","hideWages2_2018"), hide = TRUE)
-      updateNumInput_2(session, c("addWages2_2018","addW2Tax2_2018","addMedicare2_2018","addMedicareTax2_2018"),
+      hideshow(c("addWages2", "addW2Tax2", "addMedicare2","addMedicareTax2","hideWages2"), hide = TRUE)
+      updateNumInput_2(session, c("addWages2","addW2Tax2","addMedicare2","addMedicareTax2"),
                      c(0,0,0,0))
   })
-  observeEvent(input$hideWages1_2017,{
-      # hide additional wages 1 and reset value to zero, and hide the button after it done
-  
-      hideshow(c("addWages1_2017", "addW2Tax1_2017", "addMedicare1_2017", "addMedicareTax1_2017","hideWages1_2017"), hide = TRUE)
-      updateNumInput_2(session, c("addWages1_2017","addW2Tax1_2017","addMedicare1_2017","addMedicareTax1_2017"),
-                     c(0,0,0,0))
-  })
-  observeEvent (input$hideWages2_2017, {
-      # hide additional wages 2 and reset value to zero, and hide the button after it done
-      hideshow(c("addWages2_2017", "addW2Tax2_2017","addMedicare2_2017", "addMedicareTax2_2017","hideWages2_2017"), hide = TRUE)
-      updateNumInput_2(session, c("addWages2_2017","addW2Tax2_2017","addMedicare2_2017","addMedicareTax2_2017"),
-                     c(0,0,0,0))
-  })
-  observe({  # Use this to handle check box checked.
-    if(input$same){
-      updateCheckboxInput(session, "IRAException_2017", label = "Check if you meet exception to 10% additional tax", value = input$IRAException_2018 )
-      updateNumInput(session, values= list(c("yourWages_2017", "Enter your wages from W-2, box 1:", input$yourWages_2018),
-                                            c("yourW2Tax_2017", "Enter your income tax withheld, box 2:",input$yourW2Tax_2018),
-                                            c("spouseWages_2017","Enter spouse wages from W-2, box 1:",input$spouseWages_2018),
-                                            c("spouseW2Tax_2017","Enter spouse income tax withheld, box 2:",input$spouseW2Tax_2018),
-                                            c("yourMedicareW2_2017", "Enter your medicare wages from W-2, box 5:",input$yourMedicareW2_2018 ),
-                                            c("yourMedicareTax_2017","Enter your medicare tax withheld, box 6:",input$yourMedicareTax_2018),
-                                            c("spouseMedicareW2_2017","Enter your medicare wages from W-2, box 5:",input$spouseMedicareW2_2018),
-                                            c("spouseMedicareTax_2017", "Enter your medicare tax withheld, box 6:", input$spouseMedicareTax_2018),
-                                            c("addMedicare1_2017","Enter your medicare wages from W-2, box 5:", input$addMedicare1_2018),
-                                            c("addMedicareTax1_2017","Enter your medicare tax withheld, box 6:", input$addMedicareTax1_2018),
-                                            c("addWages1_2017", "Enter additional wages from W-2, box 1:", input$addWages1_2018),
-                                            c("addW2Tax1_2017", "Enter income tax from W-2, box 2:", input$addW2Tax1_2018),
-                                            c("addWages2_2017", "Enter additional wages from W-2, box 1:", input$addWages2_2018),
-                                            c("addW2Tax2_2017", "Enter income tax from W-2, box 2:", input$addW2Tax2_2018),
-                                            c("addMedicare2_2017", "Enter your medicare wages from W-2, box 5:", input$addMedicare2_2018),
-                                            c("addMedicareTax2_2017", "Enter your medicare tax withheld, box 6:", input$addMedicareTax2_2018),
-                                            c("interest_2017", "Enter your taxable interest income: (Form 1099-Int, Box 1)", input$interest_2018),
-                                            c("interestTax_2017", "Income tax withheld from interest income", input$interestTax_2018),
-                                            c("ordinaryDividends_2017", "Enter your ordinary dividends income: (Form 1099-DIV)", input$ordinaryDividends_2018),
-                                            c("dividendTax_2017", "Enter your dividend income tax withheld: (Form 1099-DIV)", input$dividendTax_2018),
-                                            c("qualifiedDividends_2017","Enter your qualified dividends income: (Form 1099-DIV)", input$qualifiedDividends_2018),
-                                            c("LTGain_2017","Enter your long-term capital gains (loss):", input$LTGain_2018),
-                                            c("STGain_2017", "Enter your long-term capital gains (loss):", input$STGain_2018),
-                                            c("capitalTax_2017", "Enter your income tax withheld:", input$capitalTax_2018),
-                                            c("IRADist_2017", "Enter your taxable distribution IRA:", input$IRADist_2018),
-                                            c("IRATax_2017","Enter your income tax withheld:", input$IRATax_2018),
-                                            c("taxRefund_2017", "Taxable refunds, credits, or offsets of state and local income taxes", input$taxRefund_2018),
-                                            c("alimony_2017", "Alimony received", input$alimony_2018),
-                                            c("unemployment_2017","Unemployment income received", input$unemployment_2018),
-                                            c("unemploymentTax_2017","Unemployment income tax withheld", input$unemploymentTax_2018)
-                      ))
-      
-    }
-  })
+
   incomeDF <- reactive({
     rowNames <- c("Your_Wages", "Your_Medicare_Wage", "Spouse_Wages", "Spouse_Medicare_Wage", "Additional_Wages_1", "Add_Medicare_Wage1", "Additional_Wages_2",
                   "Add_Medicare_Wage2", "Interest", "Ordinary_Dividends","Qualified_Dividends","Tax_Refunds", "Alimony", "Long_Term_Gains", "Short_Term_Gains",
                   "TaxableIRA", "Exception", "Unemployment_Income", "Your_W2_Tax", "Your_Medicare_Tax", "Spouse_W2_Tax","Spouse_Medicare_Tax", 
                   "Additional_W2_Tax_1","Add_Medicare_Tax1", "Additional_W2_Tax_2", "Add_Medicare_Tax2",
                   "Interest_Tax", "Dividend_Tax", "Capital_Gain_Tax", "IRA_Tax", "Unemployment_Tax")
-    Income_Tax_2018 <- c(input$yourWages_2018,
-                         input$yourMedicareW2_2018,
-                         input$spouseWages_2018,
-                         input$spouseMedicareW2_2018,
-                         input$addWages1_2018,
-                         input$addMedicare1_2018,
-                         input$addWages2_2018,
-                         input$addMedicare2_2018,
-                         input$interest_2018,
-                         input$ordinaryDividends_2018,
-                         input$qualifiedDividends_2018,
-                         input$taxRefund_2018,
-                         input$alimony_2018,
-                         input$LTGain_2018,
-                         input$STGain_2018,
-                         input$IRADist_2018,
-                         as.numeric(input$IRAException_2018),
-                         input$unemployment_2018,
-                         input$yourW2Tax_2018,
-                         input$yourMedicareTax_2018,
-                         input$spouseW2Tax_2018,
-                         input$spouseMedicareTax_2018,
-                         input$addW2Tax1_2018,
-                         input$addMedicareTax1_2018,
-                         input$addW2Tax2_2018,
-                         input$addMedicareTax2_2018,
-                         input$interestTax_2018, 
-                         input$dividendTax_2018,
-                         input$capitalTax_2018,
-                         input$IRATax_2018,
-                         input$unemploymentTax_2018
+    Income_Tax_2018 <- c(input$yourWages,
+                         input$yourMedicareW2,
+                         input$spouseWages,
+                         input$spouseMedicareW2,
+                         input$addWages1,
+                         input$addMedicare1,
+                         input$addWages2,
+                         input$addMedicare2,
+                         input$interest,
+                         input$ordinaryDividends,
+                         input$qualifiedDividends,
+                         input$taxRefund,
+                         input$alimony,
+                         input$LTGain,
+                         input$STGain,
+                         input$IRADist,
+                         as.numeric(input$IRAException),
+                         input$unemployment,
+                         input$yourW2Tax,
+                         input$yourMedicareTax,
+                         input$spouseW2Tax,
+                         input$spouseMedicareTax,
+                         input$addW2Tax1,
+                         input$addMedicareTax1,
+                         input$addW2Tax2,
+                         input$addMedicareTax2,
+                         input$interestTax, 
+                         input$dividendTax,
+                         input$capitalTax,
+                         input$IRATax,
+                         input$unemploymentTax
                          )
-    Income_Tax_2017 <- c(input$yourWages_2017,
-                         input$yourMedicareW2_2017,
-                         input$spouseWages_2017,
-                         input$spouseMedicareW2_2017,
-                         input$addWages1_2017,
-                         input$addMedicare1_2017,
-                         input$addWages2_2017,
-                         input$addMedicare2_2017,
-                         input$interest_2017,
-                         input$ordinaryDividends_2017,
-                         input$qualifiedDividends_2017,
-                         input$taxRefund_2017,
-                         input$alimony_2018,
-                         input$LTGain_2017,
-                         input$STGain_2017,
-                         input$IRADist_2017,
-                         as.numeric(input$IRAException_2017),
-                         input$unemployment_2017,
-                         input$yourW2Tax_2017,
-                         input$yourMedicareTax_2017,
-                         input$spouseW2Tax_2017,
-                         input$spouseMedicareTax_2017,
-                         input$addW2Tax1_2017,
-                         input$addMedicareTax1_2017,
-                         input$addW2Tax2_2017,
-                         input$addMedicareTax2_2017,
-                         input$interestTax_2017, 
-                         input$dividendTax_2017,
-                         input$capitalTax_2017,
-                         input$IRATax_2017, 
-                         input$unemploymentTax_2017)
-    dfIncome <- data.frame(Income_Tax_2018, Income_Tax_2017,row.names = rowNames, stringsAsFactors = FALSE)
+  
+    dfIncome <- data.frame(Income_Tax_2018,row.names = rowNames, stringsAsFactors = FALSE)
     dfIncome[is.na.data.frame(dfIncome)] <- 0
     return (dfIncome)
   })
