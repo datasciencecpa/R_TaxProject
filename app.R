@@ -201,6 +201,8 @@ server <- function(input, output, session) {
             show("stackedDeductionChb")
           }
           deductionDF <- deductionDF[valueRow,]
+          deductionDF$Deduction_2018 <- as.numeric(deductionDF$Deduction_2018)
+          deductionDF$Deduction_2017 <- as.numeric(deductionDF$Deduction_2017)
           Deduction_Type <- rownames(deductionDF)
           deductionDF <- data.frame(Deduction_Type, deductionDF, row.names = NULL)
           # rownames(deductionDF) <- NULL
