@@ -47,8 +47,9 @@ incomeUI <- function (id){
       actionButton(ns("hideWages2"), label = "Delete this W-2",class="btn btn-danger btn-responsive")
     ),   
     #-- End Wages Section ------------------------------------------------------------------------------------------------------------
-    hr(),
     # Interest Section --------------------------------------------------------------------------------------------------------------------
+    hr(),
+    h3("Taxable Interest Income"),
     fluidRow(
         column(6,
             numericInput(ns("interest"), label = "Enter your taxable interest income: (Form 1099-Int, Box 1)",
@@ -57,8 +58,9 @@ incomeUI <- function (id){
             numericInput(ns("interestTax"), label = "Income tax withheld from interest income:", value = 0, min=0))
     ),
     # End Interest Section -----------------------------------------------------------------------------------------------------------------
-    hr(),
+   
     # Ordinary and Qualified Dividends------------------------------------------------------------------------
+    hr(),h3("Dividends Income"),
     fluidRow(
       column(4, 
            numericInput(ns("ordinaryDividends"), label = "Enter your ordinary dividends income: (Form 1099-DIV)",
@@ -71,7 +73,7 @@ incomeUI <- function (id){
                         value = 0, min=0))
     ),
     # - End Dividends section-------------------------------------------------------------------------------------------------------------
-    hr(), #Taxable Refunds
+    hr(), h3("Taxable Refunds"), #Taxable Refunds
     helpText("Report taxable refunds, credits, or offsets of State and Local Income Taxes only if they are taxable.
              If you did not itemize deductions, or elected to deduct state and local general sales taxes instead of state and local income taxes -
              your refund is not taxable. Enter zero below if this applied to you."),
@@ -79,13 +81,13 @@ incomeUI <- function (id){
        numericInput(ns("taxRefund"), label = "Taxable refunds, credits, or offsets of state and local income taxes", value = 0)
     ),
     # - End Taxable Refunds section ------------------------------------------------------------------------------------------------------------
-    hr(), #Alimony received
+    hr(), h3("Alimony Income"), #Alimony received
     helpText("Your alimony income may not be taxable in 2018. If this is the case, enter zero for 2018 below. See ", 
              a(href="https://www.irs.gov/forms-pubs/about-publication-504", "IRS Publication 504"), " for detail."),
     fluidRow(numericInput(ns("alimony"), label = "Alimony received", value = 0)
     ),
     #-- End Alimony section ---------------------------------------------------------------------------------------------------------------------
-    hr(),
+    hr(), h3("Capital Gains/Losses"),
     # Capital Gains
     helpText("Enter amount of net short-term and/or long-term capital gains/losses as showed on Schedule D to boxes below.
              This app won't calculate special capital gains such as section 1250 gain or collectible gain."),
@@ -98,7 +100,7 @@ incomeUI <- function (id){
       column(3,tags$strong("Help:"), a(href= "https://www.irs.gov/taxtopics/tc409", "Topic No. 409 - Capital Gains and Losses"))
     ),
     # --- End Capital Gains section------------------------------------------------------------------------------------------------------------
-    hr(),
+    hr(), h3("IRA Distribution Income"),
     # IRA Distributions
     fluidRow(
       column(9,
@@ -112,7 +114,7 @@ incomeUI <- function (id){
       )
     ), 
     # End IRA Distributions -------------------------------------------------------------------------------------------------------------------
-    hr(), # Unemployment income 
+    hr(),h3("Unemployment Income"),# Unemployment income 
     fluidRow(
         column(6, numericInput(ns("unemployment"), label= "Unemployment income received", value = 0)),
         column(6, numericInput(ns("unemploymentTax"), label= "Unemployment income tax withheld", value = 0))
