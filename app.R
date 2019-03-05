@@ -27,40 +27,24 @@ ui <- fluidPage(
          tabPanel("Results",
                   fluidRow(
                     h4("Your Tax Summary"),
-                    column(4,checkboxInput("taxSummary", label = "Your Tax Summary", value = TRUE)),
-                    column(4, checkboxInput("displaySummaryGraph", label = "Display Graph", value = FALSE)),
+                    # column(4,checkboxInput("taxSummary", label = "Your Tax Summary", value = TRUE)),
+                    checkboxInput("add2017", label = "See Results Under 2017 Rules", value = FALSE),
                     dataTableOutput("taxSummaryTbl"),
-                    column(4,checkboxInput("viewCreditChb", label = "Detail Credit Calculation", value = FALSE)),
-                    column(8,selectInput("creditsSelect", label = "Select Credit:", choices = list())),
                     dataTableOutput("CreditTbl"),
+                    checkboxInput("viewCreditChb", label = "Detail Credit Calculation", value = FALSE),
+                    selectInput("creditsSelect", label = "Select Credit:", choices = list()),
+                    checkboxInput("displaySummaryGraph", label = "Display Graph", value = FALSE),
                     plotOutput("summaryGraph")
                   ),
                   hr(),
                   fluidRow(
-                    h4("Your Income Summary"),
-                    column(4, checkboxInput("displayIncomeChb", label="Display Income Table", value = FALSE)),
-                    column(4,checkboxInput("displayTotalIncGraph",label = "Display Graph", value = FALSE)),
-                    column(4, checkboxInput("stackedIncomeChb", label = "Stacked Income By Year", value = FALSE)),
-                    dataTableOutput("totalIncomeTbl"),
-                    plotOutput("totalIncGraph")
-                  ), # End Income section
-                  hr(),
-                  fluidRow(
-                    h4("Your Deductions Above AGI"),
-                    column(4,checkboxInput("displayDeductionChb", label="Display Deduction Table", value = FALSE)),
-                    column(4,checkboxInput("displayDeductionGraph", label = "Display Graph", value = FALSE)),
-                    column(4,checkboxInput("stackedDeductionChb", label = "Stacked Deductions By Year", value = FALSE)),
-                    dataTableOutput("totalDeductionTbl"),
-                    plotOutput("deductionGraph")
-                  ), # End Deduction section
-                  hr(),
-                  fluidRow(
-                    h4("Your Standard Deduction or Itemized Deduction"),
-                    column(4,checkboxInput("displayDeductionBlAGI", label = "Display Deduction Table", value = FALSE)),
-                    column(4,checkboxInput("displayItemizedChb", label="Display Itemized Table", value = FALSE)),
-                    dataTableOutput("belowAGIDeductionTbl"),
-                    dataTableOutput("detailItemizedTbl")
-                  ) # End Itemized section
+                    h4("Other Details Summary"),
+                    selectInput("otherDetailSummary",label = "Select Other Tax Detail Summary", choices = list(c("NONE")),
+                                selected = "NONE"),
+                    dataTableOutput("otherDetailTbl"),
+                    checkboxInput("displayOtherDetailGrh", label = "Display Graph", value= FALSE),
+                    plotOutput("detailGraph")
+                  ) # End Other Detail Section
          )
        )
     ),
@@ -100,7 +84,7 @@ ui <- fluidPage(
 )
 
 server <- function(input, output, session) {
-  # get statusInformation, incomeInformation, and deductions information entered by user.
+  # get statusInformation, incomeInformation,deductions, and credits information entered by user.
 
   statusInformation <- callModule(filingInformation, "filingInformation", session = session)
   income <- callModule(income,"income", session = session)
@@ -110,66 +94,37 @@ server <- function(input, output, session) {
   #--------------------------------------------------------------------------------
   # Display user entered information to information summary tab
   output$FS_Summary <- renderDataTable(statusInformation(), options= list(pageLength = 25), filter = "top")
-  output$Income_Summary <- renderDataTable(
-    income(), options = list(pageLength = 25), filter = 'top'
-  )
-  output$Deduction_Summary <- renderDataTable(
-    deductions(), options = list(pageLength = 25), filter="top"
-  )
+  output$Income_Summary <- renderDataTable(income(), options = list(pageLength = 25), filter = 'top')
+  output$Deduction_Summary <- renderDataTable(deductions(), options = list(pageLength = 25), filter="top")
   
   # -- Observe when user check on display graph---
   observe({
-    if (!input$displayTotalIncGraph){ # Display total income graph
-      hide("totalIncGraph")
-    } else show ("totalIncGraph")
-    if (!input$displayIncomeChb) {  # Display Income Table
-      hide ("totalIncomeTbl")  
-    } else {
-      show ("totalIncomeTbl")
-    }
-    if (!input$displayDeductionGraph){ # Display above AGI Deduction graph
-      hide ("deductionGraph")
-    } else show ("deductionGraph")
-    if (!input$displayDeductionChb) { # Display above AGI Deduction table
-      hide ("totalDeductionTbl")
-    } else show ("totalDeductionTbl")
-    if (!input$displayDeductionBlAGI){ # Display below AGI Deduction talbe
-      hide ("belowAGIDeductionTbl")
-    } else show ("belowAGIDeductionTbl")
-    if (!input$displayItemizedChb) { # Display detailed itemized deduction
-      hide ("detailItemizedTbl")
-    } else show ("detailItemizedTbl")
-    if (!input$taxSummary){
-      hide ("taxSummaryTbl")
-    } else {
-      show("taxSummaryTbl")
-    }
-    if (!input$viewCreditChb) {
-      hide ("CreditTbl")
-      hide ("creditsSelect")
-    }
-    else{
-      show ("CreditTbl")
+    if (input$viewCreditChb){# Credit checkbox under tax summary
       show ("creditsSelect")
-    } 
-    if(!input$displaySummaryGraph) hide("summaryGraph")
-    else  show("summaryGraph")
+      show ("CreditTbl")
+    } else {
+      hide ("creditsSelect")
+      hide ("CreditTbl")
+    } # End credit checkbox -----------
+    if (input$displaySummaryGraph) { #Show summary Graph
+      show("summaryGraph")
+    } else {
+      hide("summaryGraph")
+    } # End Summary Graph -----------------------
+    
+    if (input$displayOtherDetailGrh) {
+      show("displayOtherDetailGrh")
+    } else {
+      hide("displayOtherDetailGrh")
+    }
   })
   #-------------------------------------------------------------------
   
   output$taxSummaryTbl <- renderDataTable({
       #------------------------------------------------------------------+
-      hide("viewCreditChb") # Hide this until some credit are available.
-      hide("displayTotalIncGraph") # Hide this until some income are available.
-      hide("stackedIncomeChb")
-      hide("displayDeductionGraph")
-      hide("stackedDeductionChb")
-      hide("displayItemizedChb")
-      # Step 1: Get income by calling function totalIncomeCalculation
-      totalIncome <- totalIncomeCalculation(income())
-      deductionsToAGI <- totalDeductionToAGI (deductions(), statusInformation(),totalIncome)
 
-      
+      totalIncome <- totalIncomeCalculation(income()) # Return summary of all incomes user entered.
+      deductionsToAGI <- totalDeductionToAGI (deductions(), statusInformation(),totalIncome)
       valueRow <- totalIncome$AGI_2018 !=0 | totalIncome$AGI_2017 !=0  # Interested in non-zero value income type.
       if (sum(valueRow)>0) { # Some incomes were available. Display graph checkbox
           show("displayTotalIncGraph")

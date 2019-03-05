@@ -69,37 +69,30 @@ QDCGWorksheet <- function(taxYear, taxableIncome, incomeDF, filingStatus){
   return (taxAmount)
 }
 totalIncomeCalculation <- function (incomeDF){
-   # This function will sum up total income user entered from the income section.
-   # This function will ignore income with value = 0, assuming that user did not have that type of income in both year.
+   # This function will sum up total income user entered from the income section. incoe
    # Special handle for net capital gain/loss so that maximum of -$3000 are allowed. 
-   Income_Type <- c("Total_W2_Wages", "Interest", "Dividends", "Taxable_Refunds","Alimony", "Net_Capital_Gain_Loss",
+   Income_Type <- c("Total_W2_Wages", "Interest", "Ord_Dividends", "Qualified_Dividents","Taxable_Refunds","Alimony", "Net_Capital_Gain_Loss",
                  "IRA_Distribution", "Unemployment Income")
 
    AGI_2018 <- c(
      sum(incomeDF[c("Your_Wages", "Spouse_Wages", "Additional_Wages_1", "Additional_Wages_2"),"Income_Tax_2018"]),
      incomeDF["Interest", 1],
      incomeDF["Ordinary_Dividends", 1],
+     incomeDF["Qualified_Dividends",1],
      incomeDF["Tax_Refunds", 1],
      incomeDF["Alimony",1],
      ifelse (sum(incomeDF[c("Long_Term_Gains","Short_Term_Gains"),1])< -3000,-3000,sum(incomeDF[c("Long_Term_Gains","Short_Term_Gains"),1])),
      incomeDF["TaxableIRA",1],
      incomeDF["Unemployment_Income", 1]
    )
-
-   AGI_2017 <- c(
-     sum(incomeDF[c("Your_Wages", "Spouse_Wages", "Additional_Wages_1", "Additional_Wages_2"), "Income_Tax_2017"]),
-     incomeDF["Interest", 2],
-     incomeDF["Ordinary_Dividends", 2],
-     incomeDF["Tax_Refunds", 2],
-     incomeDF["Alimony",2],
-     ifelse (sum(incomeDF[c("Long_Term_Gains","Short_Term_Gains"),2])< -3000,-3000,sum(incomeDF[c("Long_Term_Gains","Short_Term_Gains"),2])),
-     incomeDF["TaxableIRA",2],
-     incomeDF["Unemployment_Income", 2]
-   )
-
-   return (data.frame(AGI_2018, AGI_2017, row.names = Income_Type))
+   return (data.frame(AGI_2018, row.names = Income_Type))
 }
 totalDeductionToAGI <- function (deductionsDF, statusDF, AGIIncome) {
+  # This function will calculate above AGI deductions.
+  # Parameters: DeductionsDF: Dataframe that contains all deductions user entered.
+  # statusDF: Dataframe that contains all user information: Ages, Filing status.
+  # And Income, use to check student loan interest and IRA deductions.
+  # Begin function --------------------------------------------------------
   valueRow <- deductionsDF$Deduction_2018 !=0 | deductionsDF$Deduction_2017 !=0
   
   Deduction_Type <- c ("Educator_Expense", "HSA_Contribution","Your_IRA_Contribution", "IRA_Excess_Amount", "Student_Loan_Deduction")
@@ -209,7 +202,7 @@ totalDeductionToAGI <- function (deductionsDF, statusDF, AGIIncome) {
                                                          "Your_Spouse_IRA_Deduction","Student_Loan_Deduction"), "Deduction_2017"])))
   if (nrow(returnDF)>1) returnDF <- returnDF[-1,]
   return (returnDF) 
-}
+} # End totalDeductionToAGI
 belowAGIDeduction <- function(deductionDF, statusDF, AGI){
   # This function will determine whether itemized deduction or SD will apply
   statusDF["Filing_Status", ] <- toupper(as.character(statusDF["Filing_Status", ]))
