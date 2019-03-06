@@ -26,21 +26,47 @@ ui <- fluidPage(
          creditsUI("credits"),
          tabPanel("Results",
                   fluidRow(
-                    h4("Your Tax Summary"),
-                    # column(4,checkboxInput("taxSummary", label = "Your Tax Summary", value = TRUE)),
-                    checkboxInput("add2017", label = "See Results Under 2017 Rules", value = FALSE),
+                    fluidRow(column(8,h3("Your Tax Summary")),
+                        column(4, checkboxInput("hideTaxSummary", label= "Hide Tax Summary", value = FALSE))
+                    ),
+                    fluidRow(column(8,checkboxInput("showTaxSummaryTbl", label = "Show Tax Summary Table", value = TRUE)),
+                        column(4,checkboxInput("add2017", label = "See Results Under 2017 Rules", value = FALSE))
+                    ),
                     dataTableOutput("taxSummaryTbl"),
-                    dataTableOutput("CreditTbl"),
                     checkboxInput("viewCreditChb", label = "Detail Credit Calculation", value = FALSE),
                     selectInput("creditsSelect", label = "Select Credit:", choices = list()),
+                    dataTableOutput("CreditTbl"),
                     checkboxInput("displaySummaryGraph", label = "Display Graph", value = FALSE),
-                    plotOutput("summaryGraph")
+                    plotOutput("summaryGraph"),
+                    hr(),
+                    fluidRow( column(8,h3("Tax Planning")),
+                              column(4, checkboxInput("hideTaxPlanning", label = "Hide Tax Planning", value = TRUE))
+                    ),
+                    h4("Change in Filing Status"),
+                    selectInput("filingStatus", label = "Select filing status",
+                                choices = c("Single", "Married Filing Jointly", "Married Filing Separately", "Qualifying Widower",
+                                            "Head of Household"), selected = "SINGLE"),
+                    hr(),
+                    h4("Change in Dependent"),
+                    sliderInput("qualifyingChild", label = "Number of Qualifying Child:", min= 0, max=10, value = 0, 
+                                round = TRUE, width = "500px", step=1),
+                    sliderInput("qualifyingRelatives", label = "Number of Qualifying Relative", min = 0, max = 10, 
+                                value = 0, round = TRUE,step = 1,width = "500px"),
+                    hr(),
+                    h4("Change in IRA Contribution"),
+                    sliderInput("IRAAmountSld", label = "IRA Contribution", min=0, max=6500, value=0, step = 50, 
+                                round = TRUE, width = "500px"),
+                    hr(),
+                    h4("Change in HSA Contribution"),
+                    sliderInput("HSAAmountSld", label = "HSA Contribution", min = 0, max = 6850, value = 0, step=50, width = "500px")
+                    
                   ),
                   hr(),
                   fluidRow(
-                    h4("Other Details Summary"),
-                    selectInput("otherDetailSummary",label = "Select Other Tax Detail Summary", choices = list(c("NONE")),
-                                selected = "NONE"),
+                    fluidRow(column(8,h3("Other Details Summary")),
+                        column(4, checkboxInput("hideDetailSummary", label = "Hide Detail Summary", value= TRUE))
+                    ),
+                    selectInput("otherDetailSummary",label = "Select Other Tax Detail Summary", choices = c("NONE"),selected = "NONE"),
                     dataTableOutput("otherDetailTbl"),
                     checkboxInput("displayOtherDetailGrh", label = "Display Graph", value= FALSE),
                     plotOutput("detailGraph")
@@ -99,6 +125,23 @@ server <- function(input, output, session) {
   
   # -- Observe when user check on display graph---
   observe({
+    if (input$hideTaxSummary){ # Hide Tax Summary  Section
+      updateCheckboxInput(session,"showTaxSummaryTbl",value = FALSE )
+      updateCheckboxInput(session, "displaySummaryGraph",value = FALSE)
+      updateCheckboxInput(session, "viewCreditChb", value= FALSE)
+      hideshow(c("showTaxSummaryTbl", "add2017","taxSummaryTbl","viewCreditChb",
+                 "displaySummaryGraph"), TRUE)
+    } else {
+      hideshow(c("showTaxSummaryTbl", "add2017","taxSummaryTbl","viewCreditChb",
+                 "displaySummaryGraph"), FALSE)
+    } # End Hide Tax Summary Section
+    if (input$hideTaxPlanning){ # Hide Tax Planning
+      hideshow(c("filingStatus","qualifyingChild","qualifyingRelatives","IRAAmountSld","HSAAmountSld"), TRUE)
+    } # End Hide Tax Planning. Uncheck this box will be handled separately within function below.
+    if (input$hideDetailSummary){
+      updateCheckboxInput(session, "displayOtherDetailGrh",value = FALSE)
+      hideshow(c("otherDetailSummary","otherDetailTbl","displayOtherDetailGrh"), TRUE)
+    } # End hide Other Detail Summary Section, Uncheck this box will be handled separately within function below.
     if (input$viewCreditChb){# Credit checkbox under tax summary
       show ("creditsSelect")
       show ("CreditTbl")
@@ -113,9 +156,14 @@ server <- function(input, output, session) {
     } # End Summary Graph -----------------------
     
     if (input$displayOtherDetailGrh) {
-      show("displayOtherDetailGrh")
+      show("detailGraph")
     } else {
-      hide("displayOtherDetailGrh")
+      hide("detailGraph")
+    }
+    if (input$showTaxSummaryTbl){
+      show("taxSummaryTbl")
+    } else {
+      hide ("taxSummaryTbl")
     }
   })
   #-------------------------------------------------------------------
