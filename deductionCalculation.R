@@ -37,7 +37,7 @@ HSADeduction <- function (ages, contributionAmt, hsaPlan, taxYear) {
   employeeContribution <- contributionAmt[1]
   employerContribution <- contributionAmt[2]
   eligibleAmount <- maxContribution - employerContribution # this is the maximum amount of additional HSA contribution employee can contribution
-  
+  eligibleAmount <- max(eligibleAmount, 0)
   HSA_Deduction <- min(eligibleAmount, employeeContribution)
   return (c(HSA_Deduction, catchupContribution, maxContribution))
 }
@@ -176,16 +176,20 @@ IRADeduction <- function (taxYear, IRAcover, filingStatus, ages, MAGI, earnedInc
   return (IRAAmount)
 }
 studentLoan <- function (interest, MAGI, filingStatus, taxYear) {
-  filingStatus <- toupper(filingStatus)
+
+  interest <- as.numeric(interest)
+  MAGI <- as.numeric(MAGI)
   if (filingStatus == "MFS") return (0)
   rowValues <- SLTbl[SLTbl$YEAR == taxYear & grepl(filingStatus, SLTbl$FILING_STATUS),]
-
+  # print (rowValues)
   if (MAGI<=rowValues$LOWER_AGI) { # Full student loan deduction
+    # print ("lower AGI, full deduction")
     return (interest)
-  } else if (MAGI>rowValues$LOWER_AGI & MAGI <=rowValues$UPPER_AGI){
-
+  } else if (MAGI>rowValues$LOWER_AGI & MAGI <rowValues$UPPER_AGI){
+    # print ("In between AGI")
     incomeRange <- rowValues$UPPER_AGI - rowValues$LOWER_AGI
-    multiplier <- round((rowValues$UPPER_AGI - MAGI)/incomeRange, digits = 3)
+    multiplier <- round((MAGI - rowValues$LOWER_AGI)/incomeRange, digits = 3)
+    # print (multiplier)
     return (interest*(1-multiplier))
   } else {
     return (0)

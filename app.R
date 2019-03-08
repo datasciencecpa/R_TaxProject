@@ -66,7 +66,7 @@ ui <- fluidPage(
                     fluidRow(column(8,h3("Other Details Summary")),
                         column(4, checkboxInput("hideDetailSummary", label = "Hide Detail Summary", value= TRUE))
                     ),
-                    selectInput("otherDetailSummary",label = "Select Other Tax Detail Summary", choices = c("NONE"),selected = "NONE"),
+                    selectInput("otherDetailSummary",label = "Select Other Taxes Detail Summary", choices = c("NONE"),selected = "NONE"),
                     dataTableOutput("otherDetailTbl"),
                     checkboxInput("displayOtherDetailGrh", label = "Display Graph", value= FALSE),
                     plotOutput("detailGraph")
@@ -173,21 +173,42 @@ server <- function(input, output, session) {
     }
   })
   #-------------------------------------------------------------------
+
+  
   
   output$taxSummaryTbl <- renderDataTable({
       #------------------------------------------------------------------+
-
+      # Step 1: Calculate TotalIncome, TotalDeductions Above AGI, SD or Itemized Deductions, Exemption
       totalIncome <- totalIncomeCalculation(income()) # Return summary of all incomes user entered.
-      
+      colnames(totalIncome) <- "Tax_2018"
+      print (totalIncome)
       deductionsToAGI <- totalDeductionToAGI (deductions(), statusInformation()[c("Filing_Status", "Your_Age","Spouse_Age"),1],
-                                              totalIncome$TotalIncome, "Tax_2018","2018")
+                                              totalIncome$Tax_2018, "Tax_2018","2018")
+      totalIncome["Total_Income",] <- sum(as.numeric(totalIncome$Tax_2018[-c(4,10,11)]))
+      
+      summaryDF <- data.frame (c(0,0,0,0,0,
+                                 0,0), 
+                               row.names = c("Total_Income", "Total_Above_AGI_Deduction","AGI", "Below_AGI_Deduction", "Exemption",
+                                             "Taxable_Income", "Tax_Amount"))
+      colnames(summaryDF) <- "Tax_2018"
+      summaryDF["Total_Income",] <- totalIncome["Total_Income",]
+      summaryDF["Total_Above_AGI_Deduction",] <- sum(as.numeric(deductionsToAGI[c("Educator_Expense","HSA_Deduction_Amt",
+                                                                                "Your_IRA_Deduction","Your_Spouse_IRA_Deduction","Student_Loan_Deduction"),1]))
+      summaryDF["AGI",] <- as.numeric(deductionsToAGI["Adjusted_Gross_Income",])
+      
+      if (!input$hideDetailSummary) { # Update selected input
+        updateSelectInput(session, "otherDetailSummary", choices= c("Income_Summary", "Above_AGI_Deduction_Summary"))
+      }
+      output$otherDetailTbl <- renderDataTable({
+        
+        if (input$otherDetailSummary == "Income_Summary"){
 
-      # valueRow <- totalIncome$AGI_2018 !=0 | totalIncome$AGI_2017 !=0  # Interested in non-zero value income type.
+          return (totalIncome)
+        } else {  # return Deductions To AGI
 
-      #     show("displayTotalIncGraph")
-      #     show("stackedIncomeChb")
-      #     totalIncome <- totalIncome[valueRow,]
-      #     output$totalIncomeTbl <- renderDataTable(totalIncome, options = list(pageLength = 25))
+          return (deductionsToAGI[])
+        }
+      },options= list(pageLength = 25))
       #     # Step 2: Plot totalIncome out to graph
       #     output$totalIncGraph <- renderPlot({
       #       Income_Type = rownames(totalIncome)
@@ -313,8 +334,7 @@ server <- function(input, output, session) {
       #     }
       #     
       #     summaryDF[is.na.data.frame(summaryDF)] <- 0
-      #     return (summaryDF)
-
+           return (summaryDF)
   }) # End Tax Summary
 }
 

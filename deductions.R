@@ -6,14 +6,14 @@ deductionsUI <- function (id){
      hr(),
      h3("Educator Expense"),
      fluidRow(
-       column(9, numericInput(ns("educatorExp"), label = "Educator Expense ($250/person, up to $500 for MFJ):", value = 0)),
+       column(9, numericInput(ns("educatorExp"), label = "Educator Expense ($250/person, up to $500 for MFJ):", value = 0, min=0)),
        column(3, tags$strong("Help:"), a(href="https://www.irs.gov/taxtopics/tc458", "Topic #458-Educator Expense Deduction"))
      ), # End Educator Expense
      hr(), h3("HSA Deductions"),
      fluidRow(
-       column(9, numericInput(ns("HSA"), label = "HSA contributions:", value = 0),
+       column(9, numericInput(ns("HSA"), label = "HSA contributions:", value = 0, min=0),
               column(8,
-                     numericInput(ns("W2HSA"), label = "Enter your HSA contribution as reported on all of your W-2", value = 0)
+                     numericInput(ns("W2HSA"), label = "Enter your HSA contribution as reported on all of your W-2", value = 0, min=0)
               ),
               column(4,
                      selectInput(ns("HSAPlan"), label = "Select your HSA plan", choices = c("Single", "Family"), selected = "Single"))     
@@ -22,9 +22,9 @@ deductionsUI <- function (id){
      ), # End HSA Contribution
      hr(), h3("IRA Deduction"),
      fluidRow(
-       column(6,numericInput(ns("YourIRA"), label = "Your Deductible IRA Contribution:", value = 0)
+       column(6,numericInput(ns("YourIRA"), label = "Your Deductible IRA Contribution:", value = 0, min=0)
        ),
-       column(6,numericInput(ns("SpouseIRA"), label = "Spouse Deductible IRA Contribution:", value = 0)),
+       column(6,numericInput(ns("SpouseIRA"), label = "Spouse Deductible IRA Contribution:", value = 0, min=0)),
        column(6, radioButtons(ns("YourIRACover"), label = "Were you covered by a retirement plan at work or through self-employment?",
                               choices = c("YES", "NO"), selected = "NO")),
        column(6, radioButtons(ns("SpouseIRACover"), label ="Were you covered by a retirement plan at work or through self-employment?",
@@ -33,7 +33,7 @@ deductionsUI <- function (id){
      ), # End IRA Deduction
      hr(), h3("Student Loan Interest"),
      fluidRow(
-       numericInput(ns("studentLoan"), label = "Enter your student loan interest(Max $2500):", value = 0)
+       numericInput(ns("studentLoan"), label = "Enter your student loan interest(Max $2500):", value = 0, min=0)
      ), # End student loan deduction
     
     # Itemized Deduction start below -----------------------------------------------------------------------------
@@ -47,13 +47,13 @@ deductionsUI <- function (id){
        tags$strong("More information:"), a(href="https://www.irs.gov/forms-pubs/about-schedule-a-form-1040","Itemized Deductions")
      ),
      fluidRow(
-        column(6,numericInput(ns("medicalExp"), label = "Enter eligible medical expenses:", value = 0)),
-        column(6,numericInput(ns("stateTax"), label = "Enter state and local income taxes or general sales tax:", value = 0)),
-        column(6,numericInput(ns("realEstateTax"), label = "Enter real estate taxes:", value = 0 )),
-        column(6,numericInput(ns("personalTax"), label = "Enter personal property taxes:", value = 0 )),
-        column(6,numericInput(ns("mortgageInterest"), label = "Enter your eligible mortgage interest:", value = 0 )),
-        column(6,numericInput(ns("charitable"), label = "Enter your charitable deductions:", value = 0)),
-        column(6,numericInput(ns("PMI"), label = "Enter your premium mortgage insurance:", value = 0 )),
+        column(6,numericInput(ns("medicalExp"), label = "Enter eligible medical expenses:", value = 0, min=0)),
+        column(6,numericInput(ns("stateTax"), label = "Enter state and local income taxes or general sales tax:", value = 0, min=0)),
+        column(6,numericInput(ns("realEstateTax"), label = "Enter real estate taxes:", value = 0, min=0 )),
+        column(6,numericInput(ns("personalTax"), label = "Enter personal property taxes:", value = 0, min=0 )),
+        column(6,numericInput(ns("mortgageInterest"), label = "Enter your eligible mortgage interest:", value = 0, min=0 )),
+        column(6,numericInput(ns("charitable"), label = "Enter your charitable deductions:", value = 0, min=0)),
+        column(6,numericInput(ns("PMI"), label = "Enter your premium mortgage insurance:", value = 0, min=0 )),
         column(6, helpText("PMI was not extended for tax year 2018. Number you entered here would be used for calculation of 2017 tax effect only."))
           
      ) # End Itemized Deductions
