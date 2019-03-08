@@ -195,7 +195,13 @@ studentLoan <- function (interest, MAGI, filingStatus, taxYear) {
     return (0)
   }
 }
-SDExemptionDeduction <- function (deductionDF, statusDF, AGI){
+SDExemptionDeduction <- function (deductionDF, statusDF, AGI, taxYear){
+  # This function will calculate both itemized and SD for a single tax year
+  # Return a vector
+  # Parameters: deductionDF: Vector that contains information about itemized expenses
+  # statusDF: dataframe
+  # AGI: vector of AGI income
+  # taxYear: Contains tax year
   PMICalculation <- function (AGI, PMIAmount, filingStatus){
     # This function is used to calculate eligible PMI deduction for tax year 2017
     # Currently, PMI was not extended for tax year 2018
@@ -217,7 +223,8 @@ SDExemptionDeduction <- function (deductionDF, statusDF, AGI){
     }
     return (PMIAmount - PMIAmount*percentage)
   } # End Internal function
-  ExemptionAmount <- function (AGI_2017, statusDF) {
+  ExemptionAmount <- function (AGI_2017, statusDF) { 
+    # This function applied only for tax year 2017
     rowValue <- ExempTbl[grepl(statusDF["Filing_Status", "Status_2017"], ExempTbl$FILING_STATUS),]
     num <- 1 # Variable to store number of exemptions
     if (statusDF["Filing_Status", "Status_2017"] == "MFJ") num <- 2
@@ -236,56 +243,66 @@ SDExemptionDeduction <- function (deductionDF, statusDF, AGI){
   }
   # ------------ Function begin ----------------------#
   # Step 1: Calculate amount of SD based on filing status, conditions (ages, blinds)
-  row_2017 <- SDTbl[SDTbl$YEAR == 2017 & grepl(statusDF["Filing_Status", "Status_2017"], SDTbl$FILING_STATUS),]
-  row_2018 <- SDTbl[SDTbl$YEAR == 2018 & grepl(statusDF["Filing_Status", "Status_2018"], SDTbl$FILING_STATUS),]
+  # ---- Create variables to store important values for this function
+  standardDeduction <- 0
+  totalItemizeAmount <- 0
+  exemptionAmt <- 0
+  # ----------------------------------------------------------------------------------------
+  rowValues <- SDTbl[SDTbl$YEAR == taxYear & grepl(statusDF["Filing_Status", 1], SDTbl$FILING_STATUS),]
+  print (rowValues)
 
-  num_2017 <- sum(as.numeric(statusDF[c("Your_Age", "Spouse_Age"),"Status_2017"])>=65) +
-              sum(as.logical(statusDF[c("You_Blind", "Spouse_Blind"), "Status_2017"]))
-  num_2018  <-  sum(as.numeric(statusDF[c("Your_Age", "Spouse_Age"),"Status_2018"])>=65) +
-                sum(as.logical(statusDF[c("You_Blind", "Spouse_Blind"), "Status_2018"]))
-
-  SD_2017 <- row_2017$AMOUNT + num_2017*row_2017$ADDITIONAL_PER_CONDITION
-  SD_2018 <- row_2018$AMOUNT + num_2018*row_2018$ADDITIONAL_PER_CONDITION
-  # End Step 1 ------------------------------------------------------------------------------------------
-  deductions_2017 <- deductionDF$Deduction_2017
-  deductions_2018 <- deductionDF$Deduction_2018 # Save information into a vector
-  deductions_2017[1] <- ifelse((deductions_2017[1] - AGI[2]*0.075)>0, (deductions_2017[1] - AGI[2]*0.075),0) # Eligible medical expense
-  deductions_2018[1] <- ifelse((deductions_2018[1] -AGI[1]* 0.075)>0, (deductions_2018[1] -AGI[1]* 0.075),0) # Eligible medical expense
-  deductions_2017[6] <- PMICalculation(AGI[2], deductions_2017[6], as.character(statusDF["Filing_Status", "Status_2017"]))
-  deductions_2018[6] <- 0 # Set this to zero since PMI was not extended for tax year 2018 - as of today.
-  deductions_2017[7] <- ifelse (deductions_2017[7]<=AGI[2]*0.5, deductions_2017[7], AGI[2]*0.5) # Calculate donation limitation
-  deductions_2018[7] <- ifelse (deductions_2018[7]<=AGI[1]*0.6, deductions_2018[7], AGI[1]*0.6) # Calculate donation limitation
-  totalSALTDDeductions <- sum(deductions_2018[2:4])
-  excess_SALT_2018 <- 0
-  if (totalSALTDDeductions>10000) { # New SALT limitation for tax year 2018
-    excess_SALT_2018 <- totalSALTDDeductions -10000
-    deductions_2018[2] <- deductions_2018[2] - (deductions_2018[2]/totalSALTDDeductions * excess_SALT_2018)
-    deductions_2018[3] <- deductions_2018[3] - (deductions_2018[3]/totalSALTDDeductions * excess_SALT_2018)
-    deductions_2018[4] <- deductions_2018[4] - (deductions_2018[4]/totalSALTDDeductions * excess_SALT_2018)
-  }
-
-  totalItemized_2017 <- sum(deductions_2017)
-  totalItemized_2018 <- sum(deductions_2018)
-  itemizedRows <- rownames(deductionDF)
+  num_condition <- sum(as.numeric(statusDF[c("Your_Age", "Spouse_Age"),1])>=65) +
+              sum(as.logical(statusDF[c("You_Blind", "Spouse_Blind"), 1]))
   
-  # Figure out the itemized deduction amount for AGI above phase-out limit.
-  if (AGI[2]>row_2017$PHASE_OUT) {
-    # Follow instructions from Itemized Deductions Worksheet
- 
-    if (sum(deductions_2017[c(1,7)]) < totalItemized_2017) { # Step 3, Box Yes checked
-      line_3 <- totalItemized_2017 - sum(deductions_2017[c(1,7)])
-      line_4 <- line_3*0.8
-      line_8 <- (AGI[2] - row_2017$PHASE_OUT)*0.03
-      line_9 <- ifelse(line_4>line_8, line_8, line_4)
-      totalItemized_2017 <- totalItemized_2017 - line_9
-      itemizedRows <- c(itemizedRows, "Itemized_Amount_Limited_By_Income")
-      deductions_2017[8] <- totalItemized_2017
-      deductions_2018[8] <- totalItemized_2018
+
+  standardDeduction <- rowValues$AMOUNT + num_condition*rowValues$ADDITIONAL_PER_CONDITION
+  print (paste("Standard Deduction Amount:", standardDeduction))
+  # End Step 1 ------------------------------------------------------------------------------------------
+  # Step 2: Calculate Itemized Deductions
+  deductionDF[1] <- max((deductionDF[1] - AGI*0.075),0) # Eligible medical expense
+  if (taxYear=="2018") {
+    deductionDF[6] <- 0 # PMI was not extended for tax year 2018
+    deductionDF[7] <- min (deductionDF[7], AGI*0.6) # Calculate donation limitation
+    totalSALTDDeductions <- sum(deductionDF[2:4])
+    excess_SALT_2018 <- 0
+    if (totalSALTDDeductions>10000) { # New SALT limitation for tax year 2018
+      excess_SALT_2018 <- totalSALTDDeductions -10000
+      deductions_2018[2] <- deductions_2018[2] - (deductions_2018[2]/totalSALTDDeductions * excess_SALT_2018)
+      deductions_2018[3] <- deductions_2018[3] - (deductions_2018[3]/totalSALTDDeductions * excess_SALT_2018)
+      deductions_2018[4] <- deductions_2018[4] - (deductions_2018[4]/totalSALTDDeductions * excess_SALT_2018)
     }
+    totalItemizeAmount <- sum(deductionDF)
+  } 
+  else if (taxYear =="2017"){
+    # Special situation:
+    # Exemption was allowed for tax year 2017
+    # PMI was allowed
+    # Charitable Donation was based on 50% maximum of AGI
+    # Itemized amount and exemption were subjected to phase-out based on income
+    #---------------------------------------------------------------------------------------------------------------------
+    deductionDF[6] <- PMICalculation(AGI, deductionDF[6], (statusDF["Filing_Status", 1]))
+    deductionDF[7] <- min (deductionDF[7], AGI*0.5) # Calculate donation limitation
+    totalItemizeAmount <- sum(deductionDF)
+    print (totalItemizeAmount)
+    # Figure out the itemized deduction amount for AGI above phase-out limit.
+    if (AGI>rowValues$PHASE_OUT) {
+      # Follow instructions from Itemized Deductions Worksheet
+      
+      if (sum(deductionDF[c(1,7)]) < totalItemizeAmount) { # Step 3, Box Yes checked
+        line_3 <- totalItemizeAmount - sum(deductionDF[c(1,7)])
+        line_4 <- line_3*0.8
+        line_8 <- (AGI - rowValues$PHASE_OUT)*0.03
+        line_9 <- min(line_4,line_8)
+        totalItemizeAmount <- totalItemizeAmount - line_9
+      }
+    }
+    print (totalItemizeAmount)
+    exemptionAmt <- ExemptionAmount(AGI_2017 = AGI, statusDF = statusDF)
   }
-  maxDeduction_2017 <- ifelse (totalItemized_2017>SD_2017, totalItemized_2017,SD_2017)
-  maxDeduction_2018 <- ifelse(totalItemized_2018>SD_2018, totalItemized_2018, SD_2018)
-  exemptionAmt <- ExemptionAmount(AGI_2017 = AGI[2], statusDF = statusDF)
+
+  maxDeduction <- min (totalItemizeAmount>standardDeduction)
+  
+  
   Below_AGI_Deduction_2018 <- c(SD_2018, totalItemized_2018, maxDeduction_2018,0)
   Below_AGI_Deduction_2017 <- c(SD_2017, totalItemized_2017, maxDeduction_2017, exemptionAmt)
   rowNames <- c("Standard_Deduction", "Total_Itemized_Deduction", "Your_Deduction", "Exemption_Deduction")

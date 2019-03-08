@@ -164,12 +164,13 @@ totalDeductionToAGI <- function (deductionsDF, statusDF, AGIIncome, colName, tax
   print (returnDF)
   return (returnDF) 
 } # End totalDeductionToAGI
-belowAGIDeduction <- function(deductionDF, statusDF, AGI){
+belowAGIDeduction <- function(deductionDF, statusDF, AGI, taxYear){
   # This function will determine whether itemized deduction or SD will apply
+  # Parameters: deductionDF: vector that contains itemmized expenses
+  # statusDF: dataframe that contains status information such as filing status, ages
   statusDF["Filing_Status", ] <- toupper(as.character(statusDF["Filing_Status", ]))
-  deductionDF$Deduction_2018 <- as.numeric(deductionDF$Deduction_2018)
-  deductionDF$Deduction_2017 <- as.numeric(deductionDF$Deduction_2017)
-  deductions <- SDExemptionDeduction (deductionDF, statusDF, AGI)
+  deductionDF <- as.numeric(deductionDF)
+  deductions <- SDExemptionDeduction (deductionDF, statusDF, AGI, taxYear)
   return (deductions)
 }
 DFConverter <- function (df){

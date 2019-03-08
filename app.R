@@ -179,12 +179,20 @@ server <- function(input, output, session) {
   output$taxSummaryTbl <- renderDataTable({
       #------------------------------------------------------------------+
       # Step 1: Calculate TotalIncome, TotalDeductions Above AGI, SD or Itemized Deductions, Exemption
+
       totalIncome <- totalIncomeCalculation(income()) # Return summary of all incomes user entered.
       colnames(totalIncome) <- "Tax_2018"
       print (totalIncome)
       deductionsToAGI <- totalDeductionToAGI (deductions(), statusInformation()[c("Filing_Status", "Your_Age","Spouse_Age"),1],
                                               totalIncome$Tax_2018, "Tax_2018","2018")
       totalIncome["Total_Income",] <- sum(as.numeric(totalIncome$Tax_2018[-c(4,10,11)]))
+      itemizedItems <- c("Medical_Exp","State_Local_Taxes", "Real_Estate_Taxes","Personal_Property_Tax",
+                         "Mortgage_Interest","Premium_Mortage_Interest","Charitable_Contribution")
+      result <- belowAGIDeduction (deductions()[itemizedItems,], statusInformation(),
+                                   deductionsToAGI["Adjusted_Gross_Income",], taxYear = "2018")
+      
+      
+      
       
       summaryDF <- data.frame (c(0,0,0,0,0,
                                  0,0), 
@@ -197,65 +205,32 @@ server <- function(input, output, session) {
       summaryDF["AGI",] <- as.numeric(deductionsToAGI["Adjusted_Gross_Income",])
       
       if (!input$hideDetailSummary) { # Update selected input
-        updateSelectInput(session, "otherDetailSummary", choices= c("Income_Summary", "Above_AGI_Deduction_Summary"))
+        detailLabel <- "Above_AGI_Deduction_Summary"
+        rowValues <- totalIncome$Tax_2018 !=0
+        if (sum(rowValues)>0) detailLabel <- append(c("Income_Summary"), detailLabel)
+        updateSelectInput(session, "otherDetailSummary", choices= detailLabel )
       }
       output$otherDetailTbl <- renderDataTable({
         
         if (input$otherDetailSummary == "Income_Summary"){
-
-          return (totalIncome)
+          rowNames <- rownames(totalIncome)
+          rowValues <- totalIncome$Tax_2018 !=0
+          rowNames <- rowNames[rowValues]
+          totalIncomeDF <- as.data.frame(totalIncome[rowValues,], row.names = rowNames)
+          colnames(totalIncomeDF) <- "Tax_2018"
+          return (totalIncomeDF)
         } else {  # return Deductions To AGI
 
           return (deductionsToAGI[])
         }
       },options= list(pageLength = 25))
-      #     # Step 2: Plot totalIncome out to graph
-      #     output$totalIncGraph <- renderPlot({
-      #       Income_Type = rownames(totalIncome)
-      #       AGIIncome <- data.frame(Income_Type, totalIncome, row.names = NULL)
-      #       if (input$stackedIncomeChb){
-      #         ggplot(data = DFConverter(AGIIncome), aes(x= TaxYear, y = Amount, fill = Income_Type)) +
-      #           geom_bar(stat = "identity")
-      #       } else {
-      #         ggplot(data = DFConverter(AGIIncome), aes(x= Income_Type, y= Amount, fill= TaxYear)) +
-      #           geom_bar(stat = "identity", position = position_dodge())+ 
-      #           geom_text(aes(label=Amount), vjust=-0.5, color="black", size=3.5)
-      #       }
-      #     })
+
       #     #------------------------------------------------------------------
-      #     # Step 3: Calculate deductions above AGI
-      #     
-      #     AGI <- as.numeric(deductionsToAGI["Adjusted_Gross_Income",]) # Getting adjusted gross income for 2 years
-      #     deductionDF <- deductionsToAGI[c("Educator_Expense", "HSA_Deduction_Amt", "Your_IRA_Deduction", "Your_Spouse_IRA_Deduction",
-      #                                      "Student_Loan_Deduction"), ]
-      #     valueRow <- (deductionDF$Deduction_2018 !=0) | (deductionDF$Deduction_2017 !=0)
-      #     if (sum(valueRow)>0){
-      #       show("displayDeductionGraph")
-      #       show("stackedDeductionChb")
-      #     }
-      #     deductionDF <- deductionDF[valueRow,]
-      #     deductionDF$Deduction_2018 <- as.numeric(deductionDF$Deduction_2018)
-      #     deductionDF$Deduction_2017 <- as.numeric(deductionDF$Deduction_2017)
-      #     Deduction_Type <- rownames(deductionDF)
-      #     deductionDF <- data.frame(Deduction_Type, deductionDF, row.names = NULL)
-      #     # rownames(deductionDF) <- NULL
-      #     output$deductionGraph <- renderPlot({
-      #       if (input$stackedDeductionChb){
-      #         ggplot(data= DFConverter(deductionDF), aes(x = TaxYear, y= Amount, fill = Deduction_Type))+
-      #           geom_bar(stat = "identity")
-      #       }
-      #       else {
-      #         ggplot(data= DFConverter(deductionDF), aes(x = Deduction_Type, y= Amount, fill = TaxYear))+
-      #           geom_bar(stat = "identity", position = position_dodge())+ 
-      #           geom_text(aes(label=Amount), vjust=-0.5, color="black", size=3.5)
-      #       }
-      #     })
-      #     output$totalDeductionTbl <- renderDataTable(deductionsToAGI, options = list(pageLength = 25))
-      #     #----------------------------------------------------------------------- End deductions above AGI
+
+
       #     # Step 4: Calculate below AGI deductions: Standard Deductions or Itemized Deductions and Exemption
-      #     itemizedItems <- c("Medical_Exp","State_Local_Taxes", "Real_Estate_Taxes","Personal_Property_Tax",
-      #                        "Mortgage_Interest","Premium_Mortage_Interest","Charitable_Contribution")
-      #     result <- belowAGIDeduction (deductions()[itemizedItems,], statusInformation(),AGI)
+          
+      
       #     deductionSummary <- result [[1]]
       #     detailItemized <- result[[2]]
       #     if (any(deductionSummary["Total_Itemized_Deduction",]>0)){
