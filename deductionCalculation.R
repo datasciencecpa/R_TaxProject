@@ -36,8 +36,10 @@ HSADeduction <- function (ages, contributionAmt, hsaPlan, taxYear) {
   maxContribution <- maxContribution + catchupContribution
   employeeContribution <- contributionAmt[1]
   employerContribution <- contributionAmt[2]
-  eligibleAmount <- maxContribution - employerContribution # this is the maximum amount of additional HSA contribution employee can contribute
-  return (c(ifelse (eligibleAmount>employeeContribution, employeeContribution, eligibleAmount), catchupContribution, maxContribution))
+  eligibleAmount <- maxContribution - employerContribution # this is the maximum amount of additional HSA contribution employee can contribution
+  
+  HSA_Deduction <- min(eligibleAmount, employeeContribution)
+  return (c(HSA_Deduction, catchupContribution, maxContribution))
 }
 IRADeduction <- function (taxYear, IRAcover, filingStatus, ages, MAGI, earnedIncome, IRAAmount){
   # For IRA, the contribution limit is $5500 for age <50. Catchup contribution is $1000. This information is the same for both 2017 & 2018
@@ -45,60 +47,65 @@ IRADeduction <- function (taxYear, IRAcover, filingStatus, ages, MAGI, earnedInc
   # since this app used limited income types.
   # IRA deduction will be calculated as follow:
   # 1. If user was not covered by retirement plan --> Full deduction amount up to limit
-  # 2a. If user was covered, Single, HOH, or MFS - check with limit.
+  # 2a. If user was covered, Single, HOH, or MFS - check with limitation amount.
   # 2b. If user was covered, MFJ - Both, or only one. Using appropriate AGI limit
-  filingStatus <- toupper(filingStatus)
+  # Parameters: taxYear: use to identify row in Excel worksheet
+  # IRAcover: vector indicates whether user/spouse were covered
+  # filingStatus: user filing status
+  # ages: vector that contains user ages
+  # MAGI: Modified AGI
+  # earnedIncome: earned income calculated.
+  # Begin function ----------------------------------------------------------------
   IRAMultiply <- function (upperAGI, MAGI, rate){
     #This function will calculate the eligible IRA deduction as stated in step 7 of the Worksheet
-
     eligibleAmt <- round_any((upperAGI - MAGI)*rate, 10,f = ceiling)
     # print (paste("Eligible amount from IRA mul: ", eligibleAmt))
     return (ifelse (eligibleAmt>200, eligibleAmt, 200))
   }
-  # print(paste("Ages:", ages, "Earned Income: ", earnedIncome))
-  # print (paste("MAGI: ", MAGI))
-  if (all (ages>70) | earnedIncome<=0) return (c(0,0)) # User can't contribute to IRA with age greater than 70 or zero earned income
-  IRAAmount[which(ages>70)] <- 0
+  #----------------------------------------------------------------
+  print(paste("Ages:", ages, "Earned Income: ", earnedIncome))
+  print (paste("MAGI: ", MAGI))
+  if (all (ages>70) | earnedIncome<=0) return (c(0,0)) # User can't contribute to IRA with age greater than 70 or with zero earned income
+  IRAAmount[which(ages>70)] <- 0 
   rowValues <- IRATbl[IRATbl$YEAR == taxYear & grepl(filingStatus, IRATbl$FILING_STATUS) & IRATbl$COVERED == "YES",]
-  limit <- 0
+  # Calculate limit that would be applied. Either the lower of Earned Income or maxContribution would be allowed
+  limit_1 <- 0
+  limit_2 <- 0
+  if (ages[1]>=50){
+    limit_1<- min(earnedIncome, 6500)
+  } else {
+    limit_1<- min(earnedIncome, 5500)
+  }
+  earnedIncome <- earnedIncome -limit_1
+  if (ages[2]>=50){
+    limit_2<- min(earnedIncome, 6500)
+  } else {
+    limit_2<- min(earnedIncome, 5500)
+  }  
+  # End calculation limits -----------------------------------------------------------
   if (all(IRAcover == "NO") | MAGI< rowValues$LOWER_AGI ){
     # print ("Meeting condition of no-one cover or lower than lowerAGI")
     if (grepl(filingStatus, "SINGLE/HOH/MFS/QW")) {
-      if (ages[1]>=50){
-        limit <- ifelse(earnedIncome <=6500,earnedIncome, 6500)
-      } else {
-        limit <- ifelse(earnedIncome <=5500,earnedIncome, 5500)
-      }
-      IRAAmount[1] <- ifelse (IRAAmount[1]<=limit, IRAAmount[1], limit)
+      IRAAmount[1] <- min (IRAAmount[1],limit_1)
       IRAAmount[2] <- 0
-    } else { # MFJ
-      if (ages[1]>=50){
-        limit <- ifelse(earnedIncome <=6500,earnedIncome, 6500)
-      } else {
-        limit <- ifelse(earnedIncome <=5500,earnedIncome, 5500)
-      }
-      IRAAmount[1] <- ifelse (IRAAmount[1]<=limit, IRAAmount[1], limit)
-      earnedIncome <- earnedIncome - limit # Reduce earnedIncome for amount of limit that already apply for IRAAmount[1]
-      # Apply for spouse
-      if (ages[2]>=50){
-        limit <- ifelse(earnedIncome <=6500,earnedIncome, 6500)
-      } else {
-        limit <- ifelse(earnedIncome <=5500,earnedIncome, 5500)
-      }
-      IRAAmount[2] <- ifelse (IRAAmount[2]<=limit, IRAAmount[2], limit)
-    }
-  } else if ( (MAGI>rowValues$UPPER_AGI & all(IRAcover =="YES"))| (MAGI>rowValues$UPPER_AGI &grepl(filingStatus, "SINGLE/HOH/MFS/QW"))) {
+    } 
+    else { # MFJ
+      IRAAmount[1] <- min (IRAAmount[1], limit_1)
+      IRAAmount[2] <- min (IRAAmount[2],limit_2)
+    } # End MFJ and first condition.
+  } # End first condition
+  else if ( (MAGI>rowValues$UPPER_AGI & all(IRAcover =="YES"))| (MAGI>rowValues$UPPER_AGI &grepl(filingStatus, "SINGLE/HOH/MFS/QW"))) {
     # print (paste("Above AGI Limit: ", rowValues$UPPER_AGI))
     IRAAmount <- c(0,0)
   } 
-  else {
-    if (grepl(filingStatus, "SINGLE/HOH/MFS/QW")) {
+  else { # This situation is either MAGI between the range, or one spouse was not covered
+    if (grepl(filingStatus, "SINGLE/HOH/MFS/QW")) { # Not MFJ Situation
       if (ages[1]>=50){
-        limit <- ifelse(earnedIncome <= (IRAMultiply(rowValues$UPPER_AGI, MAGI, 0.65)), earnedIncome, IRAMultiply(rowValues$UPPER_AGI, MAGI, 0.65))
+        limit <- min(earnedIncome, (IRAMultiply(rowValues$UPPER_AGI, MAGI, 0.65)))
       } else {
-        limit <- ifelse(earnedIncome <= (IRAMultiply(rowValues$UPPER_AGI, MAGI, 0.55)), earnedIncome, IRAMultiply(rowValues$UPPER_AGI, MAGI, 0.55))
+        limit <- min(earnedIncome , (IRAMultiply(rowValues$UPPER_AGI, MAGI, 0.55)))
       }
-      IRAAmount[1]<- ifelse (IRAAmount[1]<=limit, IRAAmount[1], limit)
+      IRAAmount[1]<- min (IRAAmount[1],limit)
       IRAAmount[2] <- 0
     } 
     else { # filingStatus = MFJ, two situation can occur: Either users have retirement coverage, or one of them have coverage.
@@ -110,65 +117,58 @@ IRADeduction <- function (taxYear, IRAcover, filingStatus, ages, MAGI, earnedInc
         if (any(IRAcover =="NO")){ # Need to update rowValues to get value with higher AGI limit
           ind_N <- which(IRAcover =="NO")
           ind_Y <- which(IRAcover =="YES")
+          if (ages[ind_N]>=50){
+            limit_1<- min(earnedIncome, 6500)
+          } else {
+            limit_1<- min(earnedIncome, 5500)
+          }
           if (MAGI<rowValues$UPPER_AGI){
             # This situation is when MAGI is between the lowerAGI and upperAGI of the covered person
             # Which, non-covered person would be allowed full deduction
             # print ("MAGI is lower than the covered person UpperAGI")
-            if (ages[ind_N]>=50){
-              limit <- ifelse(earnedIncome <=6500,earnedIncome, 6500)
-            } else {
-              limit <- ifelse(earnedIncome <=5500,earnedIncome, 5500)
-            }
-            IRAAmount[ind_N] <-  ifelse (IRAAmount[ind_N]<=limit, IRAAmount[ind_N], limit)
-            earnedIncome <- earnedIncome -limit
+            IRAAmount[ind_N] <-  min (IRAAmount[ind_N],limit_1)
+            earnedIncome <- earnedIncome -IRAAmount[ind_N]
              if (ages[ind_Y]>=50) {
-               limit <- ifelse(earnedIncome<=(IRAMultiply(rowValues$UPPER_AGI,MAGI,0.325)), earnedIncome, IRAMultiply(rowValues$UPPER_AGI,MAGI,0.325))
+               limit <- min(earnedIncome,(IRAMultiply(rowValues$UPPER_AGI,MAGI,0.325)))
              } else {
-               limit <- ifelse(earnedIncome<=(IRAMultiply(rowValues$UPPER_AGI,MAGI,0.275)), earnedIncome, IRAMultiply(rowValues$UPPER_AGI,MAGI,0.275))
+               limit <- min(earnedIncome,(IRAMultiply(rowValues$UPPER_AGI,MAGI,0.275)))
              }
-            IRAAmount[ind_Y]<-  ifelse (IRAAmount[ind_Y]<=limit, IRAAmount[ind_Y], limit)
+            IRAAmount[ind_Y]<-  min (IRAAmount[ind_Y],limit)
           } 
           else {
             print ("MAGI is higher than the covered person upperAGI. zero deduction for covered person")
             IRAAmount[ind_Y] <- 0
             if (MAGI<rowValues_2$LOWER_AGI) { #Full deduction for non-cover user
               # print (paste("MAGI is lower than the non-cover person lowerAGI: ", MAGI))
-              if (ages[ind_N]>=50){
-                limit <- ifelse(earnedIncome <=6500,earnedIncome, 6500)
-              } else {
-                limit <- ifelse(earnedIncome <=5500,earnedIncome, 5500)
-              }
+              limit <- limit_1
             }
             else {
               # print ("MAGI is between lower AGI and upperAGI")
               if (ages[ind_N]>=50){
-                limit <- ifelse (earnedIncome<=(IRAMultiply(rowValues_2$UPPER_AGI,MAGI,0.65)), earnedIncome, 
-                                                IRAMultiply(rowValues_2$UPPER_AGI,MAGI,0.65))
+                limit <- min (earnedIncome,(IRAMultiply(rowValues_2$UPPER_AGI,MAGI,0.65)))
               } else {
-                limit <- ifelse (earnedIncome<=(IRAMultiply(rowValues_2$UPPER_AGI,MAGI,0.55)), earnedIncome, 
-                                 IRAMultiply(rowValues_2$UPPER_AGI,MAGI,0.55))
+                limit <- min (earnedIncome,(IRAMultiply(rowValues_2$UPPER_AGI,MAGI,0.55)))
               }
             }
 
-            IRAAmount[ind_N] <-  ifelse (IRAAmount[ind_N]<=limit, IRAAmount[ind_N], limit)
-            IRAAmount[ind_Y] <- 0
+            IRAAmount[ind_N] <-  min (IRAAmount[ind_N],limit)
           }
-        }
-        else { # Both were covered and less than the non-cover upper_agi
+      }
+        else { # Both were covered and less than the covered upper_agi
           # print ("MAGI is between lowerAGI and upperAGI of cover person, both covered")
           if (ages[1]>=50) {
-            limit <- ifelse(earnedIncome<=IRAMultiply(rowValues$UPPER_AGI, MAGI, 0.325), earnedIncome, IRAMultiply(rowValues$UPPER_AGI, MAGI, 0.325))
+            limit <- min(earnedIncome,IRAMultiply(rowValues$UPPER_AGI, MAGI, 0.325))
           } else {
-            limit <- ifelse(earnedIncome<=IRAMultiply(rowValues$UPPER_AGI, MAGI, 0.275), earnedIncome, IRAMultiply(rowValues$UPPER_AGI, MAGI, 0.275))
+            limit <- min(earnedIncome,IRAMultiply(rowValues$UPPER_AGI, MAGI, 0.275))
           }
-          IRAAmount[1] <- ifelse(IRAAmount[1]<=limit, IRAAmount[1], limit)
+          IRAAmount[1] <- min(IRAAmount[1],limit)
           earnedIncome <- earnedIncome - limit
           if (ages[2]>=50) {
-            limit <- ifelse(earnedIncome<=IRAMultiply(rowValues$UPPER_AGI, MAGI, 0.325), earnedIncome, IRAMultiply(rowValues$UPPER_AGI, MAGI, 0.325))
+            limit <- min(earnedIncome,IRAMultiply(rowValues$UPPER_AGI, MAGI, 0.325))
           } else {
-            limit <- ifelse(earnedIncome<=IRAMultiply(rowValues$UPPER_AGI, MAGI, 0.275), earnedIncome, IRAMultiply(rowValues$UPPER_AGI, MAGI, 0.275))
+            limit <- min(earnedIncome,IRAMultiply(rowValues$UPPER_AGI, MAGI, 0.275))
           }
-          IRAAmount[2] <- ifelse(IRAAmount[2]<=limit, IRAAmount[2], limit)
+          IRAAmount[2] <- min(IRAAmount[2],limit)
         }
       } 
     } 

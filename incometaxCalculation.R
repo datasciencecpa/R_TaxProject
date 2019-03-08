@@ -71,10 +71,10 @@ QDCGWorksheet <- function(taxYear, taxableIncome, incomeDF, filingStatus){
 totalIncomeCalculation <- function (incomeDF){
    # This function will sum up total income user entered from the income section. incoe
    # Special handle for net capital gain/loss so that maximum of -$3000 are allowed. 
-   Income_Type <- c("Total_W2_Wages", "Interest", "Ord_Dividends", "Qualified_Dividents","Taxable_Refunds","Alimony", "Net_Capital_Gain_Loss",
-                 "IRA_Distribution", "Unemployment Income")
+   Income_Type <- c("Total_W2_Wages", "Interest", "Ord_Dividends", "Qualified_Dividends","Taxable_Refunds","Alimony", "Net_Capital_Gain_Loss",
+                 "IRA_Distribution", "Unemployment Income", "Total_Taxes_Withheld","Total_Medicare_Tax_Withheld")
 
-   AGI_2018 <- c(
+   TotalIncome <- c(
      sum(incomeDF[c("Your_Wages", "Spouse_Wages", "Additional_Wages_1", "Additional_Wages_2"),"Income_Tax_2018"]),
      incomeDF["Interest", 1],
      incomeDF["Ordinary_Dividends", 1],
@@ -83,124 +83,85 @@ totalIncomeCalculation <- function (incomeDF){
      incomeDF["Alimony",1],
      ifelse (sum(incomeDF[c("Long_Term_Gains","Short_Term_Gains"),1])< -3000,-3000,sum(incomeDF[c("Long_Term_Gains","Short_Term_Gains"),1])),
      incomeDF["TaxableIRA",1],
-     incomeDF["Unemployment_Income", 1]
+     incomeDF["Unemployment_Income", 1],
+     sum(incomeDF[c("Your_W2_Tax","Spouse_W2_Tax","Additional_W2_Tax_1","Additional_W2_Tax_2","Interest_Tax","Dividend_Tax",
+                    "Capital_Gain_Tax","IRA_Tax","Unemployment_Tax"),1]),
+     sum(incomeDF[c("Your_Medicare_Tax","Spouse_Medicare_Tax","Add_Medicare_Tax1","Add_Medicare_Tax2"),1])
    )
-   return (data.frame(AGI_2018, row.names = Income_Type))
+   return (data.frame(TotalIncome, row.names = Income_Type))
 }
-totalDeductionToAGI <- function (deductionsDF, statusDF, AGIIncome) {
+totalDeductionToAGI <- function (deductionsDF, statusDF, AGIIncome, colName, taxYear) {
   # This function will calculate above AGI deductions.
   # Parameters: DeductionsDF: Dataframe that contains all deductions user entered.
-  # statusDF: Dataframe that contains all user information: Ages, Filing status.
-  # And Income, use to check student loan interest and IRA deductions.
+  # statusDF: Vector that contains all user information: Ages, Filing status.
+  # Income, use to check student loan interest and IRA deductions.
+  # colName: use to assign colName for returnDF
   # Begin function --------------------------------------------------------
-  valueRow <- deductionsDF$Deduction_2018 !=0 | deductionsDF$Deduction_2017 !=0
-  
-  Deduction_Type <- c ("Educator_Expense", "HSA_Contribution","Your_IRA_Contribution", "IRA_Excess_Amount", "Student_Loan_Deduction")
-  rowNames <- rownames(deductionsDF[valueRow,]) # Get name of rows in DeductionDF that have values.
-  filingStatus <- as.character(statusDF["Filing_Status",])
-  # Iterate through rowNames to see which above AGI deductions need to verify
+  returnDF <- data.frame(c(0,0,0,0,
+                           0,0,0,
+                           0,0,0,
+                           0,0,0,
+                           0,0), 
+                         row.names = c("Educator_Expense", "HSA_Contribution", "HSA_Contribution_Per_W2","HSA_Plan_Type",
+                                             "Catchup_Contribution","Maximum_Contribution","HSA_Deduction_Amt",
+                                             "Your_IRA_Contribution","Your_IRA_Cover","Your_IRA_Deduction",
+                                             "Spouse_IRA_Contribution","Spouse_IRA_Cover","Your_Spouse_IRA_Deduction",
+                                       "Student_Loan_Interest", "Student_Loan_Deduction"))
+  colnames(returnDF) <- colName
+  filingStatus <- toupper(statusDF[1]) # vector of filing status
+  ages <- as.numeric(statusDF[2:3]) # vector that contains ages
   # Starting with Educator_Expense
-  returnDF <- data.frame (Deduction_2018 = 0, 
-                          Deduction_2017 = 0, row.names = "No Deduction") # This is the dataframe that use to hold return values for this function
-  returnDF["Educator_Expense",] <- c(0,0)
-  if (any(rowNames == Deduction_Type[1])){ # Check if Educator_Expense still in the deductonDF after elimination
-      expense_2018 <- ifelse (filingStatus[1] != "MFJ",
-                        ifelse (deductionsDF["Educator_Expense", "Deduction_2018"]<=250,deductionsDF["Educator_Expense", "Deduction_2018"], 250 ),
-                          deductionsDF["Educator_Expense", "Deduction_2018"])
-      expense_2017 <- ifelse(filingStatus[2] != "MFJ",
-                        ifelse (deductionsDF["Educator_Expense", "Deduction_2017"]<=250,deductionsDF["Educator_Expense", "Deduction_2017"], 250 ),
-                          deductionsDF["Educator_Expense", "Deduction_2017"])
-      returnDF["Educator_Expense",] <- c(expense_2018, expense_2017)
-      # print (c(expense_2018, expense_2017))
-  } # Finish checking educator expense
-  returnDF["HSA_Deduction_Amt",] <- c(0,0)
-  if (any(rowNames == Deduction_Type[2])){ # checking HSA contribution, if no HSA contributon, skip this step
-    # check if user enter amount or HSA Contribution per W2
-    HSA_Per_W2 <- c(0,0)
-    returnDF["HSA_Contribution",] <- deductionsDF["HSA_Contribution",]
-    if (any(rowNames == "HSA_Contribution_Per_W2")) {
-      HSA_Per_W2 <- as.numeric(deductionsDF["HSA_Contribution_Per_W2",])
-    }
-    returnDF["HSA_Contribution_Per_W2",] <- HSA_Per_W2
-    returnDF["HSA_Plan_Type",] <- deductionsDF["HSA_Plan_Type",]
-    deduction_2018 <- HSADeduction(ages = as.numeric(statusDF[c("Your_Age", "Spouse_Age"), "Status_2018"]), 
-                                   contributionAmt = c(as.numeric(deductionsDF["HSA_Contribution", "Deduction_2018"]), HSA_Per_W2[1]),
-                                   hsaPlan = deductionsDF["HSA_Plan_Type", "Deduction_2018"], taxYear = 2018)
-    deduction_2017 <- HSADeduction(ages = as.numeric(statusDF[c("Your_Age", "Spouse_Age"), "Status_2017"]),
-                                   contributionAmt = c(as.numeric(deductionsDF["HSA_Contribution", "Deduction_2017"]), HSA_Per_W2[2]),
-                                   hsaPlan = deductionsDF["HSA_Plan_Type", "Deduction_2017"], taxYear = 2017)
-    returnDF["Catchup_Contribution", ] <- c(deduction_2018[2], deduction_2017[2])
-    returnDF["Maximum_Contribution", ] <- c(deduction_2018[3], deduction_2017[3])
-    returnDF["HSA_Deduction_Amt",] <- c(deduction_2018[1], deduction_2017[1])
-    if (any(returnDF["HSA_Contribution", ] > returnDF["HSA_Deduction_Amt",])) {
-      returnDF["Excess_Contribution",] <- as.numeric(returnDF["HSA_Contribution", ]) - as.numeric(returnDF["HSA_Deduction_Amt",])
-    }
-    if (returnDF["HSA_Deduction_Amt", 1]<0) returnDF["HSA_Deduction_Amt", 1] <- 0
-    if (returnDF["HSA_Deduction_Amt",2]<0) returnDF["HSA_Deduction_Amt",2] <- 0
-  } # Finish checking HSA contribution
+  if (filingStatus !="MFJ"){
+    returnDF["Educator_Expense",1] <- min(deductionsDF["Educator_Expense",1], 250)
+  } else {
+    returnDF["Educator_Expense",1] <- deductionsDF["Educator_Expense",1]
+  }
   
-  returnDF["Your_IRA_Deduction",] <- c(0,0)
-  returnDF["Your_Spouse_IRA_Deduction", ] <- c(0,0)
+    # Finish checking educator expense ------------------------------------------
+  # Calculate HSA Deduction if applicable.------------------------------------------
+  returnDF[c("HSA_Contribution","HSA_Contribution_Per_W2","HSA_Plan_Type"),1] <- deductionsDF[c("HSA_Contribution","HSA_Contribution_Per_W2","HSA_Plan_Type"),1]  
+
+  HSA_Deduction <- HSADeduction(ages, as.numeric(returnDF[c("HSA_Contribution","HSA_Contribution_Per_W2"),1]),
+                            hsaPlan = returnDF["HSA_Plan_Type",1], taxYear)
+
+  returnDF[c("HSA_Deduction_Amt","Catchup_Contribution","Maximum_Contribution"),1] <- HSA_Deduction
+
+  # Finish calculating HSA Deduction ------------------------------------------------------------------------------------
+  # Start calculating IRA Deduction
+  returnDF[c("Your_IRA_Contribution","Spouse_IRA_Contribution",
+             "Your_IRA_Cover","Spouse_IRA_Cover"),1] <-  deductionsDF[c("Your_IRA_Contribution","Spouse_IRA_Contribution",
+                                                                        "Your_IRA_Cover","Spouse_IRA_Cover"),1]
+
+  # Checking if user has enough earned income (Total Wages + Alimony) to contribute to IRA
+  earnedIncome <- sum(as.numeric(AGIIncome[c(1,6)])) # Include total W2 Wages and Alimony
+  AGI <- sum(as.numeric(AGIIncome[-c(4,10,11)]))
+  MAGI <- AGI - sum(as.numeric(returnDF[c("Educator_Expense", "HSA_Deduction_Amt"),1]))
+  IRA_Deduction <- IRADeduction(taxYear, IRAcover = as.character(deductionsDF[c("Your_IRA_Cover", "Spouse_IRA_Cover"),1]),
+                                          filingStatus = filingStatus,
+                                          ages = ages,
+                                          MAGI = MAGI, 
+                                          earnedIncome = earnedIncome, 
+                                          IRAAmount = as.numeric(deductionsDF[c("Your_IRA_Contribution", "Spouse_IRA_Contribution"), 1]))
+
+  returnDF[c("Your_IRA_Deduction","Your_Spouse_IRA_Deduction"),1] <- IRA_Deduction
+    
+  # End IRA deduction calculation ------------------------------------------------------------------------------------
+  # STARTING CALCULATION OF STUDENT LOAN INTEREST DEDUCTION
+  returnDF["Student_Loan_Interest",1] <- as.numeric(deductionsDF["Student_Loan_Interest",])
+  AGI_Deduction <- sum(as.numeric(returnDF[c("Educator_Expense", "HSA_Deduction_Amt",
+                                              "Your_IRA_Deduction", "Your_Spouse_IRA_Deduction"), 1]))
   
-  if (any(grepl("IRA_Contribution", rowNames))){ # Checking if user entered any IRA contribution
-    # Checking if user has enough earned income (Total Wages + Alimony) to contribute to IRA
-    earnedIncome_2018 <- 0
-    earnedIncome_2017 <- 0
-    MAGI_2018 <- sum(as.numeric(AGIIncome$AGI_2018)) - sum(as.numeric(returnDF[c("Educator_Expense", "HSA_Deduction_Amt"), "Deduction_2018"]))
-    MAGI_2017 <- sum(as.numeric(AGIIncome$AGI_2017)) - sum(as.numeric(returnDF[c("Educator_Expense", "HSA_Deduction_Amt"), "Deduction_2017"]))
+  MAGI <- AGI - AGI_Deduction  # Calculate new MAGI for student loan deduction
 
-    returnDF["IRA_Filing_Status",] <- filingStatus
-    earnedIncome_2018 <- sum(as.numeric(AGIIncome[c(1,5),"AGI_2018"]))
-    earnedIncome_2017 <- sum(as.numeric(AGIIncome[c(1,5), "AGI_2017"]))
-    returnDF["Your_IRA_Contribution", ] <- deductionsDF["Your_IRA_Contribution",]
-    returnDF["Your_IRA_Cover",] <- deductionsDF["Your_IRA_Cover",]
-    if (any(filingStatus == "MFJ")) {
-      returnDF["Spouse_IRA_Contribution",] <- deductionsDF["Spouse_IRA_Contribution",]
-      returnDF["Spouse_IRA_Cover",] <- deductionsDF["Spouse_IRA_Cover", ]
-    }
-    
-    IRA_Deduction_2018 <- IRADeduction(2018, IRAcover = as.character(deductionsDF[c("Your_IRA_Cover", "Spouse_IRA_Cover"),"Deduction_2018"]),
-                                            filingStatus = as.character(filingStatus[1]),
-                                            ages = as.numeric(statusDF[c("Your_Age", "Spouse_Age"), "Status_2018"]),
-                                            MAGI = MAGI_2018, 
-                                            earnedIncome = earnedIncome_2018, 
-                                            IRAAmount = as.numeric(deductionsDF[c("Your_IRA_Contribution", "Spouse_IRA_Contribution"), "Deduction_2018"]))
-    print (paste("IRA Deduction 2018:", IRA_Deduction_2018))
-    IRA_Deduction_2017 <- IRADeduction(2017, IRAcover = as.character(deductionsDF[c("Your_IRA_Cover", "Spouse_IRA_Cover"),"Deduction_2017"]),
-                                       filingStatus = as.character(filingStatus[2]),
-                                       ages = as.numeric(statusDF[c("Your_Age", "Spouse_Age"), "Status_2017"]),
-                                       MAGI = MAGI_2018, earnedIncome = earnedIncome_2017, 
-                                       IRAAmount = as.numeric(deductionsDF[c("Your_IRA_Contribution", "Spouse_IRA_Contribution"), "Deduction_2017"]))
-    print (paste("IRA Deduction 2017:", IRA_Deduction_2017))
-    returnDF["Your_IRA_Deduction",] <- c(IRA_Deduction_2018[1], IRA_Deduction_2017[1])
-    returnDF["Your_Spouse_IRA_Deduction", ] <- c(IRA_Deduction_2018[2], IRA_Deduction_2017[2])
-    
-  } # End IRA deduction calculation
-  returnDF["Student_Loan_Interest",] <- c(0,0)
-  returnDF["Student_Loan_Deduction",] <- c(0,0)
-  if (any(grepl("Student_Loan", rowNames))){
-
-    SLInterest <- as.numeric(deductionsDF["Student_Loan_Interest",])
-    returnDF["Student_Loan_Interest",] <- SLInterest
-    deduction_2018 <- sum(as.numeric(returnDF[c("Educator_Expense", "HSA_Deduction_Amt",
-                                                "Your_IRA_Deduction", "Your_Spouse_IRA_Deduction"), "Deduction_2018"]))
-    deduction_2017 <- sum(as.numeric(returnDF[c("Educator_Expense", "HSA_Deduction_Amt",
-                                                "Your_IRA_Deduction", "Your_Spouse_IRA_Deduction"), "Deduction_2017"]))
-    MAGI_2018 <- sum(as.numeric(AGIIncome$AGI_2018)) - deduction_2018 
-    MAGI_2017 <- sum(as.numeric(AGIIncome$AGI_2017)) - deduction_2017
-    SLDeduction_2018 <- studentLoan(interest = SLInterest[1], MAGI_2018, filingStatus[1], 2018)
-    print (paste("Student loan deduction: ", SLDeduction_2018))
-    SLDeduction_2017 <- studentLoan(interest = SLInterest[2], MAGI_2017, filingStatus[1], 2017)
-    print (paste("Student loan deduction: ", SLDeduction_2017))
-    returnDF["Student_Loan_Deduction",] <- c(SLDeduction_2018, SLDeduction_2017)
-  } # End Student loan deduction calculation
-  returnDF["Adjusted_Gross_Income", ] <- c(sum(AGIIncome$AGI_2018) -
-                                             sum(as.numeric(returnDF[c("Educator_Expense", "HSA_Deduction_Amt","Your_IRA_Deduction", 
-                                                        "Your_Spouse_IRA_Deduction","Student_Loan_Deduction"), "Deduction_2018"])),
-                                           sum(AGIIncome$AGI_2017) -
-                                             sum(as.numeric(returnDF[c("Educator_Expense", "HSA_Deduction_Amt","Your_IRA_Deduction", 
-                                                         "Your_Spouse_IRA_Deduction","Student_Loan_Deduction"), "Deduction_2017"])))
-  if (nrow(returnDF)>1) returnDF <- returnDF[-1,]
+  SLDeduction <- studentLoan(interest = returnDF["Student_Loan_Interest",1], MAGI, filingStatus, 2018)
+  print (paste("Student loan deduction: ", SLDeduction))
+  returnDF["Student_Loan_Deduction",] <- SLDeduction
+   # End Student loan deduction calculation ----------------------------------------------------------------------
+  returnDF["Adjusted_Gross_Income", ] <- AGI - sum(as.numeric(returnDF[c("Educator_Expense", "HSA_Deduction_Amt","Your_IRA_Deduction", 
+                                                        "Your_Spouse_IRA_Deduction","Student_Loan_Deduction"), 1]))
+  returnDF["Adjusted_Gross_Income",] <- max(returnDF["Adjusted_Gross_Income",], 0)                                      
+  print("Final Return DF Value")
+  print (returnDF)
   return (returnDF) 
 } # End totalDeductionToAGI
 belowAGIDeduction <- function(deductionDF, statusDF, AGI){

@@ -5,30 +5,30 @@ incomeUI <- function (id){
     # --Wages section------------------------------------------------------------------------------------------------------------
     h3("Your W-2 Wages"),
     fluidRow(
-      column(6,numericInput(ns("yourWages"), label = "Enter your wages from W-2, box 1:", value = 0)),
-      column(6,numericInput(ns("yourW2Tax"), label = "Enter your income tax withheld, box 2:", value = 0))
+      column(6,numericInput(ns("yourWages"), label = "Enter your wages from W-2, box 1:", value=0, min=0)),
+      column(6,numericInput(ns("yourW2Tax"), label = "Enter your income tax withheld, box 2:", value=0, min=0))
     ),# Your Wages row
     fluidRow(
-      column(6,numericInput(ns("yourMedicareW2"), label = "Enter your medicare wages from W-2, box 5:", value = 0)),
-      column(6,numericInput(ns("yourMedicareTax"), label = "Enter your medicare tax withheld, box 6:", value = 0))
+      column(6,numericInput(ns("yourMedicareW2"), label = "Enter your medicare wages from W-2, box 5:", value=0, min=0)),
+      column(6,numericInput(ns("yourMedicareTax"), label = "Enter your medicare tax withheld, box 6:", value=0, min=0))
     ), # Medicare Wage & Tax Row
     fluidRow(
-      column(6,numericInput(ns("spouseWages"), label = "Enter spouse wages from W-2, box 1:", value = 0)),
-      column(6,numericInput(ns("spouseW2Tax"), label = "Enter spouse income tax withheld, box 2:", value = 0))
+      column(6,numericInput(ns("spouseWages"), label = "Enter spouse wages from W-2, box 1:", value=0, min=0)),
+      column(6,numericInput(ns("spouseW2Tax"), label = "Enter spouse income tax withheld, box 2:", value=0, min=0))
     ), # Spouse Wages
     fluidRow(
-      column(6,numericInput(ns("spouseMedicareW2"), label = "Enter your medicare wages from W-2, box 5:", value = 0)),
-      column(6,numericInput(ns("spouseMedicareTax"), label = "Enter your medicare tax withheld, box 6:", value = 0))
+      column(6,numericInput(ns("spouseMedicareW2"), label = "Enter your medicare wages from W-2, box 5:", value=0, min=0)),
+      column(6,numericInput(ns("spouseMedicareTax"), label = "Enter your medicare tax withheld, box 6:", value=0, min=0))
     ),# Spouse Medicare 
     hr(),
     h3("Your Additional W-2:"),
     fluidRow(
-      column(6,numericInput(ns("addWages1"), label = "Enter additional wages from W-2, box 1:", value = 0)),
-      column(6,numericInput(ns("addW2Tax1"), label = "Enter income tax from W-2, box 2:", value = 0))
+      column(6,numericInput(ns("addWages1"), label = "Enter additional wages from W-2, box 1:", value=0, min=0)),
+      column(6,numericInput(ns("addW2Tax1"), label = "Enter income tax from W-2, box 2:", value=0, min=0))
     ), # Additional wages 1
     fluidRow(
-      column(6,numericInput(ns("addMedicare1"), label = "Enter your medicare wages from W-2, box 5:", value = 0)),
-      column(6,numericInput(ns("addMedicareTax1"), label = "Enter your medicare tax withheld, box 6:", value = 0))
+      column(6,numericInput(ns("addMedicare1"), label = "Enter your medicare wages from W-2, box 5:", value=0, min=0)),
+      column(6,numericInput(ns("addMedicareTax1"), label = "Enter your medicare tax withheld, box 6:", value=0, min=0))
     ), # Additional medicare wages and taxes
     fluidRow(
       actionButton(ns("hideWages1"), label = "Delete this W-2", class="btn btn-danger btn-responsive")
@@ -36,12 +36,12 @@ incomeUI <- function (id){
     hr(),
     h3("Spouse Additional W-2:"),
     fluidRow(
-      column(6,numericInput(ns("addWages2"), label = "Enter additional wages from W-2, box 1:", value = 0)),
-      column(6,numericInput(ns("addW2Tax2"), label = "Enter income tax from W-2, box 2:", value = 0))
+      column(6,numericInput(ns("addWages2"), label = "Enter additional wages from W-2, box 1:", value=0, min=0)),
+      column(6,numericInput(ns("addW2Tax2"), label = "Enter income tax from W-2, box 2:", value=0, min=0))
     ), # Additional Wages 2
     fluidRow(
-      column(6,numericInput(ns("addMedicare2"), label = "Enter your medicare wages from W-2, box 5:", value = 0)),
-      column(6,numericInput(ns("addMedicareTax2"), label = "Enter your medicare tax withheld, box 6:", value = 0))
+      column(6,numericInput(ns("addMedicare2"), label = "Enter your medicare wages from W-2, box 5:", value=0, min=0)),
+      column(6,numericInput(ns("addMedicareTax2"), label = "Enter your medicare tax withheld, box 6:", value=0, min=0))
     ), # Additional Medicare wages and tax 2
     fluidRow(
       actionButton(ns("hideWages2"), label = "Delete this W-2",class="btn btn-danger btn-responsive")
@@ -93,9 +93,9 @@ incomeUI <- function (id){
              This app won't calculate special capital gains such as section 1250 gain or collectible gain."),
     fluidRow(
       column(9, 
-            numericInput(ns("LTGain"), label = "Enter your long-term capital gains (loss):", value=0 ),
-            numericInput(ns("STGain"), label = "Enter your short-term capital gains (loss)", value = 0),
-            numericInput(ns("capitalTax"), label = "Enter your income tax withheld:", value = 0)
+            numericInput(ns("LTGain"), label = "Enter your long-term capital gains (loss):", value=0, min=0 ),
+            numericInput(ns("STGain"), label = "Enter your short-term capital gains (loss)", value=0, min=0),
+            numericInput(ns("capitalTax"), label = "Enter your income tax withheld:", value=0, min=0)
       ),
       column(3,tags$strong("Help:"), a(href= "https://www.irs.gov/taxtopics/tc409", "Topic No. 409 - Capital Gains and Losses"))
     ),
@@ -105,7 +105,7 @@ incomeUI <- function (id){
     fluidRow(
       column(9,
             numericInput(ns("IRADist"), label = "Enter your taxable distribution IRA:", value = 0, min= 0),
-            numericInput(ns("IRATax"), label = "Enter your income tax withheld:", value = 0),
+            numericInput(ns("IRATax"), label = "Enter your income tax withheld:", value=0, min=0),
             checkboxInput(ns("IRAException"), label = "Check if you meet exception to 10% additional tax", value = FALSE)
       ),
       column(3, tags$strong("Help:"), 
@@ -116,8 +116,8 @@ incomeUI <- function (id){
     # End IRA Distributions -------------------------------------------------------------------------------------------------------------------
     hr(),h3("Unemployment Income"),# Unemployment income 
     fluidRow(
-        column(6, numericInput(ns("unemployment"), label= "Unemployment income received", value = 0)),
-        column(6, numericInput(ns("unemploymentTax"), label= "Unemployment income tax withheld", value = 0))
+        column(6, numericInput(ns("unemployment"), label= "Unemployment income received", value=0, min=0)),
+        column(6, numericInput(ns("unemploymentTax"), label= "Unemployment income tax withheld", value=0, min=0))
     )
   )
 } # finish incomeUI function

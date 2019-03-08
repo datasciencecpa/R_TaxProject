@@ -111,7 +111,7 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   # get statusInformation, incomeInformation,deductions, and credits information entered by user.
-
+  
   statusInformation <- callModule(filingInformation, "filingInformation", session = session)
   income <- callModule(income,"income", session = session)
   deductions <- callModule(deductions, "deductions", session = session)
@@ -134,14 +134,20 @@ server <- function(input, output, session) {
     } else {
       hideshow(c("showTaxSummaryTbl", "add2017","taxSummaryTbl","viewCreditChb",
                  "displaySummaryGraph"), FALSE)
-    } # End Hide Tax Summary Section
+    } # End Hide Tax Summary Section----------------------------------------------
+    
     if (input$hideTaxPlanning){ # Hide Tax Planning
       hideshow(c("filingStatus","qualifyingChild","qualifyingRelatives","IRAAmountSld","HSAAmountSld"), TRUE)
-    } # End Hide Tax Planning. Uncheck this box will be handled separately within function below.
+    } 
+    else {
+      hideshow(c("filingStatus","qualifyingChild","qualifyingRelatives","IRAAmountSld","HSAAmountSld"), FALSE)
+    }# End Hide Tax Planning. Uncheck this box will be handled separately within function below.
     if (input$hideDetailSummary){
       updateCheckboxInput(session, "displayOtherDetailGrh",value = FALSE)
       hideshow(c("otherDetailSummary","otherDetailTbl","displayOtherDetailGrh"), TRUE)
-    } # End hide Other Detail Summary Section, Uncheck this box will be handled separately within function below.
+    } else {
+      hideshow(c("otherDetailSummary","otherDetailTbl","displayOtherDetailGrh"), FALSE)
+    }# End hide Other Detail Summary Section.
     if (input$viewCreditChb){# Credit checkbox under tax summary
       show ("creditsSelect")
       show ("CreditTbl")
@@ -172,140 +178,143 @@ server <- function(input, output, session) {
       #------------------------------------------------------------------+
 
       totalIncome <- totalIncomeCalculation(income()) # Return summary of all incomes user entered.
-      deductionsToAGI <- totalDeductionToAGI (deductions(), statusInformation(),totalIncome)
-      valueRow <- totalIncome$AGI_2018 !=0 | totalIncome$AGI_2017 !=0  # Interested in non-zero value income type.
-      if (sum(valueRow)>0) { # Some incomes were available. Display graph checkbox
-          show("displayTotalIncGraph")
-          show("stackedIncomeChb")
-          totalIncome <- totalIncome[valueRow,]
-          output$totalIncomeTbl <- renderDataTable(totalIncome, options = list(pageLength = 25))
-          # Step 2: Plot totalIncome out to graph
-          output$totalIncGraph <- renderPlot({
-            Income_Type = rownames(totalIncome)
-            AGIIncome <- data.frame(Income_Type, totalIncome, row.names = NULL)
-            if (input$stackedIncomeChb){
-              ggplot(data = DFConverter(AGIIncome), aes(x= TaxYear, y = Amount, fill = Income_Type)) +
-                geom_bar(stat = "identity")
-            } else {
-              ggplot(data = DFConverter(AGIIncome), aes(x= Income_Type, y= Amount, fill= TaxYear)) +
-                geom_bar(stat = "identity", position = position_dodge())+ 
-                geom_text(aes(label=Amount), vjust=-0.5, color="black", size=3.5)
-            }
-          })
-          #------------------------------------------------------------------
-          # Step 3: Calculate deductions above AGI
-          
-          AGI <- as.numeric(deductionsToAGI["Adjusted_Gross_Income",]) # Getting adjusted gross income for 2 years
-          deductionDF <- deductionsToAGI[c("Educator_Expense", "HSA_Deduction_Amt", "Your_IRA_Deduction", "Your_Spouse_IRA_Deduction",
-                                           "Student_Loan_Deduction"), ]
-          valueRow <- (deductionDF$Deduction_2018 !=0) | (deductionDF$Deduction_2017 !=0)
-          if (sum(valueRow)>0){
-            show("displayDeductionGraph")
-            show("stackedDeductionChb")
-          }
-          deductionDF <- deductionDF[valueRow,]
-          deductionDF$Deduction_2018 <- as.numeric(deductionDF$Deduction_2018)
-          deductionDF$Deduction_2017 <- as.numeric(deductionDF$Deduction_2017)
-          Deduction_Type <- rownames(deductionDF)
-          deductionDF <- data.frame(Deduction_Type, deductionDF, row.names = NULL)
-          # rownames(deductionDF) <- NULL
-          output$deductionGraph <- renderPlot({
-            if (input$stackedDeductionChb){
-              ggplot(data= DFConverter(deductionDF), aes(x = TaxYear, y= Amount, fill = Deduction_Type))+
-                geom_bar(stat = "identity")
-            }
-            else {
-              ggplot(data= DFConverter(deductionDF), aes(x = Deduction_Type, y= Amount, fill = TaxYear))+
-                geom_bar(stat = "identity", position = position_dodge())+ 
-                geom_text(aes(label=Amount), vjust=-0.5, color="black", size=3.5)
-            }
-          })
-          output$totalDeductionTbl <- renderDataTable(deductionsToAGI, options = list(pageLength = 25))
-          #----------------------------------------------------------------------- End deductions above AGI
-          # Step 4: Calculate below AGI deductions: Standard Deductions or Itemized Deductions and Exemption
-          itemizedItems <- c("Medical_Exp","State_Local_Taxes", "Real_Estate_Taxes","Personal_Property_Tax",
-                             "Mortgage_Interest","Premium_Mortage_Interest","Charitable_Contribution")
-          result <- belowAGIDeduction (deductions()[itemizedItems,], statusInformation(),AGI)
-          deductionSummary <- result [[1]]
-          detailItemized <- result[[2]]
-          if (any(deductionSummary["Total_Itemized_Deduction",]>0)){
-            show("displayItemizedChb")
-          }
-          output$detailItemizedTbl <- renderDataTable(detailItemized,options= list(pageLength = 25))
-          output$belowAGIDeductionTbl <- renderDataTable(deductionSummary)
-          # End step 4 ------------------------------------------------------------------------------------
-          # Step 5: Start Summary Section
-          filingStatus <- as.character(toupper(statusInformation()["Filing_Status",]))
-          
-          summary_2018 <- c(AGI[1],deductionSummary["Your_Deduction","Below_AGI_Deduction_2018"],
-                            deductionSummary["Exemption_Deduction", "Below_AGI_Deduction_2018"])
-          summary_2017 <- c(AGI[2],deductionSummary["Your_Deduction", "Below_AGI_Deduction_2017"],
-                            deductionSummary["Exemption_Deduction", "Below_AGI_Deduction_2017"])
-          rowNames <- c("AGI", "Deduction", "Exemption" )
-          summaryDF <- data.frame(summary_2018, summary_2017, row.names = rowNames)
-          summaryDF["Taxable_Income",] <- summaryDF[1,] - apply(summaryDF[2:3,], 2, sum)
-          # summaryDF["Taxable_Income",1] <- ifelse(summaryDF["Taxable_Income",1]<0,0, summaryDF["Taxable_Income",1])
-          # summaryDF["Taxable_Income",2] <- ifelse(summaryDF["Taxable_Income",2]<0,0, summaryDF["Taxable_Income",2])
-          summaryDF["Taxable_Income",1] <- max(summaryDF["Taxable_Income",1],0)
-          summaryDF["Taxable_Income",2] <- max(summaryDF["Taxable_Income",2],0)
-          # End step 5 ------------------------------------------------------------------------------------
-          # Step 6 --- Calculate Tax Amount based on taxable income
-          tax <- taxCalculation (as.numeric(summaryDF["Taxable_Income",]), income(), filingStatus)
-          summaryDF["Tax_Amount",] <- tax
-          print (summaryDF)
-          # End Step 6 ------------------------------------------------------------------------------------
-          # Step 5 - Calculate Credits if applicable.
-          taxCredits <- creditCalculation(summaryDF, income(), filingStatus, credits()) 
-          creditNames <- names(taxCredits)
-          print (paste("Credit Names: ", creditNames))
-          creditLogical <- sapply(taxCredits, is.data.frame)
-          creditNames <- creditNames[creditLogical]
-          print (paste("Credit Names with Logical filter: ", creditNames))
-          if (sum(creditLogical)>0){
-            #------- Step 1: Show Credit Table checkbox and update selectInput with choices = creditNames[Logical]
-            show("viewCreditChb")
-            updateSelectInput(session,inputId = "creditsSelect",label = "Select Credit:", choices = creditNames, selected = creditNames[1])
-            output$CreditTbl <- renderDataTable({
-              creditSelected <- input$creditsSelect
-              print (paste("Credit Selected:", creditSelected))
-              return (taxCredits[[creditSelected]])
-            }, options = list(pageLength = 25))
-            # --------- Determine which credit is available through list of credit logical ------------
-            if (is.data.frame(taxCredits[["CDC"]])) { # CDC is dataframe, CDC credit available
-              if (length(colnames(taxCredits[["CDC"]])) == 2){
-                # print ("Two year credit")
-                summaryDF["Child_Dependent_Care_Credit", ] <- taxCredits[["CDC"]]["Child_Dependent_Care_Credit",]
-              } else {
-                # print("One year credit")
-                taxYear <- colnames(taxCredits[["CDC"]])
-                if (taxYear =="2018"){
-                  summaryDF["Child_Dependent_Care_Credit",1] <- taxCredits[["CDC"]]["Child_Dependent_Care_Credit",]
-                }else {
-                  summaryDF["Child_Dependent_Care_Credit",2] <- taxCredits[["CDC"]]["Child_Dependent_Care_Credit",]
-                }
-              }
-            }
-            if(is.data.frame(taxCredits[["Education"]])){
-              if (length(colnames(taxCredits[["Education"]]))==2){
-                # print ("Two year credit")
-                summaryDF["Nonrefundable_Educational_Credit", ] <- taxCredits[["Education"]]["Line_19",]
-              }else {
-                # print("One year credit")
-                taxYear <- colnames(taxCredits[["Education"]])
-                if (taxYear=="2018"){
-                  summaryDF["Nonrefundable_Education_Credit",1] <- taxCredits[["Education"]]["Line_19",]
-                }
-                else {
-                  summaryDF["Nonrefundable_Education_Credit",2] <- taxCredits[["Education"]]["Line_19",]
-                }
-              }
-            }
-            # 
-          }
-          
-          summaryDF[is.na.data.frame(summaryDF)] <- 0
-          return (summaryDF)
-      }
+      
+      deductionsToAGI <- totalDeductionToAGI (deductions(), statusInformation()[c("Filing_Status", "Your_Age","Spouse_Age"),1],
+                                              totalIncome$TotalIncome, "Tax_2018","2018")
+
+      # valueRow <- totalIncome$AGI_2018 !=0 | totalIncome$AGI_2017 !=0  # Interested in non-zero value income type.
+
+      #     show("displayTotalIncGraph")
+      #     show("stackedIncomeChb")
+      #     totalIncome <- totalIncome[valueRow,]
+      #     output$totalIncomeTbl <- renderDataTable(totalIncome, options = list(pageLength = 25))
+      #     # Step 2: Plot totalIncome out to graph
+      #     output$totalIncGraph <- renderPlot({
+      #       Income_Type = rownames(totalIncome)
+      #       AGIIncome <- data.frame(Income_Type, totalIncome, row.names = NULL)
+      #       if (input$stackedIncomeChb){
+      #         ggplot(data = DFConverter(AGIIncome), aes(x= TaxYear, y = Amount, fill = Income_Type)) +
+      #           geom_bar(stat = "identity")
+      #       } else {
+      #         ggplot(data = DFConverter(AGIIncome), aes(x= Income_Type, y= Amount, fill= TaxYear)) +
+      #           geom_bar(stat = "identity", position = position_dodge())+ 
+      #           geom_text(aes(label=Amount), vjust=-0.5, color="black", size=3.5)
+      #       }
+      #     })
+      #     #------------------------------------------------------------------
+      #     # Step 3: Calculate deductions above AGI
+      #     
+      #     AGI <- as.numeric(deductionsToAGI["Adjusted_Gross_Income",]) # Getting adjusted gross income for 2 years
+      #     deductionDF <- deductionsToAGI[c("Educator_Expense", "HSA_Deduction_Amt", "Your_IRA_Deduction", "Your_Spouse_IRA_Deduction",
+      #                                      "Student_Loan_Deduction"), ]
+      #     valueRow <- (deductionDF$Deduction_2018 !=0) | (deductionDF$Deduction_2017 !=0)
+      #     if (sum(valueRow)>0){
+      #       show("displayDeductionGraph")
+      #       show("stackedDeductionChb")
+      #     }
+      #     deductionDF <- deductionDF[valueRow,]
+      #     deductionDF$Deduction_2018 <- as.numeric(deductionDF$Deduction_2018)
+      #     deductionDF$Deduction_2017 <- as.numeric(deductionDF$Deduction_2017)
+      #     Deduction_Type <- rownames(deductionDF)
+      #     deductionDF <- data.frame(Deduction_Type, deductionDF, row.names = NULL)
+      #     # rownames(deductionDF) <- NULL
+      #     output$deductionGraph <- renderPlot({
+      #       if (input$stackedDeductionChb){
+      #         ggplot(data= DFConverter(deductionDF), aes(x = TaxYear, y= Amount, fill = Deduction_Type))+
+      #           geom_bar(stat = "identity")
+      #       }
+      #       else {
+      #         ggplot(data= DFConverter(deductionDF), aes(x = Deduction_Type, y= Amount, fill = TaxYear))+
+      #           geom_bar(stat = "identity", position = position_dodge())+ 
+      #           geom_text(aes(label=Amount), vjust=-0.5, color="black", size=3.5)
+      #       }
+      #     })
+      #     output$totalDeductionTbl <- renderDataTable(deductionsToAGI, options = list(pageLength = 25))
+      #     #----------------------------------------------------------------------- End deductions above AGI
+      #     # Step 4: Calculate below AGI deductions: Standard Deductions or Itemized Deductions and Exemption
+      #     itemizedItems <- c("Medical_Exp","State_Local_Taxes", "Real_Estate_Taxes","Personal_Property_Tax",
+      #                        "Mortgage_Interest","Premium_Mortage_Interest","Charitable_Contribution")
+      #     result <- belowAGIDeduction (deductions()[itemizedItems,], statusInformation(),AGI)
+      #     deductionSummary <- result [[1]]
+      #     detailItemized <- result[[2]]
+      #     if (any(deductionSummary["Total_Itemized_Deduction",]>0)){
+      #       show("displayItemizedChb")
+      #     }
+      #     output$detailItemizedTbl <- renderDataTable(detailItemized,options= list(pageLength = 25))
+      #     output$belowAGIDeductionTbl <- renderDataTable(deductionSummary)
+      #     # End step 4 ------------------------------------------------------------------------------------
+      #     # Step 5: Start Summary Section
+      #     filingStatus <- as.character(toupper(statusInformation()["Filing_Status",]))
+      #     
+      #     summary_2018 <- c(AGI[1],deductionSummary["Your_Deduction","Below_AGI_Deduction_2018"],
+      #                       deductionSummary["Exemption_Deduction", "Below_AGI_Deduction_2018"])
+      #     summary_2017 <- c(AGI[2],deductionSummary["Your_Deduction", "Below_AGI_Deduction_2017"],
+      #                       deductionSummary["Exemption_Deduction", "Below_AGI_Deduction_2017"])
+      #     rowNames <- c("AGI", "Deduction", "Exemption" )
+      #     summaryDF <- data.frame(summary_2018, summary_2017, row.names = rowNames)
+      #     summaryDF["Taxable_Income",] <- summaryDF[1,] - apply(summaryDF[2:3,], 2, sum)
+      #     # summaryDF["Taxable_Income",1] <- ifelse(summaryDF["Taxable_Income",1]<0,0, summaryDF["Taxable_Income",1])
+      #     # summaryDF["Taxable_Income",2] <- ifelse(summaryDF["Taxable_Income",2]<0,0, summaryDF["Taxable_Income",2])
+      #     summaryDF["Taxable_Income",1] <- max(summaryDF["Taxable_Income",1],0)
+      #     summaryDF["Taxable_Income",2] <- max(summaryDF["Taxable_Income",2],0)
+      #     # End step 5 ------------------------------------------------------------------------------------
+      #     # Step 6 --- Calculate Tax Amount based on taxable income
+      #     tax <- taxCalculation (as.numeric(summaryDF["Taxable_Income",]), income(), filingStatus)
+      #     summaryDF["Tax_Amount",] <- tax
+      #     print (summaryDF)
+      #     # End Step 6 ------------------------------------------------------------------------------------
+      #     # Step 5 - Calculate Credits if applicable.
+      #     taxCredits <- creditCalculation(summaryDF, income(), filingStatus, credits()) 
+      #     creditNames <- names(taxCredits)
+      #     print (paste("Credit Names: ", creditNames))
+      #     creditLogical <- sapply(taxCredits, is.data.frame)
+      #     creditNames <- creditNames[creditLogical]
+      #     print (paste("Credit Names with Logical filter: ", creditNames))
+      #     if (sum(creditLogical)>0){
+      #       #------- Step 1: Show Credit Table checkbox and update selectInput with choices = creditNames[Logical]
+      #       show("viewCreditChb")
+      #       updateSelectInput(session,inputId = "creditsSelect",label = "Select Credit:", choices = creditNames, selected = creditNames[1])
+      #       output$CreditTbl <- renderDataTable({
+      #         creditSelected <- input$creditsSelect
+      #         print (paste("Credit Selected:", creditSelected))
+      #         return (taxCredits[[creditSelected]])
+      #       }, options = list(pageLength = 25))
+      #       # --------- Determine which credit is available through list of credit logical ------------
+      #       if (is.data.frame(taxCredits[["CDC"]])) { # CDC is dataframe, CDC credit available
+      #         if (length(colnames(taxCredits[["CDC"]])) == 2){
+      #           # print ("Two year credit")
+      #           summaryDF["Child_Dependent_Care_Credit", ] <- taxCredits[["CDC"]]["Child_Dependent_Care_Credit",]
+      #         } else {
+      #           # print("One year credit")
+      #           taxYear <- colnames(taxCredits[["CDC"]])
+      #           if (taxYear =="2018"){
+      #             summaryDF["Child_Dependent_Care_Credit",1] <- taxCredits[["CDC"]]["Child_Dependent_Care_Credit",]
+      #           }else {
+      #             summaryDF["Child_Dependent_Care_Credit",2] <- taxCredits[["CDC"]]["Child_Dependent_Care_Credit",]
+      #           }
+      #         }
+      #       }
+      #       if(is.data.frame(taxCredits[["Education"]])){
+      #         if (length(colnames(taxCredits[["Education"]]))==2){
+      #           # print ("Two year credit")
+      #           summaryDF["Nonrefundable_Educational_Credit", ] <- taxCredits[["Education"]]["Line_19",]
+      #         }else {
+      #           # print("One year credit")
+      #           taxYear <- colnames(taxCredits[["Education"]])
+      #           if (taxYear=="2018"){
+      #             summaryDF["Nonrefundable_Education_Credit",1] <- taxCredits[["Education"]]["Line_19",]
+      #           }
+      #           else {
+      #             summaryDF["Nonrefundable_Education_Credit",2] <- taxCredits[["Education"]]["Line_19",]
+      #           }
+      #         }
+      #       }
+      #       # 
+      #     }
+      #     
+      #     summaryDF[is.na.data.frame(summaryDF)] <- 0
+      #     return (summaryDF)
+
   }) # End Tax Summary
 }
 
