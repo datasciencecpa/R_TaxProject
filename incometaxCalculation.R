@@ -64,6 +64,7 @@ QDCGWorksheet <- function(taxYear, taxableIncome, incomeDF, filingStatus){
   taxRow <- taxRow[ind,]
   # print (taxRow)
   taxAmount <- (taxableIncome - taxRow$LOWER_AMT) * taxRow$TAX_RATE + taxRow$ADD_ON + tax_15 + tax_20
+  taxAmount <- round(taxAmount,digits = 2)
   # print (paste("Tax Amount base on rate:", (taxableIncome - taxRow$LOWER_AMT) * taxRow$TAX_RATE))
   # print (paste("Addon: ", taxRow$ADD_ON))
   return (taxAmount)
@@ -160,8 +161,8 @@ totalDeductionToAGI <- function (deductionsDF, statusDF, AGIIncome, colName, tax
   returnDF["Adjusted_Gross_Income", ] <- AGI - sum(as.numeric(returnDF[c("Educator_Expense", "HSA_Deduction_Amt","Your_IRA_Deduction", 
                                                         "Your_Spouse_IRA_Deduction","Student_Loan_Deduction"), 1]))
   returnDF["Adjusted_Gross_Income",] <- max(returnDF["Adjusted_Gross_Income",], 0)                                      
-  print("Final Return DF Value")
-  print (returnDF)
+  # print("Final Return DF Value")
+  # print (returnDF)
   return (returnDF) 
 } # End totalDeductionToAGI
 belowAGIDeduction <- function(deductionDF, statusDF, AGI, taxYear){
@@ -170,7 +171,9 @@ belowAGIDeduction <- function(deductionDF, statusDF, AGI, taxYear){
   # statusDF: dataframe that contains status information such as filing status, ages
   statusDF["Filing_Status", ] <- toupper(as.character(statusDF["Filing_Status", ]))
   deductionDF <- as.numeric(deductionDF)
+  AGI <- as.numeric(AGI)
   deductions <- SDExemptionDeduction (deductionDF, statusDF, AGI, taxYear)
+
   return (deductions)
 }
 DFConverter <- function (df){
@@ -185,24 +188,19 @@ DFConverter <- function (df){
   # print (rbind(df, df_1))
   return (rbind(df, df_1))
 }
-taxCalculation <- function (taxableIncome, incomeDF, filingStatus){
+taxCalculation <- function (taxableIncome, incomeDF, filingStatus, taxYear){
   # This function will calculate tax based on taxable income
   # Parameter: taxableIncome is a vector, not a dataframe.
-  if (taxableIncome[1]>0){
-    tax_2018 <- QDCGWorksheet(2018, taxableIncome = taxableIncome[1], 
-                              incomeDF[c("Qualified_Dividends", "Long_Term_Gains", "Short_Term_Gains"),"Income_Tax_2018"],
-                              filingStatus[1])
+  taxes <- 0
+  if (taxableIncome>0){
+    taxes <- QDCGWorksheet(taxYear, taxableIncome = taxableIncome, 
+                              incomeDF[c("Qualified_Dividends", "Long_Term_Gains", "Short_Term_Gains"),1],
+                              filingStatus)
   } else {
-    tax_2018 <- 0
+    taxes <- 0
   }
-  if (taxableIncome[2]>0){
-    tax_2017 <- QDCGWorksheet(2017, taxableIncome = taxableIncome[2],
-                              incomeDF[c("Qualified_Dividends", "Long_Term_Gains", "Short_Term_Gains"),"Income_Tax_2017"],
-                              filingStatus[2])
-  } else{
-    tax_2017 <- 0
-  }
-  return (c(tax_2018, tax_2017))
+ 
+  return (c(taxes))
   
 }
 creditCalculation <- function (summaryDF, incomeDF, filingStatus, creditDF){
@@ -214,7 +212,7 @@ creditCalculation <- function (summaryDF, incomeDF, filingStatus, creditDF){
   # It will return a list of dataframe with all available credits
   
   # Calcualte Child and DC Expenses Credit
-  print (creditDF)
+  # print (creditDF)
   credit_18 <-creditDF$Credit_18 # Vector that contains information user enter on Credit tab
   credit_17 <- creditDF$Credit_17 # Vector that contains information user enter on Credit tab
   names(credit_18) <- rownames(creditDF)
@@ -241,14 +239,14 @@ creditCalculation <- function (summaryDF, incomeDF, filingStatus, creditDF){
       otherCredits["CDC",2] <- CDC_17["Child_Dependent_Care_Credit",]
     }
   }
-  print(otherCredits)
+  # print(otherCredits)
   # print ("Testing CDC_DF")
   # print (returnList[["CDC"]])
   
   #---------- Testing if Educational Credit need to be calculated-----------------------
   returnList[["Education"]] <- 0
   if (credit_18["Expense_1"]>0 | credit_18["Expense_2"]>0) {# Calculate only when expenses are greater than zero
-    print ("Calculate Educational credit for 2018")
+    # print ("Calculate Educational credit for 2018")
     CDC_18 
     EDC_18 <- educationalCrd("2018",summaryDF$summary_2018, filingStatus[1], credit_18, otherCredits["CDC",1])
     if (EDC_18["Line_19",]>0 | EDC_18["Refundable_AOC",]>0){
@@ -257,7 +255,7 @@ creditCalculation <- function (summaryDF, incomeDF, filingStatus, creditDF){
     }
   }
   if (credit_17["Expense_1"]>0 | credit_17["Expense_2"]>0) {# Calculate only when expenses are greater than zero
-    print ("Calculate Educational credit for 2017")
+    # print ("Calculate Educational credit for 2017")
     EDC_17 <- educationalCrd("2017",summaryDF$summary_2017, filingStatus[2], credit_17, otherCredits["CDC",2])
     if (EDC_17["Line_19",]>0 | EDC_17["Refundable_AOC",]>0){
       otherCredits["Education",2] <- EDC_17["Line_19",]
@@ -265,7 +263,7 @@ creditCalculation <- function (summaryDF, incomeDF, filingStatus, creditDF){
       else returnList[["Education"]] <- cbind(returnList[["Education"]], EDC_17)
     }
   }
-  print(otherCredits)
+  # print(otherCredits)
   # print ("Testing Education")
   # print (returnList[["Education"]])
   

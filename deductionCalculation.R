@@ -63,8 +63,8 @@ IRADeduction <- function (taxYear, IRAcover, filingStatus, ages, MAGI, earnedInc
     return (ifelse (eligibleAmt>200, eligibleAmt, 200))
   }
   #----------------------------------------------------------------
-  print(paste("Ages:", ages, "Earned Income: ", earnedIncome))
-  print (paste("MAGI: ", MAGI))
+  # print(paste("Ages:", ages, "Earned Income: ", earnedIncome))
+  # print (paste("MAGI: ", MAGI))
   if (all (ages>70) | earnedIncome<=0) return (c(0,0)) # User can't contribute to IRA with age greater than 70 or with zero earned income
   IRAAmount[which(ages>70)] <- 0 
   rowValues <- IRATbl[IRATbl$YEAR == taxYear & grepl(filingStatus, IRATbl$FILING_STATUS) & IRATbl$COVERED == "YES",]
@@ -136,7 +136,7 @@ IRADeduction <- function (taxYear, IRAcover, filingStatus, ages, MAGI, earnedInc
             IRAAmount[ind_Y]<-  min (IRAAmount[ind_Y],limit)
           } 
           else {
-            print ("MAGI is higher than the covered person upperAGI. zero deduction for covered person")
+            # print ("MAGI is higher than the covered person upperAGI. zero deduction for covered person")
             IRAAmount[ind_Y] <- 0
             if (MAGI<rowValues_2$LOWER_AGI) { #Full deduction for non-cover user
               # print (paste("MAGI is lower than the non-cover person lowerAGI: ", MAGI))
@@ -247,16 +247,18 @@ SDExemptionDeduction <- function (deductionDF, statusDF, AGI, taxYear){
   standardDeduction <- 0
   totalItemizeAmount <- 0
   exemptionAmt <- 0
+  itemizedItems <- c("Medical_Exp","State_Local_Taxes", "Real_Estate_Taxes","Personal_Property_Tax",
+                     "Mortgage_Interest","Premium_Mortage_Interest","Charitable_Contribution", "Total_Itemized_Amount")
   # ----------------------------------------------------------------------------------------
   rowValues <- SDTbl[SDTbl$YEAR == taxYear & grepl(statusDF["Filing_Status", 1], SDTbl$FILING_STATUS),]
-  print (rowValues)
+  # print (rowValues)
 
   num_condition <- sum(as.numeric(statusDF[c("Your_Age", "Spouse_Age"),1])>=65) +
               sum(as.logical(statusDF[c("You_Blind", "Spouse_Blind"), 1]))
   
 
   standardDeduction <- rowValues$AMOUNT + num_condition*rowValues$ADDITIONAL_PER_CONDITION
-  print (paste("Standard Deduction Amount:", standardDeduction))
+  # print (paste("Standard Deduction Amount:", standardDeduction))
   # End Step 1 ------------------------------------------------------------------------------------------
   # Step 2: Calculate Itemized Deductions
   deductionDF[1] <- max((deductionDF[1] - AGI*0.075),0) # Eligible medical expense
@@ -267,11 +269,12 @@ SDExemptionDeduction <- function (deductionDF, statusDF, AGI, taxYear){
     excess_SALT_2018 <- 0
     if (totalSALTDDeductions>10000) { # New SALT limitation for tax year 2018
       excess_SALT_2018 <- totalSALTDDeductions -10000
-      deductions_2018[2] <- deductions_2018[2] - (deductions_2018[2]/totalSALTDDeductions * excess_SALT_2018)
-      deductions_2018[3] <- deductions_2018[3] - (deductions_2018[3]/totalSALTDDeductions * excess_SALT_2018)
-      deductions_2018[4] <- deductions_2018[4] - (deductions_2018[4]/totalSALTDDeductions * excess_SALT_2018)
+      deductionDF[2] <- deductionDF[2] - (deductionDF[2]/totalSALTDDeductions * excess_SALT_2018)
+      deductionDF[3] <- deductionDF[3] - (deductionDF[3]/totalSALTDDeductions * excess_SALT_2018)
+      deductionDF[4] <- deductionDF[4] - (deductionDF[4]/totalSALTDDeductions * excess_SALT_2018)
     }
     totalItemizeAmount <- sum(deductionDF)
+    deductionDF[8] <- totalItemizeAmount
   } 
   else if (taxYear =="2017"){
     # Special situation:
@@ -283,7 +286,7 @@ SDExemptionDeduction <- function (deductionDF, statusDF, AGI, taxYear){
     deductionDF[6] <- PMICalculation(AGI, deductionDF[6], (statusDF["Filing_Status", 1]))
     deductionDF[7] <- min (deductionDF[7], AGI*0.5) # Calculate donation limitation
     totalItemizeAmount <- sum(deductionDF)
-    print (totalItemizeAmount)
+    # print (totalItemizeAmount)
     # Figure out the itemized deduction amount for AGI above phase-out limit.
     if (AGI>rowValues$PHASE_OUT) {
       # Follow instructions from Itemized Deductions Worksheet
@@ -296,16 +299,13 @@ SDExemptionDeduction <- function (deductionDF, statusDF, AGI, taxYear){
         totalItemizeAmount <- totalItemizeAmount - line_9
       }
     }
-    print (totalItemizeAmount)
+    deductionDF[8] <- totalItemizeAmount
     exemptionAmt <- ExemptionAmount(AGI_2017 = AGI, statusDF = statusDF)
   }
 
-  maxDeduction <- min (totalItemizeAmount>standardDeduction)
-  
-  
-  Below_AGI_Deduction_2018 <- c(SD_2018, totalItemized_2018, maxDeduction_2018,0)
-  Below_AGI_Deduction_2017 <- c(SD_2017, totalItemized_2017, maxDeduction_2017, exemptionAmt)
+  maxDeduction <- max (totalItemizeAmount, standardDeduction)
+  Below_AGI_Deduction <- c(standardDeduction, totalItemizeAmount, maxDeduction,exemptionAmt)
   rowNames <- c("Standard_Deduction", "Total_Itemized_Deduction", "Your_Deduction", "Exemption_Deduction")
-  return (list(data.frame(Below_AGI_Deduction_2018, Below_AGI_Deduction_2017, row.names = rowNames),
-            data.frame(deductions_2018, deductions_2017, row.names = itemizedRows)))
+  return (list(data.frame(Below_AGI_Deduction, row.names = rowNames),
+            data.frame(deductionDF, row.names = itemizedItems)))
 }

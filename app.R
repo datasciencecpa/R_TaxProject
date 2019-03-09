@@ -174,25 +174,25 @@ server <- function(input, output, session) {
   })
   #-------------------------------------------------------------------
 
-  
-  
   output$taxSummaryTbl <- renderDataTable({
       #------------------------------------------------------------------+
       # Step 1: Calculate TotalIncome, TotalDeductions Above AGI, SD or Itemized Deductions, Exemption
 
       totalIncome <- totalIncomeCalculation(income()) # Return summary of all incomes user entered.
       colnames(totalIncome) <- "Tax_2018"
-      print (totalIncome)
+      # print (totalIncome)
       deductionsToAGI <- totalDeductionToAGI (deductions(), statusInformation()[c("Filing_Status", "Your_Age","Spouse_Age"),1],
                                               totalIncome$Tax_2018, "Tax_2018","2018")
       totalIncome["Total_Income",] <- sum(as.numeric(totalIncome$Tax_2018[-c(4,10,11)]))
       itemizedItems <- c("Medical_Exp","State_Local_Taxes", "Real_Estate_Taxes","Personal_Property_Tax",
                          "Mortgage_Interest","Premium_Mortage_Interest","Charitable_Contribution")
-      result <- belowAGIDeduction (deductions()[itemizedItems,], statusInformation(),
+      results <- belowAGIDeduction (deductions()[itemizedItems,], statusInformation(),
                                    deductionsToAGI["Adjusted_Gross_Income",], taxYear = "2018")
-      
-      
-      
+      # print (results)
+      taxableIncome <- as.numeric(deductionsToAGI["Adjusted_Gross_Income",]) - sum(results[[1]][c("Your_Deduction","Exemption_Deduction"),])
+      taxableIncome <- max(taxableIncome, 0)
+      taxes <- taxCalculation(taxableIncome, income(), toupper(statusInformation()["Filing_Status",1]), 2018)
+      print (taxes)
       
       summaryDF <- data.frame (c(0,0,0,0,0,
                                  0,0), 
@@ -203,7 +203,9 @@ server <- function(input, output, session) {
       summaryDF["Total_Above_AGI_Deduction",] <- sum(as.numeric(deductionsToAGI[c("Educator_Expense","HSA_Deduction_Amt",
                                                                                 "Your_IRA_Deduction","Your_Spouse_IRA_Deduction","Student_Loan_Deduction"),1]))
       summaryDF["AGI",] <- as.numeric(deductionsToAGI["Adjusted_Gross_Income",])
-      
+      summaryDF[c("Below_AGI_Deduction","Exemption"),] <- results[[1]][c("Your_Deduction","Exemption_Deduction"),]
+      summaryDF["Taxable_Income",] <- taxableIncome
+      summaryDF["Tax_Amount",] <- taxes
       if (!input$hideDetailSummary) { # Update selected input
         detailLabel <- "Above_AGI_Deduction_Summary"
         rowValues <- totalIncome$Tax_2018 !=0
@@ -225,35 +227,9 @@ server <- function(input, output, session) {
         }
       },options= list(pageLength = 25))
 
-      #     #------------------------------------------------------------------
 
-
-      #     # Step 4: Calculate below AGI deductions: Standard Deductions or Itemized Deductions and Exemption
-          
-      
-      #     deductionSummary <- result [[1]]
-      #     detailItemized <- result[[2]]
-      #     if (any(deductionSummary["Total_Itemized_Deduction",]>0)){
-      #       show("displayItemizedChb")
-      #     }
-      #     output$detailItemizedTbl <- renderDataTable(detailItemized,options= list(pageLength = 25))
-      #     output$belowAGIDeductionTbl <- renderDataTable(deductionSummary)
-      #     # End step 4 ------------------------------------------------------------------------------------
-      #     # Step 5: Start Summary Section
-      #     filingStatus <- as.character(toupper(statusInformation()["Filing_Status",]))
-      #     
-      #     summary_2018 <- c(AGI[1],deductionSummary["Your_Deduction","Below_AGI_Deduction_2018"],
-      #                       deductionSummary["Exemption_Deduction", "Below_AGI_Deduction_2018"])
-      #     summary_2017 <- c(AGI[2],deductionSummary["Your_Deduction", "Below_AGI_Deduction_2017"],
-      #                       deductionSummary["Exemption_Deduction", "Below_AGI_Deduction_2017"])
-      #     rowNames <- c("AGI", "Deduction", "Exemption" )
-      #     summaryDF <- data.frame(summary_2018, summary_2017, row.names = rowNames)
       #     summaryDF["Taxable_Income",] <- summaryDF[1,] - apply(summaryDF[2:3,], 2, sum)
-      #     # summaryDF["Taxable_Income",1] <- ifelse(summaryDF["Taxable_Income",1]<0,0, summaryDF["Taxable_Income",1])
-      #     # summaryDF["Taxable_Income",2] <- ifelse(summaryDF["Taxable_Income",2]<0,0, summaryDF["Taxable_Income",2])
-      #     summaryDF["Taxable_Income",1] <- max(summaryDF["Taxable_Income",1],0)
-      #     summaryDF["Taxable_Income",2] <- max(summaryDF["Taxable_Income",2],0)
-      #     # End step 5 ------------------------------------------------------------------------------------
+
       #     # Step 6 --- Calculate Tax Amount based on taxable income
       #     tax <- taxCalculation (as.numeric(summaryDF["Taxable_Income",]), income(), filingStatus)
       #     summaryDF["Tax_Amount",] <- tax
