@@ -50,8 +50,15 @@ creditsUI <- function (id){
          column(6,numericInput(ns("numStudent2"), label = "Enter number of qualified students related to expenses entered above", value = 1, min=1, max=5))
               
       ),# End input of second student
-      
-      hr()# Waiting for next Credit Inputs
+      hr(), # Next credit is saver's credit
+      h3("Saver's Credit - Form 8880 See ", a(href="https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-savings-contributions-savers-credit", "IRS.Gov"), " for more information"),
+      helpText("You're eligible for this credit if you're 18 or older, not a full-time student, and not a dependent on another person's return. \n
+               Enter amount of contribution as showed on your W-2, box 12 (Codes:D,E,G,H). Do not enter in boxes below if you were not qualified."),
+      fluidRow(
+        column(6, numericInput(ns("yourContribution"), label = "Enter your contribution", value=0, min= 0)),
+        column(6, numericInput(ns("yourSpouseContribution"), label = "Enter spouse contribution", value=0, min= 0))               
+      ), # End saver's credit
+     hr()
   )
 }
 credits <- function(input, output, session){
