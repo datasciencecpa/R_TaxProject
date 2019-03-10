@@ -6,6 +6,7 @@
 library(gdata)
 library(plyr)
 LLTbl <- read.xls("TaxRates.xls", sheet = 8)
+SaverTbl <- read.xls("TaxRates.xls", sheet = 12)
 childTaxCrd <- function (AGI, filingStatus, taxYear, numQualifyingChild, creditDF,taxBeforeCredit, 
                          nonRefundableCredits = c(childDependentCareCredit = 0, educationCredit = 0, saverCredit = 0), numQualifyingRelative = 0){
   # Link to IRS website, pub 972: https://www.irs.gov/publications/p972
@@ -120,6 +121,7 @@ dependentCareCrd <- function (taxYear,summaryDF, filingStatus, incomeDF, creditD
   line_10 <- summaryDF["Tax_Amount",1] # Tax_Amount
   returnDF["Line_10_Tax_Amount_Before_Credit",] <- line_10
   returnDF["Child_Dependent_Care_Credit",] <- min(line_9, line_10)
+  colnames(returnDF) <- taxYear
   return (returnDF)
 }
 
@@ -212,12 +214,58 @@ educationalCrd <- function (taxYear, summaryDF, filingStatus, creditDF, otherCrd
   line_6 <- summaryDF["Tax_Amount",] - otherCrdDF # This is equivalent of Tax_Amount - CDC Credit
   # print (paste("Line 6 -Remaining Tax:", line_6))
   educationDF["Line_19", ] <- min(nonRefundableEducationCrd, line_6)
-
+  colnames(educationDF) <- taxYear
   return (educationDF)
 }# End Educaiton Credit
 
-saverCrd <- function(){
-  
+saverCrd <- function(taxYear, filingStatus, summaryDF, earnedIncome, IRAContribution, 
+                     retirementContribution,sumOtherCredits){
+  # Form 8880: https://www.irs.gov/pub/irs-pdf/f8880.pdf
+  # Parameters: summaryDF: Dataframe
+  # filingStatus: vector with single value
+  # earnedIncome: vector with single value
+  # IRAContribution: vector with length of 2
+  # retirementContribution: vector with length of 2
+  if (earnedIncome< sum(IRAContribution)){
+      # Limit amount of IRA Contribution to earnedIncome, allocated 1/2 to each if MFJ
+    print ("Reduce IRA Contribution due to lower earnedIncome")
+      if (filingStatus =="MFJ"){
+        IRAContribution[1] <- earnedIncome/2
+        IRAContribution[2] <- earnedIncome/2
+      } else {
+        IRAContribution[1] <- earnedIncome
+      }
+  }
+  rowValues <- SaverTbl[SaverTbl$YEAR == taxYear & grepl(filingStatus, SaverTbl$FILING_STATUS),] # get applicable rows
+  print (rowValues)
+  AGIRanges <- rowValues$UPPER_LIMIT
+  returnDF <- data.frame(c(0), row.names = c("Line_1: Sum of Traditional and Roth IRA"))
+  returnDF[1,] <- sum(IRAContribution)
+  returnDF["Sum of Elective Deferrals",] <- sum(retirementContribution)
+  returnDF["Total above",] <- sum (returnDF[c(1,2),])
+  eligible1 <- sum(IRAContribution[1], retirementContribution[1])
+  eligible2 <- sum(IRAContribution[2], retirementContribution[2])
+  eligible1 <- min(eligible1, 2000)
+  eligible2 <- min(eligible2, 2000)
+  returnDF["Eligible Amount",]  <- sum(eligible1, eligible2)
+  AGI <- summaryDF["AGI",]
+  returnDF["AGI",] <- AGI
+  # Determine applicable rate based on AGI in AGIRanges
+  returnDF["Rate",] <- 0
+  if (AGI<=AGIRanges[1]){
+    returnDF["Rate",] <- 0.5
+  } else if ((AGIRanges[1]< AGI) & (AGI<= AGIRanges[2])) {
+    returnDF["Rate",] <- 0.2
+  } else if ((AGIRanges[2]<AGI) & (AGI<=AGIRanges[3])){
+    returnDF["Rate",] <- 0.1
+  } 
+ 
+  returnDF["Credit_Amount",] <- returnDF["Eligible Amount",] * returnDF["Rate",]
+  returnDF["Limitation based on tax liability",1] <- summaryDF["Tax_Amount",1] - sumOtherCredits
+  returnDF["Saver_Credit",] <- min(returnDF["Credit_Amount",], returnDF["Limitation based on tax liability",1])
+  colnames(returnDF) <- taxYear
+  print(returnDF)
+  return (returnDF)
 }
 
 elderlyDisableCrd <- function (){

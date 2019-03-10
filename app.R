@@ -178,7 +178,8 @@ server <- function(input, output, session) {
       #------------------------------------------------------------------+
       # Step 1: Calculate TotalIncome, TotalDeductions Above AGI, SD or Itemized Deductions, Exemption
       filingStatus <- toupper(statusInformation()["Filing_Status",1])
-      totalIncome <- totalIncomeCalculation(income()) # Return summary of all incomes user entered.
+      incomeDF <- income() # getting dataframe from income.
+      totalIncome <- totalIncomeCalculation(incomeDF) # Return summary of all incomes user entered.
       colnames(totalIncome) <- "Tax_2018"
 
       deductionsToAGI <- totalDeductionToAGI (deductions(), statusInformation()[c("Filing_Status", "Your_Age","Spouse_Age"),1],
@@ -186,12 +187,12 @@ server <- function(input, output, session) {
       totalIncome["Total_Income",] <- sum(as.numeric(totalIncome$Tax_2018[-c(4,10,11)]))
       itemizedItems <- c("Medical_Exp","State_Local_Taxes", "Real_Estate_Taxes","Personal_Property_Tax",
                          "Mortgage_Interest","Premium_Mortage_Interest","Charitable_Contribution")
-      results <- belowAGIDeduction (deductions()[itemizedItems,], statusInformation(),
+      deductionBelowAGI <- belowAGIDeduction (deductions()[itemizedItems,], statusInformation(),
                                    deductionsToAGI["Adjusted_Gross_Income",], taxYear = "2018")
 
-      taxableIncome <- as.numeric(deductionsToAGI["Adjusted_Gross_Income",]) - sum(results[[1]][c("Your_Deduction","Exemption_Deduction"),])
+      taxableIncome <- as.numeric(deductionsToAGI["Adjusted_Gross_Income",]) - sum(deductionBelowAGI[[1]][c("Your_Deduction","Exemption_Deduction"),])
       taxableIncome <- max(taxableIncome, 0)
-      taxes <- taxCalculation(taxableIncome, income(), filingStatus, 2018)
+      taxes <- taxCalculation(taxableIncome, incomeDF, filingStatus, 2018)
       # Finish Step 1 --------------------------------------------------------------------------------
       # Step 2: Create SummaryDF and calculate amount of credits that may apply
       summaryDF <- data.frame (c(0,0,0,0,0,
@@ -203,11 +204,12 @@ server <- function(input, output, session) {
       summaryDF["Total_Above_AGI_Deduction",] <- sum(as.numeric(deductionsToAGI[c("Educator_Expense","HSA_Deduction_Amt",
                                                                                   "Your_IRA_Deduction","Your_Spouse_IRA_Deduction","Student_Loan_Deduction"),1]))
       summaryDF["AGI",] <- as.numeric(deductionsToAGI["Adjusted_Gross_Income",])
-      summaryDF[c("Below_AGI_Deduction","Exemption"),] <- results[[1]][c("Your_Deduction","Exemption_Deduction"),]
+      summaryDF[c("Below_AGI_Deduction","Exemption"),] <- deductionBelowAGI[[1]][c("Your_Deduction","Exemption_Deduction"),]
       summaryDF["Taxable_Income",] <- taxableIncome
       summaryDF["Tax_Amount",] <- taxes
-      
-      taxCredits <- creditCalculation(summaryDF, income(), filingStatus, credits(), 2018)
+      # Get IRA Contribution to calcualte saver's credit
+      IRAContribution <- as.numeric(deductions()[c("Your_IRA_Contribution","Spouse_IRA_Contribution"),1])
+      taxCredits <- creditCalculation(summaryDF, incomeDF, filingStatus, credits(),IRAContribution, 2018)
       
       if (!input$hideDetailSummary) { # Update selected input
         detailLabel <- "Above_AGI_Deduction_Summary"
@@ -234,7 +236,7 @@ server <- function(input, output, session) {
       #     summaryDF["Taxable_Income",] <- summaryDF[1,] - apply(summaryDF[2:3,], 2, sum)
 
       #     # Step 5 - Calculate Credits if applicable.
-      #     taxCredits <- creditCalculation(summaryDF, income(), filingStatus, credits()) 
+      #     taxCredits <- creditCalculation(summaryDF, incomeDF, filingStatus, credits()) 
       #     creditNames <- names(taxCredits)
       #     print (paste("Credit Names: ", creditNames))
       #     creditLogical <- sapply(taxCredits, is.data.frame)

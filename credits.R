@@ -100,13 +100,16 @@ credits <- function(input, output, session){
                     input$completePost4Yrs2,
                     input$halfTime2,
                     input$expenses2,
-                    input$numStudent2
+                    input$numStudent2,
+                    #---------- Saver's Credit------------------------------------
+                    input$yourContribution,
+                    input$yourSpouseContribution
                     )
     
     rowName <- c("MFS_Exception", "Qualifying_Person", "Expense", "You_FT_Student", "FT_Student_Month",
                  "Spouse_FT_Student","Spouse_FT_Student_Month", "Claimed_AOC_4Yrs_1", "Complete_Post_4Yrs_1",
                  "At_least_half-time_student_1", "Expense_1", "Number_Student_1", "Claimed_AOC_4Yrs_2", "Complete_Post_4Yrs_2",
-                 "At_least_half-time_student_2", "Expense_2", "Number_Student_2")
+                 "At_least_half-time_student_2", "Expense_2", "Number_Student_2","Your_Retirement_Contribution","Spouse_Retirement_Contribution")
     dfCredit <- data.frame(Credit_18, row.names = rowName, stringsAsFactors = FALSE)
     dfCredit[is.na.data.frame(dfCredit)] <- 0
     return (dfCredit)

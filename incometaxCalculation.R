@@ -203,18 +203,18 @@ taxCalculation <- function (taxableIncome, incomeDF, filingStatus, taxYear){
   return (c(taxes))
   
 }
-creditCalculation <- function (summaryDF, incomeDF, filingStatus, creditDF, taxYear){
+creditCalculation <- function (summaryDF, incomeDF, filingStatus, creditDF,IRAContribution, taxYear){
   # This function will calculate available credits:
   # Child and Dependent Care Credit
   # Education Credit
   # Child Tax Credit/ Additional CTC
   # Saver Credit
   # It will return a list of dataframe with all available credits
-  
+  # IRAContribution is a vector that contains contributions to IRA on Deductions Tab that user entered. 
   # Calcualte Child and DC Expenses Credit
-  # print (creditDF)
-
-  otherCredits <- data.frame(c(0,0),c(0,0), row.names = c("CDC", "Education")) # Use to store other Nonrefundable credits for quick access
+  print (creditDF)
+  
+  otherCredits <- data.frame (c(0,0,0,0), row.names = c("CDC", "Education", "Saver", "CTC")) # Use to store credits
   returnList <- list() # Use to store list of dataframe that will return to App.R
   #----------Calculate CDC Credit ------------------------------------------------------
   returnList[["CDC"]] <- 0 # initialize list that will contain CDC dataframe.
@@ -222,10 +222,10 @@ creditCalculation <- function (summaryDF, incomeDF, filingStatus, creditDF, taxY
     CDC <- dependentCareCrd(taxYear,summaryDF, filingStatus,incomeDF$Income_Tax_2018, creditDF)
     if (CDC["Child_Dependent_Care_Credit",]>0){
       returnList[["CDC"]] <- CDC # Store dataframe
-      otherCredits["CDC",1] <- CDC["Child_Dependent_Care_Credit",] # Store value
+      otherCredits["CDC",1] <- CDC["Child_Dependent_Care_Credit",]
     }
   }
-  print(otherCredits)
+
   print ("Testing CDC_DF")
   print (returnList[["CDC"]])
   
@@ -240,12 +240,28 @@ creditCalculation <- function (summaryDF, incomeDF, filingStatus, creditDF, taxY
       returnList[["Education"]] <- EDC
     }
   }
- 
-  print(otherCredits)
+
   print ("Testing Education")
   print (returnList[["Education"]])
   
-  #-----------netstep - calculate child tax credit
+  #-----------netstep - calculate saver's credit--------------------------------------------
+  retirementContribution <- creditDF[c("Your_Retirement_Contribution","Spouse_Retirement_Contribution"),1]
+  if (any(IRAContribution>0) | any(retirementContribution>0)){
+    # Calculate credit, starting with identify amount of earnedIncome
+    print ("Calculate saver's credit")
+
+    earnedIncome <- sum(as.numeric(incomeDF[c(1,3,5,7),1])) # Sum of all wages
+    if (filingStatus!="MFJ") { # Eliminate any amounts entered on the spouse contribution boxes and IRA boxes
+      print ("Not MFJ")
+      earnedIncome <- earnedIncome - sum(as.numeric(incomeDF[c(3,7),1])) # Eliminate spouse wages out from earned income
+      IRAContribution[2] <- 0
+      creditDF["Spouse_Retirement_Contribution",1] <- 0
+    }
+    
+    # Call saver credits
+    returnList[["Saver"]] <- saverCrd(taxYear, filingStatus, summaryDF, earnedIncome, IRAContribution, 
+                                      retirementContribution, sum(otherCredits[c("CDC", "Education"),1]))
+  }
   
   return (returnList)
 }
