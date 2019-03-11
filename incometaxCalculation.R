@@ -199,11 +199,9 @@ taxCalculation <- function (taxableIncome, incomeDF, filingStatus, taxYear){
   } else {
     taxes <- 0
   }
- 
   return (c(taxes))
-  
 }
-creditCalculation <- function (summaryDF, incomeDF, filingStatus, creditDF,IRAContribution, taxYear){
+creditCalculation <- function (summaryDF, incomeDF,statusDF, filingStatus, creditDF,IRAContribution, taxYear){
   # This function will calculate available credits:
   # Child and Dependent Care Credit
   # Education Credit
@@ -213,7 +211,7 @@ creditCalculation <- function (summaryDF, incomeDF, filingStatus, creditDF,IRACo
   # IRAContribution is a vector that contains contributions to IRA on Deductions Tab that user entered. 
   # Calcualte Child and DC Expenses Credit
   print (creditDF)
-  
+  earnedIncome <- sum(as.numeric(incomeDF[c(1,3,5,7),1])) # Sum of all wages
   otherCredits <- data.frame (c(0,0,0,0), row.names = c("CDC", "Education", "Saver", "CTC")) # Use to store credits
   returnList <- list() # Use to store list of dataframe that will return to App.R
   #----------Calculate CDC Credit ------------------------------------------------------
@@ -225,12 +223,11 @@ creditCalculation <- function (summaryDF, incomeDF, filingStatus, creditDF,IRACo
       otherCredits["CDC",1] <- CDC["Child_Dependent_Care_Credit",]
     }
   }
-
-  print ("Testing CDC_DF")
-  print (returnList[["CDC"]])
+  # print ("Testing CDC_DF")
+  # print (returnList[["CDC"]])
   
   #---------- Testing if Educational Credit need to be calculated-----------------------
-  returnList[["Education"]] <- 0
+
   if (creditDF["Expense_1",1]>0 | creditDF["Expense_2",1]>0) {# Calculate only when expenses are greater than zero
     # print ("Calculate Educational credit for 2018")
 
@@ -240,28 +237,62 @@ creditCalculation <- function (summaryDF, incomeDF, filingStatus, creditDF,IRACo
       returnList[["Education"]] <- EDC
     }
   }
+  # print ("Testing Education")
+  # print (returnList[["Education"]])
 
-  print ("Testing Education")
-  print (returnList[["Education"]])
-  
-  #-----------netstep - calculate saver's credit--------------------------------------------
+  #-----------nextstep - calculate saver's credit--------------------------------------------
   retirementContribution <- creditDF[c("Your_Retirement_Contribution","Spouse_Retirement_Contribution"),1]
   if (any(IRAContribution>0) | any(retirementContribution>0)){
     # Calculate credit, starting with identify amount of earnedIncome
-    print ("Calculate saver's credit")
-
-    earnedIncome <- sum(as.numeric(incomeDF[c(1,3,5,7),1])) # Sum of all wages
+    # print ("Calculate saver's credit")
     if (filingStatus!="MFJ") { # Eliminate any amounts entered on the spouse contribution boxes and IRA boxes
-      print ("Not MFJ")
+      # print ("Not MFJ")
       earnedIncome <- earnedIncome - sum(as.numeric(incomeDF[c(3,7),1])) # Eliminate spouse wages out from earned income
       IRAContribution[2] <- 0
       creditDF["Spouse_Retirement_Contribution",1] <- 0
     }
-    
-    # Call saver credits
-    returnList[["Saver"]] <- saverCrd(taxYear, filingStatus, summaryDF, earnedIncome, IRAContribution, 
-                                      retirementContribution, sum(otherCredits[c("CDC", "Education"),1]))
+    saverDF <- saverCrd(taxYear, filingStatus, summaryDF, earnedIncome, IRAContribution, 
+                      retirementContribution, sum(otherCredits[c("CDC", "Education"),1]))
+    if (saverDF["Saver_Credit",1]>0){
+      otherCredits["Saver",1] <- saverDF["Saver_Credit",1]
+      returnList[["Saver"]] <- saverDF
+    }
   }
-  
+  # _______________nextstep -- Calculate Child Tax and Other Dependent Credits--------------------------------
+  sumOtherCredits <- sum(otherCredits[,1])
+  ACTC <- FALSE
+  if (taxYear ==2018 & sum(as.numeric(statusDF[c("Qualifying_Child_Under_17","Qualifying_Relative"),1]))>0) {
+    CTC <- childTaxCrd(taxYear, summaryDF, statusDF,sumOtherCredits )
+  } else if (sum(as.numeric(statusDF[c("Qualifying_Child_Under_17"),1]))>0){
+    CTC <- childTaxCrd(taxYear, summaryDF, statusDF,sumOtherCredits )
+  }
+  if (CTC["Line_10",]>0){
+    otherCredits["CTC",1] <- CTC["Line_16:Child_Tax_Credit",]
+    if (CTC["Possible_Additional_CTC",1] == 1) ACTC <- TRUE
+    returnList[["CTC"]] <- CTC
+  }
+  #_______________nextstep -- Calculate Additional Child Tax Credits--------------------------------
+  if (ACTC) { # Calculate ACTC for the user
+    ACTC <- additionalChildTaxCrd(taxYear,returnList[["CTC"]], statusDF, earnedIncome)
+    if (ACTC["ACTC_Amount",1]>0){
+      returnList[["ACTC"]] <- ACTC
+    }
+  }
+  #_______________nextstep -- Calculate EIC Credits--------------------------------
+  investmentIncome <- sum(as.numeric(incomeDF[c("Interest","Ordinary_Dividends"),1]))
+  investmentIncome <- investmentIncome + max(sum(as.numeric(incomeDF[c("Short_Term_Gains","Long_Term_Gains"),1])),0)
+  # Calculate EIC only when filingStatus != MFJ, and investmentIncome is lower than amount allowed
+  maxInvestmentIncome <- 3500  # Amount applied for tax year 2018
+  if (taxYear == 2017){
+    maxInvestmentIncome <- 3450
+  }
+  if (filingStatus!= "MFS" & investmentIncome<=maxInvestmentIncome){ #Calculate EIC Credit
+    EICdf <- EIC(taxYear, earnedIncome,as.numeric(summaryDF["AGI",1]),statusDF)
+    if (EICdf["EIC_Credit_Limit",1]>0){
+      returnList[["EIC"]] <- EICdf
+    }
+  } else {
+    print ("Not Qualified for EIC")
+  }
   return (returnList)
 }

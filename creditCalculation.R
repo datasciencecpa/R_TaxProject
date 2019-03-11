@@ -7,41 +7,49 @@ library(gdata)
 library(plyr)
 LLTbl <- read.xls("TaxRates.xls", sheet = 8)
 SaverTbl <- read.xls("TaxRates.xls", sheet = 12)
-childTaxCrd <- function (AGI, filingStatus, taxYear, numQualifyingChild, creditDF,taxBeforeCredit, 
-                         nonRefundableCredits = c(childDependentCareCredit = 0, educationCredit = 0, saverCredit = 0), numQualifyingRelative = 0){
+CTCTbl <- read.xls("TaxRates.xls", sheet = 5)
+EICTbl <- read.xls("TaxRates.xls", sheet = 13)
+childTaxCrd <- function (taxYear, summaryDF, statusDF,sumOtherCredits){
   # Link to IRS website, pub 972: https://www.irs.gov/publications/p972
-  # numQualifyingRelative is a variable that will be used for tax year 2018 and later only.
-  # tax credit of this is $500 per qualified person, nonrefundable.
-  credit_row <- creditDF[creditDF$YEAR == taxYear & grepl(filingStatus, creditDF$FILING_STATUS),]
+  # Parameters:
+  # * taxYear: Numeric
+  # * summaryDF: Dataframe that contains information needed such as AGI, Tax_Amount
+  # * sumOtherCredits : Numeric that contains total of other non-refundable credits
+  
+  credit_row <- CTCTbl[CTCTbl$YEAR == taxYear & grepl(toupper(statusDF["Filing_Status",1]), CTCTbl$FILING_STATUS),]
+  # print (credit_row)
   phase_out_agi <- as.numeric(credit_row$PHASE_OUT_AGI)
  
   credit_per_child <- as.numeric(credit_row$CREDIT_PER_CHILD)
   credit_per_otherDep <- as.numeric(credit_row$CREDIT_PER_OTHER_DEP)
-  numQualifyingChild <- as.numeric(numQualifyingChild)
-  numQualifyingRelative <- as.numeric(numQualifyingRelative)
-
-  line_1 <- numQualifyingChild * credit_per_child
-  line_1b <- numQualifyingRelative * credit_per_otherDep
-  line_1c <- line_1 + line_1b
-  line_2 <- AGI
-  line_3 <- phase_out_agi
-  line_4 <- ifelse(line_2<line_3, 0, round_any(line_2 - line_3, 1000, f= ceiling))
-  line_5 <- line_4 *0.05
-  line_6 <- ifelse(line_5>line_1c,0, line_1c - line_5)  # this is the net credit after the 5% reduction
-  line_7 <- as.numeric(taxBeforeCredit)
-  line_8 <- sum(nonRefundableCredits)
-  line_9 <- line_7 - line_8                             # This is the net tax after subtraction of other nonrefundable credit
-  line_10 <- ifelse (line_6>line_9, line_9, line_6)     # Smaller of net tax above, or net credit. If net credit is higher, additional credit may apply
-  line_11 <- ifelse (line_6>line_9, line_6 - line_9, 0)
-  resultDF <- c(line_1, line_1b, line_1c, line_2, line_3, line_4, line_5, line_6, line_7, line_8, line_9, line_10, line_11)
-  line_1_name <-  paste("Tax_Credit_Per_Qualifying_Child_", numQualifyingChild, sep ="")
-  line_1b_name <- paste("Tax_Credit_Per_Other_Dependent_", numQualifyingRelative, sep = "")
-  names(resultDF) <- c(line_1_name, line_1b_name,
-                       "Total_Tax_Credit", "Your_AGI","Phase_Out_AGI","Amt_Over_AGI", "Reduce_Credit_Amt",
-                       "Net_Tax_Credit","Your_Tax","Sum_Other_Nonrefundable_Credit", "Net_Tax_After_Credit_Above", 
-                       "Your_Child_Tax_Credit", "Qualify_For_Additional_Credit")
-  
-  return (data.frame(resultDF)) 
+  numQualifyingChild <- as.numeric(statusDF["Qualifying_Child_Under_17",1])
+  numQualifyingRelative <- as.numeric(statusDF["Qualifying_Relative",1])
+  returnDF <- data.frame(c(0), row.names = c("Credit_Per_Qualifying_Child"))
+  colnames(returnDF) <- taxYear
+  returnDF["Credit_Per_Qualifying_Child",] <- numQualifyingChild * credit_per_child
+  returnDF["Credit_Per_Other_Dependent",] <- numQualifyingRelative * credit_per_otherDep
+  returnDF["Total_Above",] <- returnDF["Credit_Per_Qualifying_Child",] + returnDF["Credit_Per_Other_Dependent",]
+  returnDF["AGI",] <- summaryDF["AGI",]
+  returnDF["Line_5:SKIP",] <- 0
+  returnDF["Line_6:AGI",] <- summaryDF["AGI",] + returnDF["Line_5:SKIP",]
+  returnDF["Line_7:Phase_Out_Amount",] <- phase_out_agi
+  returnDF["Line_8",] <- ifelse(returnDF["Line_6:AGI",]<returnDF["Line_7:Phase_Out_Amount",], 0, 
+                               round_any(returnDF["Line_6:AGI",] - returnDF["Line_7:Phase_Out_Amount",], 1000, f= ceiling))
+  returnDF["Line_9",] <- round(returnDF["Line_8",] *0.05, digits = 4)
+  returnDF["Line_10",] <- ifelse(returnDF["Line_9",]>returnDF["Total_Above",],0,
+                                 returnDF["Total_Above",] - returnDF["Line_9",])  # this is the net credit after the 5% reduction
+  returnDF["Line_11_Taxes",] <- summaryDF["Tax_Amount",]
+  returnDF["Line_12:Other_Nonrefundable_Credits",] <- sumOtherCredits
+  returnDF["Line_13_Net_Taxes",] <- returnDF["Line_11_Taxes",] - returnDF["Line_12:Other_Nonrefundable_Credits",] # This is the net tax after subtraction of other nonrefundable credit
+  returnDF["Line_14:SKIP",] <- 0
+  returnDF["Line_15:Net_Taxes",] <- returnDF["Line_13_Net_Taxes",]
+  returnDF["Line_16:Child_Tax_Credit",] <- min(returnDF["Line_15:Net_Taxes",],returnDF["Line_10",])
+  if (returnDF["Line_10",]> returnDF["Line_15:Net_Taxes",]) {
+    returnDF["Possible_Additional_CTC",1] <- 1 # May eligible for additional CTC
+  } else {
+    returnDF["Possible_Additional_CTC",1] <- 0 # Not eligible for additional CTC
+  }
+  return (returnDF) 
 }
 
 dependentCareCrd <- function (taxYear,summaryDF, filingStatus, incomeDF, creditDF ){
@@ -90,7 +98,7 @@ dependentCareCrd <- function (taxYear,summaryDF, filingStatus, incomeDF, creditD
         # this is the case when both are students and both sum of months is more than 12
         # Reduce income of the higher one, eithe line 4 or 5 by the extra months above 12
         reductionAmt <- 250*creditDF["Qualifying_Person",]*(creditDF["FT_Student_Month",] + creditDF["Spouse_FT_Student_Month",]-12)
-        # print (paste("Reduction Amount: ", reductionAmt))
+        #  print (paste("Reduction Amount: ", reductionAmt))
         if (line_4> line_5){
           line_4 <- line_4 - reductionAmt
           # print (paste("Line_4 afte reduction:", line_4))
@@ -237,7 +245,7 @@ saverCrd <- function(taxYear, filingStatus, summaryDF, earnedIncome, IRAContribu
       }
   }
   rowValues <- SaverTbl[SaverTbl$YEAR == taxYear & grepl(filingStatus, SaverTbl$FILING_STATUS),] # get applicable rows
-  print (rowValues)
+  # print (rowValues)
   AGIRanges <- rowValues$UPPER_LIMIT
   returnDF <- data.frame(c(0), row.names = c("Line_1: Sum of Traditional and Roth IRA"))
   returnDF[1,] <- sum(IRAContribution)
@@ -264,17 +272,92 @@ saverCrd <- function(taxYear, filingStatus, summaryDF, earnedIncome, IRAContribu
   returnDF["Limitation based on tax liability",1] <- summaryDF["Tax_Amount",1] - sumOtherCredits
   returnDF["Saver_Credit",] <- min(returnDF["Credit_Amount",], returnDF["Limitation based on tax liability",1])
   colnames(returnDF) <- taxYear
-  print(returnDF)
+  # print(returnDF)
   return (returnDF)
 }
-
 elderlyDisableCrd <- function (){
   # Schedule R Instruction: https://www.irs.gov/pub/irs-pdf/i1040sr.pdf
-  
-}
-additionalChildTaxCrd <- function (){
-   # Form 8812
-}
 
+}
+additionalChildTaxCrd <- function (taxYear, CTCDF, statusDF, earnedIncome){
+   # Form 8812 instructions: https://www.irs.gov/pub/irs-pdf/i1040s8.pdf
+   # There was a change in 2014 in which each qualifying child may eligible for up to $1400 of ACTC
+  returnDF <- data.frame(c(0), row.names = c("Line_1:CTC_Before_Taxes"))
+  returnDF["Line_1:CTC_Before_Taxes",1] <- CTCDF["Line_10",1]
+  returnDF["Line_2:CTC_After_Taxes",1] <- CTCDF["Line_16:Child_Tax_Credit",1]
+  returnDF["Line_3:Net_Amount_Above",1] <- returnDF["Line_1:CTC_Before_Taxes",1] -returnDF["Line_2:CTC_After_Taxes",1]
+  returnDF["Line_3b",1] <- returnDF["Line_3:Net_Amount_Above",1]
+  subtractionAmt <- 3000
+  if (taxYear == 2018){
+    returnDF["ACTC_Amount_Per_Qualifying_Child",1] <- as.numeric(statusDF["Qualifying_Child_Under_17",1]) *1400
+    returnDF["Line_3b",1] <- min(returnDF["ACTC_Amount_Per_Qualifying_Child",1],returnDF["Line_3b",1])
+    subtractionAmt <- 2500
+  }
+  returnDF["Line_4:Earned_Income",1] <- earnedIncome
+  returnDF["Line_5:Subtraction_From_Earned_Income",1] <- subtractionAmt
+  returnDF["Line_6:Net_Earned_Income",1] <- max(returnDF["Line_4:Earned_Income",1]-subtractionAmt,0)
+  returnDF["Line_7:15% of Line_6 Above",1] <- returnDF["Line_6:Net_Earned_Income",1] *0.15
+  returnDF["ACTC_Amount",1] <- min(returnDF["Line_7:15% of Line_6 Above",1],returnDF["Line_3b",1])
+  colnames(returnDF) <- taxYear
+  return (returnDF)
+}
+EIC <- function(taxYear, earnedIncome, AGI, statusDF ){
+  # Restrictions of claiming the EIC credit for this function
+  # 1. Can't have MFS status
+  # 2. Age: between 25 and 65
+  # 3. Investment Income less than $3500(2018) or $3450 for 2017
+  # 3b. Investment Income defined: Interest and Dividends, Capital Gains but not capital loss
+  # 3b. Investment income did not include: Royalties, Rental, Passive Activities income
+  numQualChild <- sum(as.numeric(statusDF[c("Qualifying_Child_Under_17","Qualifying_Child_Over_17"),1]))
+  filingStatus <- toupper(statusDF["Filing_Status",1])
+  numQualChild <- min(numQualChild,3)
+  ages <- as.numeric(statusDF[c("Your_Age"),1])
+  
+  if (filingStatus =="MFJ"){
+    ages <- as.numeric(statusDF[c("Your_Age","Spouse_Age"),1])
+  }
+  rowValues <- EICTbl[EICTbl$YEAR == taxYear & grepl(filingStatus, EICTbl$FILING_STATUS) & 
+                        EICTbl$NUM_QUALIFYING_CHILD == numQualChild,] 
+  print (rowValues)
+  MAX_EIC <- round(rowValues$EI_RANGE_1 * rowValues$RATE, digits = 2)
+  returnDF <- data.frame(c(0,0,0,0,0,0), row.names = c("Num_Qualifying_Child","Earned_Income","EIC_Credit","AGI","EIC_Credit_Limit","EIC_Amount"))
+  returnDF["Num_Qualifying_Child",1] <- numQualChild
+  # limitation: This function will calculate EIC credit using Worksheet A of form 1040.
+  # Step 1 - Determine if user is qualified for EIC
+  if (numQualChild == 0 & (any(ages<25) | any(ages>65))){ # Check step 4 of EIC instruction on form 1040
+    return (returnDF)
+  }
+  if (earnedIncome>=rowValues$MAX_OUT_AGI){
+    return (returnDF)
+  }
+  returnDF["Earned_Income",1] <- earnedIncome
+  # Step 2 - Determine EIC
+  if (earnedIncome<=rowValues$EI_RANGE_1) {
+    returnDF["EIC_Credit",1] <- round(earnedIncome* rowValues$RATE, digits = 2)
+  } 
+  else if ((earnedIncome >rowValues$EI_RANGE_1) & (earnedIncome <=rowValues$EI_RANGE_2)){ # Max EIC
+    returnDF["EIC_Credit",1] <- MAX_EIC
+  } else { # Reduce EIC
+    returnDF["EIC_Credit",1] <- MAX_EIC - ((earnedIncome-rowValues$EI_RANGE_2)*rowValues$REDUCE_RATE)
+  }
+  returnDF["AGI",1] <- AGI
+  # line 4 on Worksheet, compare AGI with earnedIncome
+  if ((AGI == earnedIncome) | (AGI<rowValues$AGI_LIMIT)){ #Skip Part 2 line 5
+    returnDF["EIC_Credit_Limit",1] <- returnDF["EIC_Credit",1]
+  } else { # Calculate EIC based on AGI income
+    #----------------------------------------------------------------------------
+    if (AGI<=rowValues$EI_RANGE_1) {
+      returnDF["EIC_Credit_Limit",1] <- round(AGI* rowValues$RATE, digits = 2)
+    } 
+    else if ((AGI >rowValues$EI_RANGE_1) & (AGI <=rowValues$EI_RANGE_2)){ # Max EIC
+      returnDF["EIC_Credit_Limit",1] <- MAX_EIC
+    } else { # Reduce EIC
+      returnDF["EIC_Credit_Limit",1] <- MAX_EIC - ((AGI-rowValues$EI_RANGE_2)*rowValues$REDUCE_RATE)
+    }
+  }
+  returnDF["EIC_Amount",1] <- min(returnDF["EIC_Credit",1],returnDF["EIC_Credit_Limit",1])
+  colnames(returnDF) <- taxYear
+  return (returnDF)
+}
 
 
