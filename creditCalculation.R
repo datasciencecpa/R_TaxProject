@@ -141,10 +141,10 @@ educationalCrd <- function (taxYear, summaryDF, filingStatus, creditDF, otherCrd
   DENOMINATOR <- ifelse (filingStatus=="MFJ", 20000, 10000)
   educationDF <- data.frame(c(0,0,0,0,0,0,0,0,0,0,
                               0,0,0,0,0,0,0,0,0),
-                            row.names = c("Part_1_Line_1","Line_2","Line_3_MAGI", "Line_4",
-                                          "Line_5","Line_6","Line_7","Refundable_AOC", "Line_9_AOC_Nonrefundable_Amount",
-                                          "Line_10: Lifetime learning expense", "Line_11", "Line_12:20% of Line 11","Line_13:Phase-out Amount", 
-                                          "Line_14:AGI","Line_15", "Line_16","Line_17","Line_18", "Line_19"))
+                            row.names = c("Part 1: AOC Expense","Phase Out Amount","Line_3_MAGI", "Difference From Above",
+                                          "Line_5:Denominator","Line_6:Percentage","Line_7: AOC Eligible Amount","Refundable_AOC (40%)", "Line_9_AOC_Nonrefundable_Amount",
+                                          "Line_10: Lifetime learning expense", "Line_11:Smaller of Line 10 or 10000", "Line_12:20% of Line 11","Line_13:Phase-out Amount", 
+                                          "Line_14:AGI","Line_15:Difference from above", "Line_16:Denominator","Line_17:Percentage","Line_18:LL Eligible Amount", "Line_19:Nonrefundable Education Credits"))
   colnames(educationDF) <- taxYear
   rowValue <- LLTbl[LLTbl$YEAR == taxYear & grepl(filingStatus, LLTbl$FILING_STATUS),]
   # print (paste("Row Values:", rowValue))
@@ -190,38 +190,38 @@ educationalCrd <- function (taxYear, summaryDF, filingStatus, creditDF, otherCrd
     }
   }
   # ------- Calculate refundable AOC - Part 1 of form 8863
-  educationDF["Part_1_Line_1",] <- line_30
-  educationDF["Line_2", ] <- UPPER_MAGI
+  educationDF["Part 1: AOC Expense",] <- line_30
+  educationDF["Phase Out Amount", ] <- UPPER_MAGI
   educationDF["Line_3_MAGI", ] <- summaryDF["AGI",] # Equal AGI
-  educationDF["Line_4", ] <- educationDF["Line_2",] -educationDF["Line_3_MAGI",]
-  educationDF["Line_4", ] <- max(educationDF["Line_4", ],0)
-  educationDF["Line_5", ] <- DENOMINATOR
-  line_6 <- ifelse (educationDF["Line_4",] >= educationDF["Line_5",], 1, round(educationDF["Line_4",]/educationDF["Line_5",], digits = 3))
-  educationDF["Line_6", ] <- line_6
-  educationDF["Line_7", ] <- educationDF["Part_1_Line_1",] * educationDF["Line_6", ]
-  educationDF["Refundable_AOC",] <- educationDF["Line_7", ] *0.4
-  # print (paste("Refundable AOC", educationDF["Refundable_AOC",]))
+  educationDF["Difference From Above", ] <- educationDF["Phase Out Amount",] -educationDF["Line_3_MAGI",]
+  educationDF["Difference From Above", ] <- max(educationDF["Difference From Above", ],0)
+  educationDF["Line_5:Denominator", ] <- DENOMINATOR
+  line_6 <- ifelse (educationDF["Difference From Above",] >= educationDF["Line_5:Denominator",], 1, round(educationDF["Difference From Above",]/educationDF["Line_5:Denominator",], digits = 3))
+  educationDF["Line_6:Percentage", ] <- line_6
+  educationDF["Line_7: AOC Eligible Amount", ] <- educationDF["Part 1: AOC Expense",] * educationDF["Line_6:Percentage", ]
+  educationDF["Refundable_AOC (40%)",] <- educationDF["Line_7: AOC Eligible Amount", ] *0.4
+  # print (paste("Refundable AOC", educationDF["Refundable_AOC (40%)",]))
   #-------- Calculate nonrefundable - Part 2 of form 8863
-  educationDF["Line_9_AOC_Nonrefundable_Amount",] <- educationDF["Line_7", ] - educationDF["Refundable_AOC",]
+  educationDF["Line_9_AOC_Nonrefundable_Amount",] <- educationDF["Line_7: AOC Eligible Amount", ] - educationDF["Refundable_AOC (40%)",]
   educationDF["Line_10: Lifetime learning expense", ] <- line_31
-  educationDF["Line_11", ] <- min(educationDF["Line_10: Lifetime learning expense",], 10000)
-  educationDF["Line_12:20% of Line 11", ] <- educationDF["Line_11",] * 0.2
+  educationDF["Line_11:Smaller of Line 10 or 10000", ] <- min(educationDF["Line_10: Lifetime learning expense",], 10000)
+  educationDF["Line_12:20% of Line 11", ] <- educationDF["Line_11:Smaller of Line 10 or 10000",] * 0.2
   educationDF["Line_13:Phase-out Amount", ] <- rowValue$UPPER_MAGI
   educationDF["Line_14:AGI", ] <- summaryDF["AGI",]
   line_15 <- educationDF["Line_13:Phase-out Amount", ] - educationDF["Line_14:AGI", ]
   line_15 <- ifelse(line_15>0, line_15, 0)
-  educationDF["Line_15", ] <- line_15
-  educationDF["Line_16", ] <- DENOMINATOR
+  educationDF["Line_15:Difference from above", ] <- line_15
+  educationDF["Line_16:Denominator", ] <- DENOMINATOR
   line_17 <- ifelse(line_15>=DENOMINATOR, 1, round(line_15/DENOMINATOR, digits = 3))
   # print(paste("Line 17:", line_17))
-  educationDF["Line_17", ] <- line_17
-  educationDF["Line_18", ] <- educationDF["Line_12:20% of Line 11", ] * line_17 # This amount is LL Nonrefundable credit amount
+  educationDF["Line_17:Percentage", ] <- line_17
+  educationDF["Line_18:LL Eligible Amount", ] <- educationDF["Line_12:20% of Line 11", ] * line_17 # This amount is LL Nonrefundable credit amount
   #----- Calculate Credit limit at showed on page 7 of form 8863
-  nonRefundableEducationCrd <- educationDF["Line_9_AOC_Nonrefundable_Amount",] + educationDF["Line_18",]
+  nonRefundableEducationCrd <- educationDF["Line_9_AOC_Nonrefundable_Amount",] + educationDF["Line_18:LL Eligible Amount",]
   # print(paste("Nonrefundable Credit", nonRefundableEducationCrd))
   line_6 <- summaryDF["Tax_Amount",] - otherCrdDF # This is equivalent of Tax_Amount - CDC Credit
   # print (paste("Line 6 -Remaining Tax:", line_6))
-  educationDF["Line_19", ] <- min(nonRefundableEducationCrd, line_6)
+  educationDF["Line_19:Nonrefundable Education Credits", ] <- min(nonRefundableEducationCrd, line_6)
   colnames(educationDF) <- taxYear
   return (educationDF)
 }# End Educaiton Credit
@@ -318,7 +318,7 @@ EIC <- function(taxYear, earnedIncome, AGI, statusDF ){
   }
   rowValues <- EICTbl[EICTbl$YEAR == taxYear & grepl(filingStatus, EICTbl$FILING_STATUS) & 
                         EICTbl$NUM_QUALIFYING_CHILD == numQualChild,] 
-  print (rowValues)
+  #print (rowValues)
   MAX_EIC <- round(rowValues$EI_RANGE_1 * rowValues$RATE, digits = 2)
   returnDF <- data.frame(c(0,0,0,0,0,0), row.names = c("Num_Qualifying_Child","Earned_Income","EIC_Credit","AGI","EIC_Credit_Limit","EIC_Amount"))
   returnDF["Num_Qualifying_Child",1] <- numQualChild
