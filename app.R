@@ -210,7 +210,13 @@ server <- function(input, output, session) {
       # Get IRA Contribution to calcualte saver's credit
       IRAContribution <- as.numeric(deductions()[c("Your_IRA_Contribution","Spouse_IRA_Contribution"),1])
       taxCredits <- creditCalculation(summaryDF, incomeDF, statusInformation(), credits(),IRAContribution, 2018)
+      print (rownames(taxCredits))
       print (taxCredits)
+      # Step 3: Calculate additional taxes if applicable.
+      addTaxes <- additionalTaxes(statusInformation(), incomeDF,summaryDF["AGI",1], 2018)
+      print (addTaxes)
+      
+      
       if (!input$hideDetailSummary) { # Update selected input
         detailLabel <- "Above_AGI_Deduction_Summary"
         rowValues <- totalIncome$Tax_2018 !=0

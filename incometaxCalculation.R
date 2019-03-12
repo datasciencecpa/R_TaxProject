@@ -299,6 +299,92 @@ creditCalculation <- function (summaryDF, incomeDF,statusDF, creditDF,IRAContrib
   }
   return (returnList)
 }
-additionalTaxes <- function (statusDF ){
-  
+additionalTaxes <- function (statusDF, incomeDF, AGI,taxYear){
+  # This function will calculate the additional taxes from 3 sources:
+  # 1. Additional Medicare Taxes
+  # 2. Net Investment Income Taxes
+  # 3. 10% additional taxes on IRA distribution
+  addMedicareTaxes <- function (statusDF, incomeDF,taxYear){
+    # Helper function. 
+    # This function will calculate medicare taxes on from W-2 wages only. 
+    # https://www.irs.gov/pub/irs-pdf/i8959.pdf
+    
+    thresholdAmount <- 0
+    if (statusDF["Filing_Status",1]=="MFJ"){
+      thresholdAmount <- 250000
+    } else if (statusDF["Filing_Status",1]=="MFS"){
+      thresholdAmount <- 125000
+    } else thresholdAmount <- 200000
+    returnDF <- data.frame(c(0), row.names = c("Total medicare wages from W2s"))
+    returnDF["Total medicare wages from W2s",] <- sum(as.numeric(incomeDF[c(2,4,6,8),1]))
+    returnDF["Unreported Tips: Skip",1] <- 0
+    returnDF["Wages from form 8919: Skip",1] <- 0
+    returnDF["Total Above",1] <- returnDF["Total medicare wages from W2s",] +returnDF["Unreported Tips: Skip",1]+
+                                  returnDF["Wages from form 8919: Skip",1]
+    returnDF["Threshold Amount for your filing status",1] <- thresholdAmount
+    returnDF["Difference from above",1] <- returnDF["Total Above",1] -returnDF["Threshold Amount for your filing status",1]
+    returnDF["Difference from above",1] <- max(returnDF["Difference from above",1],0)
+    returnDF["Additional Medicare Taxes (0.9%)",1] <- round(returnDF["Difference from above",1]*0.009,digits = 4)
+    # End Part 1 of form 8959 - Starting part 5 Withholding Reconciliation
+    returnDF["Total Medicare tax withheld",1] <- sum(as.numeric(incomeDF[c(20,22,24,26),1]))
+    returnDF["Total Medicare wages above",1] <- returnDF["Total medicare wages from W2s",]
+    returnDF["Regular Medicare Taxes (1.45%)",1] <- round(returnDF["Total Medicare wages above",1]*0.0145,digits = 4)
+    returnDF["Additional Medicare tax withheld by employer",1] <- returnDF["Total Medicare tax withheld",1]-returnDF["Regular Medicare Taxes (1.45%)",1]
+    returnDF["Additional Medicare tax withheld by employer",1] <- max(returnDF["Additional Medicare tax withheld by employer",1],0)
+    returnDF["Line 23: SKip",1] <- 0
+    returnDF["Additional Medicare tax withholding",1] <- returnDF["Additional Medicare tax withheld by employer",1] 
+    colnames(returnDF) <- taxYear
+    return (returnDF)
+  } # End addMedicareTaxes function
+  netInvestmentTaxes <- function (statusDF, incomeDF,AGI, taxYear){
+    # https://www.irs.gov/pub/irs-pdf/i8960.pdf
+    # This function will calculate NIT on interest, Or.Div, and net capital gains only.
+    thresholdAmount <- 0
+    if (statusDF["Filing_Status",1]=="MFJ" | statusDF["Filing_Status",1]=="QW"){
+      thresholdAmount <- 250000
+    } else if (statusDF["Filing_Status",1]=="MFS"){
+      thresholdAmount <- 125000
+    } else thresholdAmount <- 200000
+    returnDF <- NULL
+    returnDF[c("Taxable Interest","Ordinary Dividends")] <- as.numeric(incomeDF[c("Interest","Ordinary_Dividends"),1])
+    returnDF["Net Capital Gain or Loss"] <- sum(as.numeric(incomeDF[c("Long_Term_Gains","Short_Term_Gains"),1]))
+    returnDF["Net Capital Gain or Loss"] <- max(returnDF["Net Capital Gain or Loss"], -3000)
+    returnDF["Total Investment Income"] <- sum(returnDF)
+    returnDF["AGI"] <- AGI
+    returnDF["Threshold Amount"] <- thresholdAmount
+    returnDF["Difference from above"] <- returnDF["AGI"]- returnDF["Threshold Amount"]
+    returnDF["Difference from above"] <- max (returnDF["Difference from above"],0)
+    returnDF["Amount Subject to NIT"] <- min(returnDF["Difference from above"], returnDF["Total Investment Income"])
+    returnDF["Net Investment Income Tax"] <- round(returnDF["Amount Subject to NIT"]*0.038, digits = 4)
+    returnDF <- data.frame(returnDF, row.names = names(returnDF))
+    colnames(returnDF) <- taxYear
+    return (returnDF)
+  }# End netInvestmentTaxes function
+  additionalTaxesIRA <- function (incomeDF, taxYear){
+    # 10% taxes on IRA distribution reported, if exception was not checked.
+    returnDF <- NULL
+    returnDF["IRAs Distribution"] <- as.numeric(incomeDF["TaxableIRA",1])
+    returnDF["Additional IRA Taxes"] <- 0 # assuming that exception was applied
+    if (as.numeric(incomeDF["Exception",1])==1){
+      returnDF["Additional IRA Taxes"] <- round (returnDF["IRAs Distribution"]*0.1, digits = 4)
+    }
+    returnDF <- data.frame(returnDF, row.names = names(returnDF))
+    colnames(returnDF) <- taxYear
+    return (returnDF)
+  } # End additionalTaxesIRA function
+  #-----------------Main function ----------------------------------------------
+  medicareTaxes <- addMedicareTaxes(statusDF, incomeDF, taxYear)
+  NIT <- netInvestmentTaxes(statusDF, incomeDF, AGI,taxYear)
+  IRATaxes <- additionalTaxesIRA(incomeDF, taxYear)
+  returnList <- list()
+  if (medicareTaxes["Additional Medicare Taxes (0.9%)",1]>0){
+    returnList[["MedicareTaxes"]] <- medicareTaxes
+  }
+  if (NIT["Net Investment Income Tax",1]>0){
+    returnList[["NIT"]] <- NIT
+  }
+  if (IRATaxes["Additional IRA Taxes",1]>0){
+    returnList[["IRATaxes"]] <- IRATaxes
+  }
+  return (returnList)
 }
