@@ -110,6 +110,7 @@ ui <- fluidPage(
 )
 
 server <- function(input, output, session) {
+
   # get statusInformation, incomeInformation,deductions, and credits information entered by user.
   
   statusInformation <- callModule(filingInformation, "filingInformation", session = session)
@@ -173,18 +174,31 @@ server <- function(input, output, session) {
     }
   })
   #-------------------------------------------------------------------
-
+  observe( # use to check for tax_2017 checkbox
+    if (input$add2017){
+      # Doing something here.
+      add17ToSummaryTbl <- TRUE
+      # Doing something here.
+    } else {
+      add17ToSummaryTbl <- FALSE
+    }
+  )
   output$taxSummaryTbl <- renderDataTable({
       #------------------------------------------------------------------+
       # Step 1: Calculate TotalIncome, TotalDeductions Above AGI, SD or Itemized Deductions, Exemption
-      filingStatus <- toupper(statusInformation()["Filing_Status",1])
-      incomeDF <- income() # getting dataframe from income.
-      totalIncome <- totalIncomeCalculation(incomeDF) # Return summary of all incomes user entered.
-      colnames(totalIncome) <- "Tax_2018"
-
-      deductionsToAGI <- totalDeductionToAGI (deductions(), statusInformation()[c("Filing_Status", "Your_Age","Spouse_Age"),1],
-                                              totalIncome$Tax_2018, "Tax_2018","2018")
-      totalIncome["Total_Income",] <- sum(as.numeric(totalIncome$Tax_2018[-c(4,10,11)]))
+      # local variables for this function ------------------------------------
+      filingStatus <- toupper(statusInformation()["Filing_Status",1]) # commonly use variable
+      incomeDF <- income() # getting dataframe from income.           # commonly use variable
+      # End local variables ------------------------------------------------------------------------
+      totalIncome <- totalIncomeCalculation(2018,incomeDF ) # Return summary of all incomes user entered.
+      # deductionsToAGI <- totalDeductionToAGI (deductions(), statusInformation()[c("Filing_Status", "Your_Age","Spouse_Age"),1],
+      #                                         totalIncome$Tax_2018, "Tax_2018","2018")
+      deductionsToAGI <- totalDeductionToAGI(taxYear = 2018,
+                                             status = statusInformation()[c("Filing_Status", "Your_Age","Spouse_Age"),1],
+                                             deductionsDF = deductions(),
+                                             totalIncome[,1]
+                                             )
+      totalIncome["Total_Income",] <- sum(as.numeric(totalIncome[-c(4,10,11),1])) #
       itemizedItems <- c("Medical_Exp","State_Local_Taxes", "Real_Estate_Taxes","Personal_Property_Tax",
                          "Mortgage_Interest","Premium_Mortage_Interest","Charitable_Contribution")
       deductionBelowAGI <- belowAGIDeduction (deductions()[itemizedItems,], statusInformation(),
@@ -194,7 +208,8 @@ server <- function(input, output, session) {
       taxableIncome <- max(taxableIncome, 0)
       taxes <- taxCalculation(taxableIncome, incomeDF, filingStatus, 2018)
       # Finish Step 1 --------------------------------------------------------------------------------
-      # Step 2: Create SummaryDF and calculate amount of credits that may apply
+      # Step 2: Checking if Tax_2017 was checked
+      if (input$add2017) print ("Box was checked")
       summaryDF <- data.frame (c(0,0,0,0,0,
                                  0,0), 
                                row.names = c("Total_Income", "Total_Above_AGI_Deduction","AGI", "Below_AGI_Deduction", "Exemption",
@@ -219,7 +234,7 @@ server <- function(input, output, session) {
       
       if (!input$hideDetailSummary) { # Update selected input
         detailLabel <- "Above_AGI_Deduction_Summary"
-        rowValues <- totalIncome$Tax_2018 !=0
+        rowValues <- totalIncome[,1] !=0
         if (sum(rowValues)>0) detailLabel <- append(c("Income_Summary"), detailLabel)
         updateSelectInput(session, "otherDetailSummary", choices= detailLabel )
       }
@@ -227,9 +242,9 @@ server <- function(input, output, session) {
         
         if (input$otherDetailSummary == "Income_Summary"){
           rowNames <- rownames(totalIncome)
-          rowValues <- totalIncome$Tax_2018 !=0
+          rowValues <- totalIncome[,1] !=0
           rowNames <- rowNames[rowValues]
-          totalIncomeDF <- as.data.frame(totalIncome[rowValues,], row.names = rowNames)
+          totalIncomeDF <- as.data.frame(totalIncome[rowValues,1], row.names = rowNames)
           colnames(totalIncomeDF) <- "Tax_2018"
           return (totalIncomeDF)
         } else {  # return Deductions To AGI

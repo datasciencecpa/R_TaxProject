@@ -70,9 +70,10 @@ QDCGWorksheet <- function(taxYear, taxableIncome, incomeDF, filingStatus){
   # print (paste("Addon: ", taxRow$ADD_ON))
   return (taxAmount)
 }
-totalIncomeCalculation <- function (incomeDF){
+totalIncomeCalculation <- function (taxYear,incomeDF){
    # This function will sum up total income user entered from the income section. incoe
    # Special handle for net capital gain/loss so that maximum of -$3000 are allowed. 
+   print ("Total Income Calculation")
    Income_Type <- c("Total_W2_Wages", "Interest", "Ord_Dividends", "Qualified_Dividends","Taxable_Refunds","Alimony", "Net_Capital_Gain_Loss",
                  "IRA_Distribution", "Unemployment Income", "Total_Taxes_Withheld","Total_Medicare_Tax_Withheld")
 
@@ -83,21 +84,23 @@ totalIncomeCalculation <- function (incomeDF){
      incomeDF["Qualified_Dividends",1],
      incomeDF["Tax_Refunds", 1],
      incomeDF["Alimony",1],
-     ifelse (sum(incomeDF[c("Long_Term_Gains","Short_Term_Gains"),1])< -3000,-3000,sum(incomeDF[c("Long_Term_Gains","Short_Term_Gains"),1])),
+     max (sum(incomeDF[c("Long_Term_Gains","Short_Term_Gains"),1]), -3000),
      incomeDF["TaxableIRA",1],
      incomeDF["Unemployment_Income", 1],
      sum(incomeDF[c("Your_W2_Tax","Spouse_W2_Tax","Additional_W2_Tax_1","Additional_W2_Tax_2","Interest_Tax","Dividend_Tax",
                     "Capital_Gain_Tax","IRA_Tax","Unemployment_Tax"),1]),
      sum(incomeDF[c("Your_Medicare_Tax","Spouse_Medicare_Tax","Add_Medicare_Tax1","Add_Medicare_Tax2"),1])
    )
-   return (data.frame(TotalIncome, row.names = Income_Type))
+   totalIncomeDF <- data.frame(TotalIncome, row.names = Income_Type)
+   colnames(totalIncomeDF) <- taxYear
+   return (totalIncomeDF)
 }
-totalDeductionToAGI <- function (deductionsDF, statusDF, AGIIncome, colName, taxYear) {
+totalDeductionToAGI <- function (taxYear,status,deductionsDF,AGIIncome) {
   # This function will calculate above AGI deductions.
   # Parameters: DeductionsDF: Dataframe that contains all deductions user entered.
-  # statusDF: Vector that contains all user information: Ages, Filing status.
+  # status: Vector that contains all user information: Ages, Filing status.
   # Income, use to check student loan interest and IRA deductions.
-  # colName: use to assign colName for returnDF
+  # deductionsDF <- contains all deductions usered entered.
   # Begin function --------------------------------------------------------
   returnDF <- data.frame(c(0,0,0,0,
                            0,0,0,
@@ -109,9 +112,9 @@ totalDeductionToAGI <- function (deductionsDF, statusDF, AGIIncome, colName, tax
                                              "Your_IRA_Contribution","Your_IRA_Cover","Your_IRA_Deduction",
                                              "Spouse_IRA_Contribution","Spouse_IRA_Cover","Your_Spouse_IRA_Deduction",
                                        "Student_Loan_Interest", "Student_Loan_Deduction"))
-  colnames(returnDF) <- colName
-  filingStatus <- toupper(statusDF[1]) # vector of filing status
-  ages <- as.numeric(statusDF[2:3]) # vector that contains ages
+  colnames(returnDF) <- taxYear
+  filingStatus <- toupper(status[1]) # vector of filing status
+  ages <- as.numeric(status[2:3]) # vector that contains ages
   # Starting with Educator_Expense
   if (filingStatus !="MFJ"){
     returnDF["Educator_Expense",1] <- min(deductionsDF["Educator_Expense",1], 250)
@@ -135,8 +138,8 @@ totalDeductionToAGI <- function (deductionsDF, statusDF, AGIIncome, colName, tax
                                                                         "Your_IRA_Cover","Spouse_IRA_Cover"),1]
 
   # Checking if user has enough earned income (Total Wages + Alimony) to contribute to IRA
-  earnedIncome <- sum(as.numeric(AGIIncome[c(1,6)])) # Include total W2 Wages and Alimony
-  AGI <- sum(as.numeric(AGIIncome[-c(4,10,11)]))
+  earnedIncome <- sum(as.numeric(AGIIncome[c(1,6)]))    # Include total W2 Wages and Alimony
+  AGI <- sum(as.numeric(AGIIncome[-c(4,10,11)]))        # Exclude qualified div, and taxes rows
   MAGI <- AGI - sum(as.numeric(returnDF[c("Educator_Expense", "HSA_Deduction_Amt"),1]))
   IRA_Deduction <- IRADeduction(taxYear, IRAcover = as.character(deductionsDF[c("Your_IRA_Cover", "Spouse_IRA_Cover"),1]),
                                           filingStatus = filingStatus,
@@ -155,8 +158,8 @@ totalDeductionToAGI <- function (deductionsDF, statusDF, AGIIncome, colName, tax
   
   MAGI <- AGI - AGI_Deduction  # Calculate new MAGI for student loan deduction
 
-  SLDeduction <- studentLoan(interest = returnDF["Student_Loan_Interest",1], MAGI, filingStatus, 2018)
-  print (paste("Student loan deduction: ", SLDeduction))
+  SLDeduction <- studentLoan(interest = returnDF["Student_Loan_Interest",1], MAGI, filingStatus, taxYear)
+  # print (paste("Student loan deduction: ", SLDeduction))
   returnDF["Student_Loan_Deduction",] <- SLDeduction
    # End Student loan deduction calculation ----------------------------------------------------------------------
   returnDF["Adjusted_Gross_Income", ] <- AGI - sum(as.numeric(returnDF[c("Educator_Expense", "HSA_Deduction_Amt","Your_IRA_Deduction", 
@@ -365,7 +368,7 @@ additionalTaxes <- function (statusDF, incomeDF, AGI,taxYear){
     returnDF <- NULL
     returnDF["IRAs Distribution"] <- as.numeric(incomeDF["TaxableIRA",1])
     returnDF["Additional IRA Taxes"] <- 0 # assuming that exception was applied
-    if (as.numeric(incomeDF["Exception",1])==1){
+    if (as.numeric(incomeDF["Exception",1])==0){
       returnDF["Additional IRA Taxes"] <- round (returnDF["IRAs Distribution"]*0.1, digits = 4)
     }
     returnDF <- data.frame(returnDF, row.names = names(returnDF))
