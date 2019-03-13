@@ -225,10 +225,10 @@ SDExemptionDeduction <- function (deductionDF, statusDF, AGI, taxYear){
   } # End Internal function
   ExemptionAmount <- function (AGI_2017, statusDF) { 
     # This function applied only for tax year 2017
-    rowValue <- ExempTbl[grepl(statusDF["Filing_Status", "Status_2017"], ExempTbl$FILING_STATUS),]
+    rowValue <- ExempTbl[grepl(statusDF["Filing_Status", 1], ExempTbl$FILING_STATUS),]
     num <- 1 # Variable to store number of exemptions
-    if (statusDF["Filing_Status", "Status_2017"] == "MFJ") num <- 2
-    num <- num + sum(as.numeric(statusDF$Status_2017[2:4]))
+    if (statusDF["Filing_Status", 1] == "MFJ") num <- 2
+    num <- num + sum(as.numeric(statusDF[,1][2:4]))
     ExemptionAmt <- num * rowValue$AMOUNT
     if ((AGI_2017 > rowValue$LOWER_AMT) & (AGI_2017<rowValue$UPPER_AMT)) {
       line_5 <- AGI_2017 - rowValue$LOWER_AMT

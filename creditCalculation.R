@@ -9,11 +9,11 @@ LLTbl <- read.xls("TaxRates.xls", sheet = 8)
 SaverTbl <- read.xls("TaxRates.xls", sheet = 12)
 CTCTbl <- read.xls("TaxRates.xls", sheet = 5)
 EICTbl <- read.xls("TaxRates.xls", sheet = 13)
-childTaxCrd <- function (taxYear, summaryDF, statusDF,sumOtherCredits){
+childTaxCrd <- function (taxYear, AGI, taxes, statusDF,sumOtherCredits){
   # Link to IRS website, pub 972: https://www.irs.gov/publications/p972
   # Parameters:
   # * taxYear: Numeric
-  # * summaryDF: Dataframe that contains information needed such as AGI, Tax_Amount
+  
   # * sumOtherCredits : Numeric that contains total of other non-refundable credits
   
   credit_row <- CTCTbl[CTCTbl$YEAR == taxYear & grepl(toupper(statusDF["Filing_Status",1]), CTCTbl$FILING_STATUS),]
@@ -29,16 +29,16 @@ childTaxCrd <- function (taxYear, summaryDF, statusDF,sumOtherCredits){
   returnDF["Credit_Per_Qualifying_Child",] <- numQualifyingChild * credit_per_child
   returnDF["Credit_Per_Other_Dependent",] <- numQualifyingRelative * credit_per_otherDep
   returnDF["Total_Above",] <- returnDF["Credit_Per_Qualifying_Child",] + returnDF["Credit_Per_Other_Dependent",]
-  returnDF["AGI",] <- summaryDF["AGI",]
+  returnDF["AGI",] <- AGI
   returnDF["Line_5:SKIP",] <- 0
-  returnDF["Line_6:AGI",] <- summaryDF["AGI",] + returnDF["Line_5:SKIP",]
+  returnDF["Line_6:AGI",] <- AGI + returnDF["Line_5:SKIP",]
   returnDF["Line_7:Phase_Out_Amount",] <- phase_out_agi
   returnDF["Line_8",] <- ifelse(returnDF["Line_6:AGI",]<returnDF["Line_7:Phase_Out_Amount",], 0, 
                                round_any(returnDF["Line_6:AGI",] - returnDF["Line_7:Phase_Out_Amount",], 1000, f= ceiling))
   returnDF["Line_9",] <- round(returnDF["Line_8",] *0.05, digits = 4)
   returnDF["Line_10",] <- ifelse(returnDF["Line_9",]>returnDF["Total_Above",],0,
                                  returnDF["Total_Above",] - returnDF["Line_9",])  # this is the net credit after the 5% reduction
-  returnDF["Line_11_Taxes",] <- summaryDF["Tax_Amount",]
+  returnDF["Line_11_Taxes",] <- taxes
   returnDF["Line_12:Other_Nonrefundable_Credits",] <- sumOtherCredits
   returnDF["Line_13_Net_Taxes",] <- returnDF["Line_11_Taxes",] - returnDF["Line_12:Other_Nonrefundable_Credits",] # This is the net tax after subtraction of other nonrefundable credit
   returnDF["Line_14:SKIP",] <- 0
@@ -51,8 +51,7 @@ childTaxCrd <- function (taxYear, summaryDF, statusDF,sumOtherCredits){
   }
   return (returnDF) 
 }
-
-dependentCareCrd <- function (taxYear,summaryDF, filingStatus, incomeDF, creditDF ){
+dependentCareCrd <- function (taxYear,AGI, taxes, filingStatus, incomeDF, creditDF ){
   #https://www.irs.gov/pub/irs-pdf/i2441.pdf
   # Rules: Qualifying child must be under 13 year old/ Or Disabled
   # Rules: Expense can't be more than $3000 for one child, or 6000 for 2 or more child
@@ -114,7 +113,7 @@ dependentCareCrd <- function (taxYear,summaryDF, filingStatus, incomeDF, creditD
 
   line_6 <- min(c(line_4, line_5, creditDF["Expense",])) # getting the smallest
   returnDF["Line_6_Smallest_Of_3_4_5_Above", ] <- line_6
-  AGI <- summaryDF["AGI",] # AGI
+  
   returnDF["Line_7_AGI", ] <- AGI
   # print (paste("AGI:",AGI))
   if (AGI<LOWER_LIMIT) rate <- MAX_RATE
@@ -126,14 +125,13 @@ dependentCareCrd <- function (taxYear,summaryDF, filingStatus, incomeDF, creditD
   
   line_9 <- round(line_6 * rate, digits = 4)
   returnDF["Line_9", ] <- line_9
-  line_10 <- summaryDF["Tax_Amount",1] # Tax_Amount
+  line_10 <- taxes # Tax_Amount
   returnDF["Line_10_Tax_Amount_Before_Credit",] <- line_10
   returnDF["Child_Dependent_Care_Credit",] <- min(line_9, line_10)
   colnames(returnDF) <- taxYear
   return (returnDF)
 }
-
-educationalCrd <- function (taxYear, summaryDF, filingStatus, creditDF, otherCrdDF){
+educationalCrd <- function (taxYear, AGI, taxes, filingStatus, creditDF, otherCrdDF){
   
   # This function will a dataframe that contains Part1 & Part2 calculation of form 8863
   # Rule1: MFS cannot claim the credit
@@ -192,7 +190,7 @@ educationalCrd <- function (taxYear, summaryDF, filingStatus, creditDF, otherCrd
   # ------- Calculate refundable AOC - Part 1 of form 8863
   educationDF["Part 1: AOC Expense",] <- line_30
   educationDF["Phase Out Amount", ] <- UPPER_MAGI
-  educationDF["Line_3_MAGI", ] <- summaryDF["AGI",] # Equal AGI
+  educationDF["Line_3_MAGI", ] <- AGI # Equal AGI
   educationDF["Difference From Above", ] <- educationDF["Phase Out Amount",] -educationDF["Line_3_MAGI",]
   educationDF["Difference From Above", ] <- max(educationDF["Difference From Above", ],0)
   educationDF["Line_5:Denominator", ] <- DENOMINATOR
@@ -207,7 +205,7 @@ educationalCrd <- function (taxYear, summaryDF, filingStatus, creditDF, otherCrd
   educationDF["Line_11:Smaller of Line 10 or 10000", ] <- min(educationDF["Line_10: Lifetime learning expense",], 10000)
   educationDF["Line_12:20% of Line 11", ] <- educationDF["Line_11:Smaller of Line 10 or 10000",] * 0.2
   educationDF["Line_13:Phase-out Amount", ] <- rowValue$UPPER_MAGI
-  educationDF["Line_14:AGI", ] <- summaryDF["AGI",]
+  educationDF["Line_14:AGI", ] <- AGI
   line_15 <- educationDF["Line_13:Phase-out Amount", ] - educationDF["Line_14:AGI", ]
   line_15 <- ifelse(line_15>0, line_15, 0)
   educationDF["Line_15:Difference from above", ] <- line_15
@@ -219,17 +217,16 @@ educationalCrd <- function (taxYear, summaryDF, filingStatus, creditDF, otherCrd
   #----- Calculate Credit limit at showed on page 7 of form 8863
   nonRefundableEducationCrd <- educationDF["Line_9_AOC_Nonrefundable_Amount",] + educationDF["Line_18:LL Eligible Amount",]
   # print(paste("Nonrefundable Credit", nonRefundableEducationCrd))
-  line_6 <- summaryDF["Tax_Amount",] - otherCrdDF # This is equivalent of Tax_Amount - CDC Credit
+  line_6 <- taxes - otherCrdDF # This is equivalent of Tax_Amount - CDC Credit
   # print (paste("Line 6 -Remaining Tax:", line_6))
   educationDF["Line_19:Nonrefundable Education Credits", ] <- min(nonRefundableEducationCrd, line_6)
   colnames(educationDF) <- taxYear
   return (educationDF)
 }# End Educaiton Credit
-
-saverCrd <- function(taxYear, filingStatus, summaryDF, earnedIncome, IRAContribution, 
+saverCrd <- function(taxYear, filingStatus, AGI, taxes, earnedIncome, IRAContribution, 
                      retirementContribution,sumOtherCredits){
   # Form 8880: https://www.irs.gov/pub/irs-pdf/f8880.pdf
-  # Parameters: summaryDF: Dataframe
+  # Parameters: 
   # filingStatus: vector with single value
   # earnedIncome: vector with single value
   # IRAContribution: vector with length of 2
@@ -256,7 +253,7 @@ saverCrd <- function(taxYear, filingStatus, summaryDF, earnedIncome, IRAContribu
   eligible1 <- min(eligible1, 2000)
   eligible2 <- min(eligible2, 2000)
   returnDF["Eligible Amount",]  <- sum(eligible1, eligible2)
-  AGI <- summaryDF["AGI",]
+  AGI <- AGI
   returnDF["AGI",] <- AGI
   # Determine applicable rate based on AGI in AGIRanges
   returnDF["Rate",] <- 0
@@ -269,7 +266,7 @@ saverCrd <- function(taxYear, filingStatus, summaryDF, earnedIncome, IRAContribu
   } 
  
   returnDF["Credit_Amount",] <- returnDF["Eligible Amount",] * returnDF["Rate",]
-  returnDF["Limitation based on tax liability",1] <- summaryDF["Tax_Amount",1] - sumOtherCredits
+  returnDF["Limitation based on tax liability",1] <- taxes - sumOtherCredits
   returnDF["Saver_Credit",] <- min(returnDF["Credit_Amount",], returnDF["Limitation based on tax liability",1])
   colnames(returnDF) <- taxYear
   # print(returnDF)

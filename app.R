@@ -39,8 +39,10 @@ ui <- fluidPage(
                     checkboxInput("displaySummaryGraph", label = "Display Graph", value = FALSE),
                     plotOutput("summaryGraph"),
                     hr(),
-                    fluidRow( column(8,h3("Tax Planning")),
-                              column(4, checkboxInput("hideTaxPlanning", label = "Hide Tax Planning", value = TRUE))
+                    fluidRow( column(4,h3("Tax Planning")),
+                              column(4, checkboxInput("taxPlanning", label = "Tax Planning", value = FALSE)),
+                              column(4, checkboxInput("hideTaxPlanning", label = "Hide Tax Planning", value = TRUE)
+                              )
                     ),
                     h4("Change in Filing Status"),
                     selectInput("filingStatus", label = "Select filing status",
@@ -174,82 +176,55 @@ server <- function(input, output, session) {
     }
   })
   #-------------------------------------------------------------------
-  observe( # use to check for tax_2017 checkbox
-    if (input$add2017){
-      # Doing something here.
-      add17ToSummaryTbl <- TRUE
-      # Doing something here.
-    } else {
-      add17ToSummaryTbl <- FALSE
-    }
-  )
+
   output$taxSummaryTbl <- renderDataTable({
       #------------------------------------------------------------------+
-      # Step 1: Calculate TotalIncome, TotalDeductions Above AGI, SD or Itemized Deductions, Exemption
+      # Step 1: Calculate TotalIncome, TotalDeductions Above AGI, SD or Itemized Deductions, Exemption, taxes, and credits
       # local variables for this function ------------------------------------
-      filingStatus <- toupper(statusInformation()["Filing_Status",1]) # commonly use variable
+      statusDF <- statusInformation()
+      filingStatus <- toupper(statusDF["Filing_Status",1]) # commonly use variable
       incomeDF <- income() # getting dataframe from income.           # commonly use variable
-      # End local variables ------------------------------------------------------------------------
-      totalIncome <- totalIncomeCalculation(2018,incomeDF ) # Return summary of all incomes user entered.
-      # deductionsToAGI <- totalDeductionToAGI (deductions(), statusInformation()[c("Filing_Status", "Your_Age","Spouse_Age"),1],
-      #                                         totalIncome$Tax_2018, "Tax_2018","2018")
-      deductionsToAGI <- totalDeductionToAGI(taxYear = 2018,
-                                             status = statusInformation()[c("Filing_Status", "Your_Age","Spouse_Age"),1],
-                                             deductionsDF = deductions(),
-                                             totalIncome[,1]
-                                             )
-      totalIncome["Total_Income",] <- sum(as.numeric(totalIncome[-c(4,10,11),1])) #
-      itemizedItems <- c("Medical_Exp","State_Local_Taxes", "Real_Estate_Taxes","Personal_Property_Tax",
-                         "Mortgage_Interest","Premium_Mortage_Interest","Charitable_Contribution")
-      deductionBelowAGI <- belowAGIDeduction (deductions()[itemizedItems,], statusInformation(),
-                                   deductionsToAGI["Adjusted_Gross_Income",], taxYear = "2018")
-
-      taxableIncome <- as.numeric(deductionsToAGI["Adjusted_Gross_Income",]) - sum(deductionBelowAGI[[1]][c("Your_Deduction","Exemption_Deduction"),])
-      taxableIncome <- max(taxableIncome, 0)
-      taxes <- taxCalculation(taxableIncome, incomeDF, filingStatus, 2018)
-      # Finish Step 1 --------------------------------------------------------------------------------
-      # Step 2: Checking if Tax_2017 was checked
-      if (input$add2017) print ("Box was checked")
-      summaryDF <- data.frame (c(0,0,0,0,0,
-                                 0,0), 
-                               row.names = c("Total_Income", "Total_Above_AGI_Deduction","AGI", "Below_AGI_Deduction", "Exemption",
-                                             "Taxable_Income", "Tax_Amount"))
-      colnames(summaryDF) <- "Tax_2018"
-      summaryDF["Total_Income",] <- totalIncome["Total_Income",]
-      summaryDF["Total_Above_AGI_Deduction",] <- sum(as.numeric(deductionsToAGI[c("Educator_Expense","HSA_Deduction_Amt",
-                                                                                  "Your_IRA_Deduction","Your_Spouse_IRA_Deduction","Student_Loan_Deduction"),1]))
-      summaryDF["AGI",] <- as.numeric(deductionsToAGI["Adjusted_Gross_Income",])
-      summaryDF[c("Below_AGI_Deduction","Exemption"),] <- deductionBelowAGI[[1]][c("Your_Deduction","Exemption_Deduction"),]
-      summaryDF["Taxable_Income",] <- taxableIncome
-      summaryDF["Tax_Amount",] <- taxes
-      # Get IRA Contribution to calcualte saver's credit
       IRAContribution <- as.numeric(deductions()[c("Your_IRA_Contribution","Spouse_IRA_Contribution"),1])
-      taxCredits <- creditCalculation(summaryDF, incomeDF, statusInformation(), credits(),IRAContribution, 2018)
-      print (rownames(taxCredits))
-      print (taxCredits)
-      # Step 3: Calculate additional taxes if applicable.
-      addTaxes <- additionalTaxes(statusInformation(), incomeDF,summaryDF["AGI",1], 2018)
-      print (addTaxes)
+      taxes2017 <- NULL                # Vector variable used to store taxes 2017
+      taxPlanning <- NULL              # Vector variable used to store taxPlanning
+   
+      taxes2018 <- taxSummary(2018,statusDF, incomeDF, deductions(), credits())
       
+      print (taxes2018[[5]])
+      print (taxes2018[[6]])
+      summaryDF <- data.frame(taxes2018[[1]], row.names = names(taxes2018[[1]]))
+      colnames(summaryDF) <- "Tax_2018"
+      
+      # Finish Step 1- Calculate Taxes_2018 --------------------------------------------------------------------------------
+      if (input$add2017){
+        # Step 1: Calculate taxes2017
+        taxes2017 <- taxSummary(2017,statusDF, incomeDF, deductions(), credits())
+        # Step 2: Add to summaryDF
+        summaryDF <- cbind(summaryDF, taxes2017[[1]])
+        colnames(summaryDF) <- c("Tax_2018", "Tax_2017")
+      } else {
+        summaryDF <- data.frame(taxes2018[[1]], row.names = names(taxes2018[[1]]))
+        colnames(summaryDF) <- "Tax_2018"
+      }
       
       if (!input$hideDetailSummary) { # Update selected input
         detailLabel <- "Above_AGI_Deduction_Summary"
-        rowValues <- totalIncome[,1] !=0
+        rowValues <- taxes2018[[2]][,1] !=0
         if (sum(rowValues)>0) detailLabel <- append(c("Income_Summary"), detailLabel)
         updateSelectInput(session, "otherDetailSummary", choices= detailLabel )
       }
       output$otherDetailTbl <- renderDataTable({
-        
+
         if (input$otherDetailSummary == "Income_Summary"){
-          rowNames <- rownames(totalIncome)
-          rowValues <- totalIncome[,1] !=0
+          rowNames <- rownames(taxes2018[[2]])
+          rowValues <- taxes2018[[2]][,1] !=0
           rowNames <- rowNames[rowValues]
-          totalIncomeDF <- as.data.frame(totalIncome[rowValues,1], row.names = rowNames)
+          totalIncomeDF <- as.data.frame(taxes2018[[2]][rowValues,1], row.names = rowNames)
           colnames(totalIncomeDF) <- "Tax_2018"
           return (totalIncomeDF)
         } else {  # return Deductions To AGI
 
-          return (deductionsToAGI[])
+          return (taxes2018[[3]])
         }
       },options= list(pageLength = 25))
 

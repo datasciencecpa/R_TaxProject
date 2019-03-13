@@ -99,7 +99,7 @@ totalDeductionToAGI <- function (taxYear,status,deductionsDF,AGIIncome) {
   # This function will calculate above AGI deductions.
   # Parameters: DeductionsDF: Dataframe that contains all deductions user entered.
   # status: Vector that contains all user information: Ages, Filing status.
-  # Income, use to check student loan interest and IRA deductions.
+  # AGIIncome: Vector uses to check student loan interest and IRA deductions.
   # deductionsDF <- contains all deductions usered entered.
   # Begin function --------------------------------------------------------
   returnDF <- data.frame(c(0,0,0,0,
@@ -175,7 +175,7 @@ belowAGIDeduction <- function(deductionDF, statusDF, AGI, taxYear){
   # statusDF: dataframe that contains status information such as filing status, ages
   statusDF["Filing_Status", ] <- toupper(as.character(statusDF["Filing_Status", ]))
   deductionDF <- as.numeric(deductionDF)
-  AGI <- as.numeric(AGI)
+
   deductions <- SDExemptionDeduction (deductionDF, statusDF, AGI, taxYear)
 
   return (deductions)
@@ -205,7 +205,7 @@ taxCalculation <- function (taxableIncome, incomeDF, filingStatus, taxYear){
   }
   return (c(taxes))
 }
-creditCalculation <- function (summaryDF, incomeDF,statusDF, creditDF,IRAContribution, taxYear){
+creditCalculation <- function (AGI, taxes, incomeDF,statusDF, creditDF,IRAContribution, taxYear){
   # This function will calculate available credits:
   # Child and Dependent Care Credit
   # Education Credit
@@ -223,7 +223,7 @@ creditCalculation <- function (summaryDF, incomeDF,statusDF, creditDF,IRAContrib
   #----------Calculate CDC Credit ------------------------------------------------------
 
   if (creditDF["Qualifying_Person",]>0 & creditDF["Expense",]>0){ # Calculate CDC for current tax year
-    CDC <- dependentCareCrd(taxYear,summaryDF, filingStatus,incomeDF$Income_Tax_2018, creditDF)
+    CDC <- dependentCareCrd(taxYear,AGI, taxes, filingStatus,incomeDF$Income_Tax_2018, creditDF)
     if (CDC["Child_Dependent_Care_Credit",]>0){
       returnList[["CDC"]] <- CDC # Store dataframe
       otherCredits["CDC",1] <- CDC["Child_Dependent_Care_Credit",]
@@ -234,7 +234,7 @@ creditCalculation <- function (summaryDF, incomeDF,statusDF, creditDF,IRAContrib
   if (creditDF["Expense_1",1]>0 | creditDF["Expense_2",1]>0) {# Calculate only when expenses are greater than zero
     # print ("Calculate Educational credit for 2018")
 
-    EDC <- educationalCrd(taxYear,summaryDF, filingStatus, creditDF, otherCredits["CDC",1])
+    EDC <- educationalCrd(taxYear,AGI, taxes, filingStatus, creditDF, otherCredits["CDC",1])
     if (EDC["Line_19:Nonrefundable Education Credits",]>0 | EDC["Refundable_AOC",]>0){
       otherCredits["Education",1] <- EDC["Line_19:Nonrefundable Education Credits",]
       returnList[["Education"]] <- EDC
@@ -251,7 +251,7 @@ creditCalculation <- function (summaryDF, incomeDF,statusDF, creditDF,IRAContrib
       IRAContribution[2] <- 0
       creditDF["Spouse_Retirement_Contribution",1] <- 0
     }
-    saverDF <- saverCrd(taxYear, filingStatus, summaryDF, earnedIncome, IRAContribution, 
+    saverDF <- saverCrd(taxYear, filingStatus, AGI, taxes, earnedIncome, IRAContribution, 
                       retirementContribution, sum(otherCredits[c("CDC", "Education"),1]))
     if (saverDF["Credit_Amount",1]>0){
       otherCredits["Saver",1] <- saverDF["Saver_Credit",1]
@@ -263,10 +263,10 @@ creditCalculation <- function (summaryDF, incomeDF,statusDF, creditDF,IRAContrib
   ACTC <- FALSE
   isCTCEligible <- FALSE
   if (taxYear ==2018 & sum(as.numeric(statusDF[c("Qualifying_Child_Under_17","Qualifying_Relative"),1]))>0) {
-    CTC <- childTaxCrd(taxYear, summaryDF, statusDF,sumOtherCredits )
+    CTC <- childTaxCrd(taxYear, AGI, taxes, statusDF,sumOtherCredits )
     isCTCEligible <- TRUE
   } else if (sum(as.numeric(statusDF[c("Qualifying_Child_Under_17"),1]))>0){
-    CTC <- childTaxCrd(taxYear, summaryDF, statusDF,sumOtherCredits )
+    CTC <- childTaxCrd(taxYear, AGI, taxes, statusDF,sumOtherCredits )
     isCTCEligible <- TRUE
   }
   if (isCTCEligible){
@@ -293,7 +293,7 @@ creditCalculation <- function (summaryDF, incomeDF,statusDF, creditDF,IRAContrib
     maxInvestmentIncome <- 3450
   }
   if (filingStatus!= "MFS" & investmentIncome<=maxInvestmentIncome){ #Calculate EIC Credit
-    EICdf <- EIC(taxYear, earnedIncome,as.numeric(summaryDF["AGI",1]),statusDF)
+    EICdf <- EIC(taxYear, earnedIncome,AGI,statusDF)
     if (EICdf["EIC_Credit_Limit",1]>0){
       returnList[["EIC"]] <- EICdf
     }
@@ -390,4 +390,40 @@ additionalTaxes <- function (statusDF, incomeDF, AGI,taxYear){
     returnList[["IRATaxes"]] <- IRATaxes
   }
   return (returnList)
+}
+taxSummary <- function (taxYear, statusDF, incomeDF, deductionDF, creditDF){
+  # This will be the main helper function, return a vector with all necessary information
+  
+  # Commonly use variables
+  filingStatus <- toupper(statusDF["Filing_Status",1])
+  IRAContribution <- as.numeric(deductionDF[c("Your_IRA_Contribution","Spouse_IRA_Contribution"),1])
+  itemizedItems <- c("Medical_Exp","State_Local_Taxes", "Real_Estate_Taxes","Personal_Property_Tax",
+                     "Mortgage_Interest","Premium_Mortage_Interest","Charitable_Contribution")
+  # End Commonly use variables
+  # Begin main function
+  totalIncomeDF <- totalIncomeCalculation(taxYear = taxYear, incomeDF) # Step 1:Summary Income and taxes
+  deductionsAboveAGI <- totalDeductionToAGI(taxYear, statusDF[c("Filing_Status", "Your_Age","Spouse_Age"),1],
+                                            deductionDF, totalIncomeDF[,1]) # Step 2: Calculate above AGI deductions
+  totalIncomeDF["Total_Income",] <- sum(as.numeric(totalIncomeDF[-c(4,10,11),1])) # Step 3: Calculate total income  
+  AGI <- as.numeric(deductionsAboveAGI["Adjusted_Gross_Income",1])
+  deductionBelowAGI <- belowAGIDeduction(deductionDF[itemizedItems,1],statusDF = statusDF,
+                                         AGI, taxYear) # Step 3: Calculate SD, Itemized, and Exemption
+  taxableIncome <- AGI - sum(deductionBelowAGI[[1]][c("Your_Deduction","Exemption_Deduction"),])
+  taxableIncome <- max(taxableIncome, 0)
+  taxes <- taxCalculation(taxableIncome, incomeDF, filingStatus, taxYear)
+  aboveAGIDeduction <- sum(as.numeric(deductionsAboveAGI[c("Educator_Expense","HSA_Deduction_Amt",
+                            "Your_IRA_Deduction","Your_Spouse_IRA_Deduction","Student_Loan_Deduction"),1]))
+  taxCredits <- creditCalculation(AGI, taxes, incomeDF, statusDF, creditDF,IRAContribution, taxYear)
+  addTaxes <- additionalTaxes(statusDF, incomeDF, AGI, taxYear)
+  # Finish main function
+  # Prepare information to return to caller
+  summaryV <- c(totalIncomeDF["Total_Income",],aboveAGIDeduction,AGI,
+                deductionBelowAGI[[1]]["Your_Deduction",1],
+                deductionBelowAGI[[1]]["Exemption_Deduction",1],
+                taxableIncome,
+                taxes)
+  names(summaryV) <- c("Total_Income", "Above_AGI_Deduction", "AGI", "Standard_Deduction_Or_Itemized",
+                       "Exemption_Amount","Taxable_Income", "Taxes_Before_Credits")
+
+  returnList <- list(summaryV, totalIncomeDF, deductionsAboveAGI, deductionBelowAGI, taxCredits,addTaxes)
 }
