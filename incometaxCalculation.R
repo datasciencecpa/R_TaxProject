@@ -218,7 +218,7 @@ creditCalculation <- function (AGI, taxes, incomeDF,statusDF, creditDF,IRAContri
   # print (creditDF)
   filingStatus <- toupper(statusDF["Filing_Status",1])
   earnedIncome <- sum(as.numeric(incomeDF[c(1,3,5,7),1])) # Sum of all wages
-  otherCredits <- data.frame (c(0,0,0,0), row.names = c("CDC", "Education", "Saver", "CTC")) # Use to store credits
+  otherCredits <- data.frame (c(0,0,0,0,0,0,0), row.names = c("CDC", "Education", "Saver", "CTC", "AOC","ACTC", "EIC")) # Use to store credits
   returnList <- list() # Use to store list of dataframe that will return to App.R
   #----------Calculate CDC Credit ------------------------------------------------------
 
@@ -237,6 +237,7 @@ creditCalculation <- function (AGI, taxes, incomeDF,statusDF, creditDF,IRAContri
     EDC <- educationalCrd(taxYear,AGI, taxes, filingStatus, creditDF, otherCredits["CDC",1])
     if (EDC["Line_19:Nonrefundable Education Credits",]>0 | EDC["Refundable_AOC",]>0){
       otherCredits["Education",1] <- EDC["Line_19:Nonrefundable Education Credits",]
+      otherCredits["AOC",1] <- EDC["Refundable_AOC",]
       returnList[["Education"]] <- EDC
     }
   }
@@ -259,7 +260,7 @@ creditCalculation <- function (AGI, taxes, incomeDF,statusDF, creditDF,IRAContri
     }
   }
   # _______________nextstep -- Calculate Child Tax and Other Dependent Credits--------------------------------
-  sumOtherCredits <- sum(otherCredits[,1])
+  sumOtherCredits <- sum(otherCredits[c("CDC","Education","Saver"),1])
   ACTC <- FALSE
   isCTCEligible <- FALSE
   if (taxYear ==2018 & sum(as.numeric(statusDF[c("Qualifying_Child_Under_17","Qualifying_Relative"),1]))>0) {
@@ -274,6 +275,7 @@ creditCalculation <- function (AGI, taxes, incomeDF,statusDF, creditDF,IRAContri
       otherCredits["CTC",1] <- CTC["Line_16:Child_Tax_Credit",]
       if (CTC["Possible_Additional_CTC",1] == 1) ACTC <- TRUE
       returnList[["CTC"]] <- CTC
+      
     }
   }
   
@@ -282,6 +284,7 @@ creditCalculation <- function (AGI, taxes, incomeDF,statusDF, creditDF,IRAContri
     ACTC <- additionalChildTaxCrd(taxYear,returnList[["CTC"]], statusDF, earnedIncome)
     if (ACTC["ACTC_Amount",1]>0){
       returnList[["ACTC"]] <- ACTC
+      otherCredits["ACTC",1] <- ACTC["ACTC_Amount",1]
     }
   }
   #_______________nextstep -- Calculate EIC Credits--------------------------------
@@ -296,10 +299,12 @@ creditCalculation <- function (AGI, taxes, incomeDF,statusDF, creditDF,IRAContri
     EICdf <- EIC(taxYear, earnedIncome,AGI,statusDF)
     if (EICdf["EIC_Credit_Limit",1]>0){
       returnList[["EIC"]] <- EICdf
+      otherCredits["EIC",1] <- EICdf["EIC_Amount",1]
     }
   } else {
     print ("Not Qualified for EIC")
   }
+  returnList[["summaryCredits"]] <- otherCredits
   return (returnList)
 }
 additionalTaxes <- function (statusDF, incomeDF, AGI,taxYear){
@@ -380,15 +385,22 @@ additionalTaxes <- function (statusDF, incomeDF, AGI,taxYear){
   NIT <- netInvestmentTaxes(statusDF, incomeDF, AGI,taxYear)
   IRATaxes <- additionalTaxesIRA(incomeDF, taxYear)
   returnList <- list()
+  addTaxesAmount <- 0
+  returnList[["Add_Medicare_Withholding"]] <- 0
   if (medicareTaxes["Additional Medicare Taxes (0.9%)",1]>0){
     returnList[["MedicareTaxes"]] <- medicareTaxes
+    addTaxesAmount <- addTaxesAmount+ medicareTaxes["Additional Medicare Taxes (0.9%)",1]
+    returnList[["Add_Medicare_Withholding"]] <- medicareTaxes["Additional Medicare tax withholding",1]
   }
   if (NIT["Net Investment Income Tax",1]>0){
     returnList[["NIT"]] <- NIT
+    addTaxesAmount <- addTaxesAmount +NIT["Net Investment Income Tax",1]
   }
   if (IRATaxes["Additional IRA Taxes",1]>0){
     returnList[["IRATaxes"]] <- IRATaxes
+    addTaxesAmount <- addTaxesAmount + IRATaxes["Additional IRA Taxes",1]
   }
+  returnList[["AddTaxesAmount"]] <- addTaxesAmount
   return (returnList)
 }
 taxSummary <- function (taxYear, statusDF, incomeDF, deductionDF, creditDF){
@@ -417,13 +429,26 @@ taxSummary <- function (taxYear, statusDF, incomeDF, deductionDF, creditDF){
   addTaxes <- additionalTaxes(statusDF, incomeDF, AGI, taxYear)
   # Finish main function
   # Prepare information to return to caller
+  print (taxCredits[["summaryCredits"]][1:4,1])
+  
   summaryV <- c(totalIncomeDF["Total_Income",],aboveAGIDeduction,AGI,
                 deductionBelowAGI[[1]]["Your_Deduction",1],
                 deductionBelowAGI[[1]]["Exemption_Deduction",1],
                 taxableIncome,
-                taxes)
+                taxes,
+                sum(taxCredits[["summaryCredits"]][1:4,1]), # this is the total nonrefundable credits
+                max(taxes - sum(taxCredits[["summaryCredits"]][1:4,1]),0),
+                addTaxes[["AddTaxesAmount"]],
+                max(taxes - sum(taxCredits[["summaryCredits"]][1:4,1]),0) +addTaxes[["AddTaxesAmount"]],
+                totalIncomeDF["Total_Taxes_Withheld",1] + addTaxes[["Add_Medicare_Withholding"]],
+                sum(taxCredits[["summaryCredits"]][5:7,1])
+                
+                )
+  
   names(summaryV) <- c("Total_Income", "Above_AGI_Deduction", "AGI", "Standard_Deduction_Or_Itemized",
-                       "Exemption_Amount","Taxable_Income", "Taxes_Before_Credits")
+                       "Exemption_Amount","Taxable_Income", "Taxes_Before_Credits", "Non_refundable_credit",
+                       "Net_Taxes_After_Refundable_Credits","Additional_Taxes","Total_Taxes",
+                       "Total_Withholding_From_All_Sources","Refundable_Credits")
 
   returnList <- list(summaryV, totalIncomeDF, deductionsAboveAGI, deductionBelowAGI, taxCredits,addTaxes)
 }
