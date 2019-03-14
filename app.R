@@ -33,11 +33,12 @@ ui <- fluidPage(
                         column(4,checkboxInput("add2017", label = "See Results Under 2017 Rules", value = FALSE))
                     ),
                     dataTableOutput("taxSummaryTbl"),
-                    checkboxInput("viewCreditChb", label = "Detail Credit Calculation", value = FALSE),
-                    selectInput("creditsSelect", label = "Select Credit:", choices = list()),
-                    dataTableOutput("CreditTbl"),
                     checkboxInput("displaySummaryGraph", label = "Display Graph", value = FALSE),
                     plotOutput("summaryGraph"),
+                    checkboxInput("viewCreditChb", label = "Detail Credits", value = FALSE),
+                    selectInput("creditsSelect", label = "Select Credit:", choices = list()),
+                    dataTableOutput("CreditTbl"),
+                    
                     hr(),
                     fluidRow( column(4,h3("Tax Planning")),
                               column(4, checkboxInput("taxPlanning", label = "Tax Planning", value = FALSE)),
@@ -46,17 +47,21 @@ ui <- fluidPage(
                     ),
                     h4("Change in Filing Status"),
                     selectInput("filingStatus", label = "Select filing status",
-                                choices = c("Single", "Married Filing Jointly", "Married Filing Separately", "Qualifying Widower",
-                                            "Head of Household"), selected = "SINGLE"),
+                                choices = c("Single", "MFJ", "MFS", "QW",
+                                            "HOH"), selected = "Single"),
                     hr(),
                     h4("Change in Dependent"),
-                    sliderInput("qualifyingChild", label = "Number of Qualifying Child:", min= 0, max=10, value = 0, 
+                    sliderInput("qualifyingChildU17", label = "Number of Qualifying Child Under 17:", min= 0, max=10, value = 0, 
+                                round = TRUE, width = "500px", step=1),
+                    sliderInput("qualifyingChildO17", label = "Number of Qualifying Child Over 17:", min= 0, max=10, value = 0, 
                                 round = TRUE, width = "500px", step=1),
                     sliderInput("qualifyingRelatives", label = "Number of Qualifying Relative", min = 0, max = 10, 
                                 value = 0, round = TRUE,step = 1,width = "500px"),
                     hr(),
                     h4("Change in IRA Contribution"),
-                    sliderInput("IRAAmountSld", label = "IRA Contribution", min=0, max=6500, value=0, step = 50, 
+                    sliderInput("YourIRAAmountSld", label = "Your IRA Contribution", min=0, max=6500, value=0, step = 50, 
+                                round = TRUE, width = "500px"),
+                    sliderInput("SpouseIRAAmountSld", label = "Spouse IRA Contribution", min=0, max=6500, value=0, step = 50, 
                                 round = TRUE, width = "500px"),
                     hr(),
                     h4("Change in HSA Contribution"),
@@ -140,10 +145,13 @@ server <- function(input, output, session) {
     } # End Hide Tax Summary Section----------------------------------------------
     
     if (input$hideTaxPlanning){ # Hide Tax Planning
-      hideshow(c("filingStatus","qualifyingChild","qualifyingRelatives","IRAAmountSld","HSAAmountSld"), TRUE)
+      hideshow(c("filingStatus","qualifyingChildU17", "qualifyingChildO17","qualifyingRelatives","YourIRAAmountSld",
+                 "SpouseIRAAmountSld","HSAAmountSld"), TRUE)
     } 
     else {
-      hideshow(c("filingStatus","qualifyingChild","qualifyingRelatives","IRAAmountSld","HSAAmountSld"), FALSE)
+      hideshow(c("filingStatus","qualifyingChildU17", "qualifyingChildO17","qualifyingRelatives","YourIRAAmountSld",
+                 "SpouseIRAAmountSld","HSAAmountSld"), FALSE)
+      
     }# End Hide Tax Planning. Uncheck this box will be handled separately within function below.
     if (input$hideDetailSummary){
       updateCheckboxInput(session, "displayOtherDetailGrh",value = FALSE)
@@ -174,6 +182,17 @@ server <- function(input, output, session) {
     } else {
       hide ("taxSummaryTbl")
     }
+    if (input$taxPlanning){# Update values in planning section
+      # Update variables for taxPlanning section
+      updateSelectInput(session,"filingStatus", selected = statusInformation()["Filing_Status",1])
+      updateSliderInput(session, "qualifyingChildU17", value = as.numeric(statusInformation()[c("Qualifying_Child_Under_17"),1]))
+      updateSliderInput(session, "qualifyingChildO17", value = as.numeric(statusInformation()[c("Qualifying_Child_Over_17"),1]))
+      updateSliderInput(session, "qualifyingRelatives", value = as.numeric(statusInformation()["Qualifying_Relative",1]))
+      updateSliderInput(session, "YourIRAAmountSld", value = deductions()["Your_IRA_Contribution",1])
+      updateSliderInput(session, "SpouseIRAAmountSld", value = deductions()["Spouse_IRA_Cover",1])
+      updateSliderInput(session, "HSAAmountSld", value = deductions()["HSA_Contribution",1])
+    }
+    
   })
   #-------------------------------------------------------------------
 
@@ -187,26 +206,63 @@ server <- function(input, output, session) {
       IRAContribution <- as.numeric(deductions()[c("Your_IRA_Contribution","Spouse_IRA_Contribution"),1])
       taxes2017 <- NULL                # Vector variable used to store taxes 2017
       taxPlanning <- NULL              # Vector variable used to store taxPlanning
-   
-      taxes2018 <- taxSummary(2018,statusDF, incomeDF, deductions(), credits())
+      credits18 <- NULL
+
+      deductionsDF <- deductions()
       
-      print (taxes2018[[5]])
-      print (taxes2018[[6]])
+      # Start main function
+      taxes2018 <- taxSummary(2018,statusDF, incomeDF, deductionsDF, credits())
+      credits18 <- taxes2018[[5]]
       summaryDF <- data.frame(taxes2018[[1]], row.names = names(taxes2018[[1]]))
       colnames(summaryDF) <- "Tax_2018"
-      
+      currentColNames <- colnames(summaryDF)
       # Finish Step 1- Calculate Taxes_2018 --------------------------------------------------------------------------------
       if (input$add2017){
         # Step 1: Calculate taxes2017
-        taxes2017 <- taxSummary(2017,statusDF, incomeDF, deductions(), credits())
+        taxes2017 <- taxSummary(2017,statusDF, incomeDF, deductionsDF, credits())
+
         # Step 2: Add to summaryDF
         summaryDF <- cbind(summaryDF, taxes2017[[1]])
-        colnames(summaryDF) <- c("Tax_2018", "Tax_2017")
-      } else {
-        summaryDF <- data.frame(taxes2018[[1]], row.names = names(taxes2018[[1]]))
-        colnames(summaryDF) <- "Tax_2018"
+        colnames(summaryDF) <- append(currentColNames, "Tax_2017")
+      } 
+      else { # unchecked, remove tax 2017 column
+        summaryDF$Tax_2017 <- NULL
+
       }
+      currentColNames <- colnames(summaryDF)
+      if (input$taxPlanning){
+        # Step 1: Update max amount for both HSA Contribution sliders
+        updateSliderInput(session,"HSAAmountSld", max = taxes2018[[3]]["Maximum_Contribution",1] )
+        # Step 2: Updates values in both statusDF and deductionsDF
+        statusDF["Filing_Status",1] <- input$filingStatus
+        statusDF["Qualifying_Child_Under_17",1] <- input$qualifyingChildU17
+        statusDF["Qualifying_Child_Over_17",1] <- input$qualifyingChildO17
+        statusDF["Qualifying_Relative",1] <- input$qualifyingRelatives
+        deductionsDF["Your_IRA_Contribution",1] <- input$YourIRAAmountSld
+        deductionsDF["Spouse_IRA_Cover",1] <- input$SpouseIRAAmountSld
+        deductionsDF["HSA_Contribution",1] <- input$HSAAmountSld
+        # Step 3: calculate taxPlan
+        taxPlanning <- taxSummary(2018, statusDF, incomeDF, deductionsDF, credits())
+
+        # Step 4: add to summaryDF
+        summaryDF <- cbind(summaryDF, taxPlanning[[1]])
+        colnames(summaryDF) <- append(currentColNames, "Tax_Planning")
+      } 
+      else {
+        summaryDF$Tax_Planning <- NULL
+      } 
+        # Step 5:Adding to credits tables
       
+      if (input$viewCreditChb){
+        # Adding eligible credits to selectInput
+        updateSelectInput(session,"creditsSelect", choices = names(credits18) )
+      }
+      output$CreditTbl <- renderDataTable({
+        creditName <- input$creditsSelect
+        return (credits18[[creditName]])
+      },options= list(pageLength = 25))
+      # Finish Step 5 ------------------------------------------------------------------------
+      # Step 6: Adding to Other Details Summary
       if (!input$hideDetailSummary) { # Update selected input
         detailLabel <- "Above_AGI_Deduction_Summary"
         rowValues <- taxes2018[[2]][,1] !=0
@@ -222,67 +278,29 @@ server <- function(input, output, session) {
           totalIncomeDF <- as.data.frame(taxes2018[[2]][rowValues,1], row.names = rowNames)
           colnames(totalIncomeDF) <- "Tax_2018"
           return (totalIncomeDF)
-        } else {  # return Deductions To AGI
+        } 
+        else {  # return Deductions To AGI
 
           return (taxes2018[[3]])
         }
       },options= list(pageLength = 25))
+      # Finish Step 6------------------------------------------------------------------------
+      # Graph section -------------------------------------------------------------------------
+      if (input$displaySummaryGraph){
+        # Step 1: cut row with zero value
+        rowNames <- row.names(summaryDF)
+        valueRows <- apply(summaryDF, 1, function(row) all(row!=0))
+        rowNames <- rowNames[valueRows]
+        graphDF <- data.frame(rowNames,summaryDF[valueRows,], row.names = NULL)
 
-
-      #     summaryDF["Taxable_Income",] <- summaryDF[1,] - apply(summaryDF[2:3,], 2, sum)
-
-      #     # Step 5 - Calculate Credits if applicable.
-      #     taxCredits <- creditCalculation(summaryDF, incomeDF, filingStatus, credits()) 
-      #     creditNames <- names(taxCredits)
-      #     print (paste("Credit Names: ", creditNames))
-      #     creditLogical <- sapply(taxCredits, is.data.frame)
-      #     creditNames <- creditNames[creditLogical]
-      #     print (paste("Credit Names with Logical filter: ", creditNames))
-      #     if (sum(creditLogical)>0){
-      #       #------- Step 1: Show Credit Table checkbox and update selectInput with choices = creditNames[Logical]
-      #       show("viewCreditChb")
-      #       updateSelectInput(session,inputId = "creditsSelect",label = "Select Credit:", choices = creditNames, selected = creditNames[1])
-      #       output$CreditTbl <- renderDataTable({
-      #         creditSelected <- input$creditsSelect
-      #         print (paste("Credit Selected:", creditSelected))
-      #         return (taxCredits[[creditSelected]])
-      #       }, options = list(pageLength = 25))
-      #       # --------- Determine which credit is available through list of credit logical ------------
-      #       if (is.data.frame(taxCredits[["CDC"]])) { # CDC is dataframe, CDC credit available
-      #         if (length(colnames(taxCredits[["CDC"]])) == 2){
-      #           # print ("Two year credit")
-      #           summaryDF["Child_Dependent_Care_Credit", ] <- taxCredits[["CDC"]]["Child_Dependent_Care_Credit",]
-      #         } else {
-      #           # print("One year credit")
-      #           taxYear <- colnames(taxCredits[["CDC"]])
-      #           if (taxYear =="2018"){
-      #             summaryDF["Child_Dependent_Care_Credit",1] <- taxCredits[["CDC"]]["Child_Dependent_Care_Credit",]
-      #           }else {
-      #             summaryDF["Child_Dependent_Care_Credit",2] <- taxCredits[["CDC"]]["Child_Dependent_Care_Credit",]
-      #           }
-      #         }
-      #       }
-      #       if(is.data.frame(taxCredits[["Education"]])){
-      #         if (length(colnames(taxCredits[["Education"]]))==2){
-      #           # print ("Two year credit")
-      #           summaryDF["Nonrefundable_Educational_Credit", ] <- taxCredits[["Education"]]["Line_19",]
-      #         }else {
-      #           # print("One year credit")
-      #           taxYear <- colnames(taxCredits[["Education"]])
-      #           if (taxYear=="2018"){
-      #             summaryDF["Nonrefundable_Education_Credit",1] <- taxCredits[["Education"]]["Line_19",]
-      #           }
-      #           else {
-      #             summaryDF["Nonrefundable_Education_Credit",2] <- taxCredits[["Education"]]["Line_19",]
-      #           }
-      #         }
-      #       }
-      #       # 
-      #     }
-      #     
-      #     summaryDF[is.na.data.frame(summaryDF)] <- 0
-           return (summaryDF)
-  }) # End Tax Summary
+        output$summaryGraph <- renderPlot({
+          ggplot(data = DFConverter(graphDF), aes(x= rowNames, y =Amount, fill = TaxYear))+
+            geom_bar (stat="identity", position = position_dodge())
+        })
+        
+      }
+      return (summaryDF)
+  },options = list(pageLength = 25), filter="top") # End Tax Summary
 }
 
 shinyApp(ui, server)

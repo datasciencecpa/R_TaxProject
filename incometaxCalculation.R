@@ -73,7 +73,7 @@ QDCGWorksheet <- function(taxYear, taxableIncome, incomeDF, filingStatus){
 totalIncomeCalculation <- function (taxYear,incomeDF){
    # This function will sum up total income user entered from the income section. incoe
    # Special handle for net capital gain/loss so that maximum of -$3000 are allowed. 
-   print ("Total Income Calculation")
+
    Income_Type <- c("Total_W2_Wages", "Interest", "Ord_Dividends", "Qualified_Dividends","Taxable_Refunds","Alimony", "Net_Capital_Gain_Loss",
                  "IRA_Distribution", "Unemployment Income", "Total_Taxes_Withheld","Total_Medicare_Tax_Withheld")
 
@@ -219,6 +219,7 @@ creditCalculation <- function (AGI, taxes, incomeDF,statusDF, creditDF,IRAContri
   filingStatus <- toupper(statusDF["Filing_Status",1])
   earnedIncome <- sum(as.numeric(incomeDF[c(1,3,5,7),1])) # Sum of all wages
   otherCredits <- data.frame (c(0,0,0,0,0,0,0), row.names = c("CDC", "Education", "Saver", "CTC", "AOC","ACTC", "EIC")) # Use to store credits
+  colnames(otherCredits) <- taxYear
   returnList <- list() # Use to store list of dataframe that will return to App.R
   #----------Calculate CDC Credit ------------------------------------------------------
 
@@ -235,7 +236,7 @@ creditCalculation <- function (AGI, taxes, incomeDF,statusDF, creditDF,IRAContri
     # print ("Calculate Educational credit for 2018")
 
     EDC <- educationalCrd(taxYear,AGI, taxes, filingStatus, creditDF, otherCredits["CDC",1])
-    if (EDC["Line_19:Nonrefundable Education Credits",]>0 | EDC["Refundable_AOC",]>0){
+    if (EDC["LLine_9_AOC_Nonrefundable_Amount ",]>0 | EDC["Refundable_AOC",]>0){
       otherCredits["Education",1] <- EDC["Line_19:Nonrefundable Education Credits",]
       otherCredits["AOC",1] <- EDC["Refundable_AOC",]
       returnList[["Education"]] <- EDC
@@ -305,6 +306,7 @@ creditCalculation <- function (AGI, taxes, incomeDF,statusDF, creditDF,IRAContri
     print ("Not Qualified for EIC")
   }
   returnList[["summaryCredits"]] <- otherCredits
+  
   return (returnList)
 }
 additionalTaxes <- function (statusDF, incomeDF, AGI,taxYear){
@@ -429,26 +431,29 @@ taxSummary <- function (taxYear, statusDF, incomeDF, deductionDF, creditDF){
   addTaxes <- additionalTaxes(statusDF, incomeDF, AGI, taxYear)
   # Finish main function
   # Prepare information to return to caller
-  print (taxCredits[["summaryCredits"]][1:4,1])
   
+  nonrefundableAmount <- sum(taxCredits[["summaryCredits"]][1:4,1])
+  netTaxesAfterRefundableCrd <- max(taxes -nonrefundableAmount,0)
+  totalTaxes <- netTaxesAfterRefundableCrd + addTaxes[["AddTaxesAmount"]]
+  totalWitholding <- totalIncomeDF["Total_Taxes_Withheld",1] + addTaxes[["Add_Medicare_Withholding"]]
   summaryV <- c(totalIncomeDF["Total_Income",],aboveAGIDeduction,AGI,
                 deductionBelowAGI[[1]]["Your_Deduction",1],
                 deductionBelowAGI[[1]]["Exemption_Deduction",1],
                 taxableIncome,
                 taxes,
-                sum(taxCredits[["summaryCredits"]][1:4,1]), # this is the total nonrefundable credits
-                max(taxes - sum(taxCredits[["summaryCredits"]][1:4,1]),0),
+                nonrefundableAmount, # this is the total nonrefundable credits
+                netTaxesAfterRefundableCrd,
                 addTaxes[["AddTaxesAmount"]],
-                max(taxes - sum(taxCredits[["summaryCredits"]][1:4,1]),0) +addTaxes[["AddTaxesAmount"]],
-                totalIncomeDF["Total_Taxes_Withheld",1] + addTaxes[["Add_Medicare_Withholding"]],
-                sum(taxCredits[["summaryCredits"]][5:7,1])
-                
+                totalTaxes,
+                totalWitholding,
+                sum(taxCredits[["summaryCredits"]][5:7,1]),
+                totalWitholding + sum(taxCredits[["summaryCredits"]][5:7,1]) - totalTaxes
                 )
   
   names(summaryV) <- c("Total_Income", "Above_AGI_Deduction", "AGI", "Standard_Deduction_Or_Itemized",
                        "Exemption_Amount","Taxable_Income", "Taxes_Before_Credits", "Non_refundable_credit",
                        "Net_Taxes_After_Refundable_Credits","Additional_Taxes","Total_Taxes",
-                       "Total_Withholding_From_All_Sources","Refundable_Credits")
-
+                       "Total_Withholding_From_All_Sources","Refundable_Credits", "Your_Refund/Payment")
+  
   returnList <- list(summaryV, totalIncomeDF, deductionsAboveAGI, deductionBelowAGI, taxCredits,addTaxes)
 }

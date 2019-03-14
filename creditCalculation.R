@@ -43,7 +43,7 @@ childTaxCrd <- function (taxYear, AGI, taxes, statusDF,sumOtherCredits){
   returnDF["Line_13_Net_Taxes",] <- returnDF["Line_11_Taxes",] - returnDF["Line_12:Other_Nonrefundable_Credits",] # This is the net tax after subtraction of other nonrefundable credit
   returnDF["Line_14:SKIP",] <- 0
   returnDF["Line_15:Net_Taxes",] <- returnDF["Line_13_Net_Taxes",]
-  returnDF["Line_16:Child_Tax_Credit",] <- min(returnDF["Line_15:Net_Taxes",],returnDF["Line_10",])
+  returnDF["Line_16:Child_Tax_Credit",] <- round(min(returnDF["Line_15:Net_Taxes",],returnDF["Line_10",]), digits = 2)
   if (returnDF["Line_10",]> returnDF["Line_15:Net_Taxes",]) {
     returnDF["Possible_Additional_CTC",1] <- 1 # May eligible for additional CTC
   } else {
@@ -61,7 +61,7 @@ dependentCareCrd <- function (taxYear,AGI, taxes, filingStatus, incomeDF, credit
   MAX_RATE <- 0.35
   MIN_RATE <- 0.2
   INCREMENT <- 2000
-  returnDF <- data.frame(Number_Of_Qualifying_Person =creditDF["Qualifying_Person",])
+  returnDF <- data.frame(creditDF["Qualifying_Person",], row.names = c("Number_Of_Qualifying_Person"))
   colnames(returnDF) <- taxYear
   # returnDF["Number_Of_Qualifying_Person",] <- creditDF["Qualifying_Person",]
   if (creditDF["Qualifying_Person",]==1){
@@ -123,11 +123,11 @@ dependentCareCrd <- function (taxYear,AGI, taxes, filingStatus, incomeDF, credit
   }
   returnDF["Rate", ] <- rate #Step 8
   
-  line_9 <- round(line_6 * rate, digits = 4)
+  line_9 <- round(line_6 * rate, digits = 2)
   returnDF["Line_9", ] <- line_9
   line_10 <- taxes # Tax_Amount
   returnDF["Line_10_Tax_Amount_Before_Credit",] <- line_10
-  returnDF["Child_Dependent_Care_Credit",] <- min(line_9, line_10)
+  returnDF["Child_Dependent_Care_Credit",] <- round(min(line_9, line_10), digits = 2)
   colnames(returnDF) <- taxYear
   return (returnDF)
 }
@@ -194,10 +194,10 @@ educationalCrd <- function (taxYear, AGI, taxes, filingStatus, creditDF, otherCr
   educationDF["Difference From Above", ] <- educationDF["Phase Out Amount",] -educationDF["Line_3_MAGI",]
   educationDF["Difference From Above", ] <- max(educationDF["Difference From Above", ],0)
   educationDF["Line_5:Denominator", ] <- DENOMINATOR
-  line_6 <- ifelse (educationDF["Difference From Above",] >= educationDF["Line_5:Denominator",], 1, round(educationDF["Difference From Above",]/educationDF["Line_5:Denominator",], digits = 3))
+  line_6 <- ifelse (educationDF["Difference From Above",] >= educationDF["Line_5:Denominator",], 1, round(educationDF["Difference From Above",]/educationDF["Line_5:Denominator",], digits = 2))
   educationDF["Line_6:Percentage", ] <- line_6
   educationDF["Line_7: AOC Eligible Amount", ] <- educationDF["Part 1: AOC Expense",] * educationDF["Line_6:Percentage", ]
-  educationDF["Refundable_AOC (40%)",] <- educationDF["Line_7: AOC Eligible Amount", ] *0.4
+  educationDF["Refundable_AOC (40%)",] <- round(educationDF["Line_7: AOC Eligible Amount", ] *0.4, digits = 2)
   # print (paste("Refundable AOC", educationDF["Refundable_AOC (40%)",]))
   #-------- Calculate nonrefundable - Part 2 of form 8863
   educationDF["Line_9_AOC_Nonrefundable_Amount",] <- educationDF["Line_7: AOC Eligible Amount", ] - educationDF["Refundable_AOC (40%)",]
@@ -210,7 +210,7 @@ educationalCrd <- function (taxYear, AGI, taxes, filingStatus, creditDF, otherCr
   line_15 <- ifelse(line_15>0, line_15, 0)
   educationDF["Line_15:Difference from above", ] <- line_15
   educationDF["Line_16:Denominator", ] <- DENOMINATOR
-  line_17 <- ifelse(line_15>=DENOMINATOR, 1, round(line_15/DENOMINATOR, digits = 3))
+  line_17 <- ifelse(line_15>=DENOMINATOR, 1, round(line_15/DENOMINATOR, digits = 2))
   # print(paste("Line 17:", line_17))
   educationDF["Line_17:Percentage", ] <- line_17
   educationDF["Line_18:LL Eligible Amount", ] <- educationDF["Line_12:20% of Line 11", ] * line_17 # This amount is LL Nonrefundable credit amount
@@ -219,7 +219,7 @@ educationalCrd <- function (taxYear, AGI, taxes, filingStatus, creditDF, otherCr
   # print(paste("Nonrefundable Credit", nonRefundableEducationCrd))
   line_6 <- taxes - otherCrdDF # This is equivalent of Tax_Amount - CDC Credit
   # print (paste("Line 6 -Remaining Tax:", line_6))
-  educationDF["Line_19:Nonrefundable Education Credits", ] <- min(nonRefundableEducationCrd, line_6)
+  educationDF["Line_19:Nonrefundable Education Credits", ] <- round(min(nonRefundableEducationCrd, line_6), digits = 2)
   colnames(educationDF) <- taxYear
   return (educationDF)
 }# End Educaiton Credit
@@ -267,7 +267,7 @@ saverCrd <- function(taxYear, filingStatus, AGI, taxes, earnedIncome, IRAContrib
  
   returnDF["Credit_Amount",] <- returnDF["Eligible Amount",] * returnDF["Rate",]
   returnDF["Limitation based on tax liability",1] <- taxes - sumOtherCredits
-  returnDF["Saver_Credit",] <- min(returnDF["Credit_Amount",], returnDF["Limitation based on tax liability",1])
+  returnDF["Saver_Credit",] <- round(min(returnDF["Credit_Amount",], returnDF["Limitation based on tax liability",1]), digits = 2)
   colnames(returnDF) <- taxYear
   # print(returnDF)
   return (returnDF)
@@ -294,7 +294,7 @@ additionalChildTaxCrd <- function (taxYear, CTCDF, statusDF, earnedIncome){
   returnDF["Line_5:Subtraction_From_Earned_Income",1] <- subtractionAmt
   returnDF["Line_6:Net_Earned_Income",1] <- max(returnDF["Line_4:Earned_Income",1]-subtractionAmt,0)
   returnDF["Line_7:15% of Line_6 Above",1] <- returnDF["Line_6:Net_Earned_Income",1] *0.15
-  returnDF["ACTC_Amount",1] <- min(returnDF["Line_7:15% of Line_6 Above",1],returnDF["Line_3b",1])
+  returnDF["ACTC_Amount",1] <- round(min(returnDF["Line_7:15% of Line_6 Above",1],returnDF["Line_3b",1]), digits = 2)
   colnames(returnDF) <- taxYear
   return (returnDF)
 }
@@ -335,7 +335,7 @@ EIC <- function(taxYear, earnedIncome, AGI, statusDF ){
   else if ((earnedIncome >rowValues$EI_RANGE_1) & (earnedIncome <=rowValues$EI_RANGE_2)){ # Max EIC
     returnDF["EIC_Credit",1] <- MAX_EIC
   } else { # Reduce EIC
-    returnDF["EIC_Credit",1] <- MAX_EIC - ((earnedIncome-rowValues$EI_RANGE_2)*rowValues$REDUCE_RATE)
+    returnDF["EIC_Credit",1] <- round(MAX_EIC - ((earnedIncome-rowValues$EI_RANGE_2)*rowValues$REDUCE_RATE), digits = 2)
   }
   returnDF["AGI",1] <- AGI
   # line 4 on Worksheet, compare AGI with earnedIncome
@@ -352,7 +352,7 @@ EIC <- function(taxYear, earnedIncome, AGI, statusDF ){
       returnDF["EIC_Credit_Limit",1] <- MAX_EIC - ((AGI-rowValues$EI_RANGE_2)*rowValues$REDUCE_RATE)
     }
   }
-  returnDF["EIC_Amount",1] <- min(returnDF["EIC_Credit",1],returnDF["EIC_Credit_Limit",1])
+  returnDF["EIC_Amount",1] <- round(min(returnDF["EIC_Credit",1],returnDF["EIC_Credit_Limit",1]), digit=2)
   colnames(returnDF) <- taxYear
   return (returnDF)
 }
