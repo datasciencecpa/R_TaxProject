@@ -117,7 +117,8 @@ ui <- fluidPage(
 )
 
 server <- function(input, output, session) {
-
+  # local variable for entire server
+  
   # get statusInformation, incomeInformation,deductions, and credits information entered by user.
   
   statusInformation <- callModule(filingInformation, "filingInformation", session = session)
@@ -159,13 +160,6 @@ server <- function(input, output, session) {
     } else {
       hideshow(c("otherDetailSummary","otherDetailTbl","displayOtherDetailGrh"), FALSE)
     }# End hide Other Detail Summary Section.
-    if (input$viewCreditChb){# Credit checkbox under tax summary
-      show ("creditsSelect")
-      show ("CreditTbl")
-    } else {
-      hide ("creditsSelect")
-      hide ("CreditTbl")
-    } # End credit checkbox -----------
     if (input$displaySummaryGraph) { #Show summary Graph
       show("summaryGraph")
     } else {
@@ -182,8 +176,20 @@ server <- function(input, output, session) {
     } else {
       hide ("taxSummaryTbl")
     }
+  })
+  observe ({
+    if (input$viewCreditChb){# Credit checkbox under tax summary
+      show ("creditsSelect")
+      show ("CreditTbl")
+    } else {
+      hide ("creditsSelect")
+      hide ("CreditTbl")
+    } # End credit checkbox -----------
+  })
+  observe({
     if (input$taxPlanning){# Update values in planning section
       # Update variables for taxPlanning section
+      
       updateSelectInput(session,"filingStatus", selected = statusInformation()["Filing_Status",1])
       updateSliderInput(session, "qualifyingChildU17", value = as.numeric(statusInformation()[c("Qualifying_Child_Under_17"),1]))
       updateSliderInput(session, "qualifyingChildO17", value = as.numeric(statusInformation()[c("Qualifying_Child_Over_17"),1]))
@@ -192,10 +198,9 @@ server <- function(input, output, session) {
       updateSliderInput(session, "SpouseIRAAmountSld", value = deductions()["Spouse_IRA_Cover",1])
       updateSliderInput(session, "HSAAmountSld", value = deductions()["HSA_Contribution",1])
     }
-    
   })
+    
   #-------------------------------------------------------------------
-
   output$taxSummaryTbl <- renderDataTable({
       #------------------------------------------------------------------+
       # Step 1: Calculate TotalIncome, TotalDeductions Above AGI, SD or Itemized Deductions, Exemption, taxes, and credits
@@ -207,7 +212,6 @@ server <- function(input, output, session) {
       taxes2017 <- NULL                # Vector variable used to store taxes 2017
       taxPlanning <- NULL              # Vector variable used to store taxPlanning
       credits18 <- NULL
-
       deductionsDF <- deductions()
       
       # Start main function
@@ -216,6 +220,8 @@ server <- function(input, output, session) {
       summaryDF <- data.frame(taxes2018[[1]], row.names = names(taxes2018[[1]]))
       colnames(summaryDF) <- "Tax_2018"
       currentColNames <- colnames(summaryDF)
+      # Adding eligible credits to selectInput
+      updateSelectInput(session,"creditsSelect", choices = names(credits18) )
       # Finish Step 1- Calculate Taxes_2018 --------------------------------------------------------------------------------
       if (input$add2017){
         # Step 1: Calculate taxes2017
@@ -227,7 +233,6 @@ server <- function(input, output, session) {
       } 
       else { # unchecked, remove tax 2017 column
         summaryDF$Tax_2017 <- NULL
-
       }
       currentColNames <- colnames(summaryDF)
       if (input$taxPlanning){
@@ -251,12 +256,7 @@ server <- function(input, output, session) {
       else {
         summaryDF$Tax_Planning <- NULL
       } 
-        # Step 5:Adding to credits tables
-      
-      if (input$viewCreditChb){
-        # Adding eligible credits to selectInput
-        updateSelectInput(session,"creditsSelect", choices = names(credits18) )
-      }
+       
       output$CreditTbl <- renderDataTable({
         creditName <- input$creditsSelect
         return (datatable({credits18[[creditName]]},
@@ -265,16 +265,14 @@ server <- function(input, output, session) {
                                  fixedColumns = TRUE, autoWidth = FALSE, paging= TRUE), class= "display" 
                 )
         )
-        
       })
       # Finish Step 5 ------------------------------------------------------------------------
       # Step 6: Adding to Other Details Summary
-      if (!input$hideDetailSummary) { # Update selected input
-        detailLabel <- "Above_AGI_Deduction_Summary"
-        rowValues <- taxes2018[[2]][,1] !=0
-        if (sum(rowValues)>0) detailLabel <- append(c("Income_Summary"), detailLabel)
-        updateSelectInput(session, "otherDetailSummary", choices= detailLabel )
-      }
+      detailLabel <- "Above_AGI_Deduction_Summary"
+      rowValues <- taxes2018[[2]][,1] !=0
+      if (sum(rowValues)>0) detailLabel <- append(c("Income_Summary"), detailLabel)
+      updateSelectInput(session, "otherDetailSummary", choices= detailLabel )
+
       output$otherDetailTbl <- renderDataTable({
         detailSummaryDF <- 0
         if (input$otherDetailSummary == "Income_Summary"){
@@ -296,19 +294,20 @@ server <- function(input, output, session) {
       })
       # Finish Step 6------------------------------------------------------------------------
       # Graph section -------------------------------------------------------------------------
-      if (input$displaySummaryGraph){
-        # Step 1: cut row with zero value
-        rowNames <- row.names(summaryDF)
-        valueRows <- apply(summaryDF, 1, function(row) all(row!=0))
-        rowNames <- rowNames[valueRows]
-        graphDF <- data.frame(rowNames,summaryDF[valueRows,], row.names = NULL)
+      # Step 1: cut row with zero value
+      Income_Credit <- row.names(summaryDF)
+      valueRows <- apply(summaryDF, 1, function(row) all(row!=0))
+      Income_Credit <- Income_Credit[valueRows]
+      graphDF <- data.frame(Income_Credit,summaryDF[valueRows,], row.names = NULL)
 
-        output$summaryGraph <- renderPlot({
-          ggplot(data = DFConverter(graphDF), aes(x= rowNames, y =Amount, fill = TaxYear))+
-            geom_bar (stat="identity", position = position_dodge())
-        })
+      output$summaryGraph <- renderPlot({
+        ggplot(data = DFConverter(graphDF), aes(x= Income_Credit, y =Amount, fill = TaxYear))+
+          geom_bar (stat="identity", position = position_dodge())
+      })
+      
         
-      }
+        
+      # Final Step: return data to output$taxSummaryTbl
       return (
         datatable({summaryDF},extensions = "Buttons", 
                   options = list(pageLength = 25,dom ="Bfrtip",buttons= c("excel", "pdf", "print"),

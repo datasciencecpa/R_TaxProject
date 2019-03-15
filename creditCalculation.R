@@ -35,9 +35,9 @@ childTaxCrd <- function (taxYear, AGI, taxes, statusDF,sumOtherCredits){
   returnDF["Line_7:Phase_Out_Amount",] <- phase_out_agi
   returnDF["Line_8",] <- ifelse(returnDF["Line_6:AGI",]<returnDF["Line_7:Phase_Out_Amount",], 0, 
                                round_any(returnDF["Line_6:AGI",] - returnDF["Line_7:Phase_Out_Amount",], 1000, f= ceiling))
-  returnDF["Line_9",] <- round(returnDF["Line_8",] *0.05, digits = 4)
-  returnDF["Line_10",] <- ifelse(returnDF["Line_9",]>returnDF["Total_Above",],0,
-                                 returnDF["Total_Above",] - returnDF["Line_9",])  # this is the net credit after the 5% reduction
+  returnDF["Line_9: 5% of Line 8",] <- round(returnDF["Line_8",] *0.05, digits = 4)
+  returnDF["Line_10",] <- ifelse(returnDF["Line_9: 5% of Line 8",]>returnDF["Total_Above",],0,
+                                 returnDF["Total_Above",] - returnDF["Line_9: 5% of Line 8",])  # this is the net credit after the 5% reduction
   returnDF["Line_11_Taxes",] <- taxes
   returnDF["Line_12:Other_Nonrefundable_Credits",] <- sumOtherCredits
   returnDF["Line_13_Net_Taxes",] <- returnDF["Line_11_Taxes",] - returnDF["Line_12:Other_Nonrefundable_Credits",] # This is the net tax after subtraction of other nonrefundable credit
@@ -70,7 +70,7 @@ dependentCareCrd <- function (taxYear,AGI, taxes, filingStatus, incomeDF, credit
     creditDF["Expense",] <- min(creditDF["Expense",],6000)
     creditDF["Qualifying_Person",] <- 2
   }
-  returnDF["Max_Expense",] <- creditDF["Expense",] # Step 2, this equal to line 2, part 2 of form 2441
+  returnDF["Maximum Expense",] <- creditDF["Expense",] # Step 2, this equal to line 2, part 2 of form 2441
 
   # Rules: Caclualte earning for FT Students or Disable Spouse
   # Rules: Earned $250/Child for each month being FT Student or Disabled
@@ -81,14 +81,14 @@ dependentCareCrd <- function (taxYear,AGI, taxes, filingStatus, incomeDF, credit
     line_4 <- line_4 + 250* creditDF["FT_Student_Month",]* creditDF["Qualifying_Person",]
   }
   line_5 <- line_4
-  returnDF["Line_4", ] <- line_4
-  returnDF["Line_5", ] <- line_5
+  returnDF["Line 4:Your Earned Income", ] <- line_4
+  returnDF["Line 5: Spouse Earned Income (MFJ)", ] <- line_5
   if (filingStatus == "MFJ"){
     line_5 <-  incomeDF[3] + incomeDF[7] # W-2 income of spouse
     if (creditDF["Spouse_FT_Student",]==1){
       line_5 <- line_5 + 250 * creditDF["Spouse_FT_Student_Month",]* creditDF["Qualifying_Person",]
     }
-    returnDF["Line_5", ] <- line_5 # Change line 5 to spouse income
+    returnDF["Line 5: Spouse Earned Income (MFJ)", ] <- line_5 # Change line 5 to spouse income
     if (creditDF["You_FT_Student",]== 1 & creditDF["Spouse_FT_Student",]==1){ # if both are full-time student, can allow additional income for the same month
       # I am making assumption that if the total of months being student are more than 12
       # I will deduct the excess out from income of the higher one.
@@ -101,18 +101,18 @@ dependentCareCrd <- function (taxYear,AGI, taxes, filingStatus, incomeDF, credit
         if (line_4> line_5){
           line_4 <- line_4 - reductionAmt
           # print (paste("Line_4 afte reduction:", line_4))
-          returnDF["Line_4", ] <- line_4
+          returnDF["Line 4:Your Earned Income", ] <- line_4
         } else {
           line_5 <- line_5 - reductionAmt
           # print (paste("Line_5 after reduction:", line_5))
-          returnDF["Line_5", ] <- line_5
+          returnDF["Line 5: Spouse Earned Income (MFJ)", ] <- line_5
         }
       } # else: no need to do anything
     }
   }
 
   line_6 <- min(c(line_4, line_5, creditDF["Expense",])) # getting the smallest
-  returnDF["Line_6_Smallest_Of_3_4_5_Above", ] <- line_6
+  returnDF["Line_6: Smallest of 3 lines above", ] <- line_6
   
   returnDF["Line_7_AGI", ] <- AGI
   # print (paste("AGI:",AGI))
@@ -121,12 +121,12 @@ dependentCareCrd <- function (taxYear,AGI, taxes, filingStatus, incomeDF, credit
   else {
     rate <- MAX_RATE -(round_any((AGI - LOWER_LIMIT)/2000,1, f= ceiling)/100)
   }
-  returnDF["Rate", ] <- rate #Step 8
+  returnDF["Line 8: Rate", ] <- rate #Step 8
   
   line_9 <- round(line_6 * rate, digits = 2)
-  returnDF["Line_9", ] <- line_9
+  returnDF["Line 9: Amount of credit before limitation", ] <- line_9
   line_10 <- taxes # Tax_Amount
-  returnDF["Line_10_Tax_Amount_Before_Credit",] <- line_10
+  returnDF["Line 10: Tax amount before credit",] <- line_10
   returnDF["Child_Dependent_Care_Credit",] <- round(min(line_9, line_10), digits = 2)
   colnames(returnDF) <- taxYear
   return (returnDF)

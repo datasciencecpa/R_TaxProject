@@ -182,6 +182,7 @@ belowAGIDeduction <- function(deductionDF, statusDF, AGI, taxYear){
 }
 DFConverter <- function (df){
   # This function is used to convert given dataframe into different format
+  print(head(df,5))
   df_col_names <- colnames(df)
   df_1 <- df[c(df_col_names[1], df_col_names[3])]  # get dataframe that contain the first and last column
   colnames(df_1)[2] <- "Amount"
@@ -189,7 +190,7 @@ DFConverter <- function (df){
   df[,3] <- NULL # Delete column with amount from 2017
   colnames(df)[2] <- "Amount"
   df$TaxYear <- "2018"
-  # print (rbind(df, df_1))
+  print (head(rbind(df, df_1),5))
   return (rbind(df, df_1))
 }
 taxCalculation <- function (taxableIncome, incomeDF, filingStatus, taxYear){
@@ -305,7 +306,7 @@ creditCalculation <- function (AGI, taxes, incomeDF,statusDF, creditDF,IRAContri
   } else {
     print ("Not Qualified for EIC")
   }
-  returnList[["summaryCredits"]] <- otherCredits
+  returnList[["Credits Summary"]] <- otherCredits
   
   return (returnList)
 }
@@ -432,7 +433,7 @@ taxSummary <- function (taxYear, statusDF, incomeDF, deductionDF, creditDF){
   # Finish main function
   # Prepare information to return to caller
   
-  nonrefundableAmount <- sum(taxCredits[["summaryCredits"]][1:4,1])
+  nonrefundableAmount <- sum(taxCredits[["Credits Summary"]][1:4,1])
   netTaxesAfterRefundableCrd <- max(taxes -nonrefundableAmount,0)
   totalTaxes <- netTaxesAfterRefundableCrd + addTaxes[["AddTaxesAmount"]]
   totalWitholding <- totalIncomeDF["Total_Taxes_Withheld",1] + addTaxes[["Add_Medicare_Withholding"]]
@@ -446,8 +447,8 @@ taxSummary <- function (taxYear, statusDF, incomeDF, deductionDF, creditDF){
                 addTaxes[["AddTaxesAmount"]],
                 totalTaxes,
                 totalWitholding,
-                sum(taxCredits[["summaryCredits"]][5:7,1]),
-                totalWitholding + sum(taxCredits[["summaryCredits"]][5:7,1]) - totalTaxes
+                sum(taxCredits[["Credits Summary"]][5:7,1]),
+                totalWitholding + sum(taxCredits[["Credits Summary"]][5:7,1]) - totalTaxes
                 )
   
   names(summaryV) <- c("Total_Income", "Above_AGI_Deduction", "AGI", "Standard_Deduction_Or_Itemized",

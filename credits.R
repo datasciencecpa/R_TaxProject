@@ -11,8 +11,8 @@ creditsUI <- function (id){
      fluidRow(
         h4("Married Filing Separately Exception"),
         checkboxInput(ns("MFSException"), label = "Married Filing Separately - Uncheck this box if you do not meet the MFS exception to claim this credit", value = TRUE),
-        column(6,numericInput(ns("numQualifying"), label = "Enter number of qualifying person", value = 0, min= 0, max = 2)),
         column(6,numericInput(ns("qualifiedExp"), label = "Enter total of qualified expenses (Max $6000)", value = 0, min = 0, max = 6000)),
+        column(6,numericInput(ns("numQualifying"), label = "Enter number of qualifying person", value = 0, min= 0, max = 2)),
         helpText("If one or both spouses were students/disabled, check the boxes below and enter numbers of months you were students or disabled. \n
                  See form 2441 Instruction for more detail."),
         column(6,checkboxInput(ns("youFTStudent"), label = "You were a full-time student or disabled and did not have any earned income"),
