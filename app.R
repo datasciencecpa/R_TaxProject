@@ -259,8 +259,14 @@ server <- function(input, output, session) {
       }
       output$CreditTbl <- renderDataTable({
         creditName <- input$creditsSelect
-        return (credits18[[creditName]])
-      },options= list(pageLength = 25))
+        return (datatable({credits18[[creditName]]},
+                  extensions = "Buttons", 
+                  options = list(pageLength = 25, dom ="Bfrtip",buttons= c("excel", "pdf", "print"),
+                                 fixedColumns = TRUE, autoWidth = FALSE, paging= TRUE), class= "display" 
+                )
+        )
+        
+      })
       # Finish Step 5 ------------------------------------------------------------------------
       # Step 6: Adding to Other Details Summary
       if (!input$hideDetailSummary) { # Update selected input
@@ -270,20 +276,24 @@ server <- function(input, output, session) {
         updateSelectInput(session, "otherDetailSummary", choices= detailLabel )
       }
       output$otherDetailTbl <- renderDataTable({
-
+        detailSummaryDF <- 0
         if (input$otherDetailSummary == "Income_Summary"){
           rowNames <- rownames(taxes2018[[2]])
           rowValues <- taxes2018[[2]][,1] !=0
           rowNames <- rowNames[rowValues]
           totalIncomeDF <- as.data.frame(taxes2018[[2]][rowValues,1], row.names = rowNames)
           colnames(totalIncomeDF) <- "Tax_2018"
-          return (totalIncomeDF)
+          detailSummaryDF <- totalIncomeDF
         } 
         else {  # return Deductions To AGI
-
-          return (taxes2018[[3]])
+          detailSummaryDF <- taxes2018[[3]]
         }
-      },options= list(pageLength = 25))
+        return (datatable({detailSummaryDF},
+                          extensions = "Buttons", 
+                          options = list(pageLength = 25, dom ="Bfrtip",buttons= c("excel", "pdf", "print"),
+                                         fixedColumns = TRUE, autoWidth = TRUE, paging= TRUE), class= "display"        
+                ))
+      })
       # Finish Step 6------------------------------------------------------------------------
       # Graph section -------------------------------------------------------------------------
       if (input$displaySummaryGraph){
@@ -299,8 +309,12 @@ server <- function(input, output, session) {
         })
         
       }
-      return (summaryDF)
-  },options = list(pageLength = 25), filter="top") # End Tax Summary
+      return (
+        datatable({summaryDF},extensions = "Buttons", 
+                  options = list(pageLength = 25,dom ="Bfrtip",buttons= c("excel", "pdf", "print"),
+                                fixedColumns = FALSE, autoWidth = FALSE, paging= TRUE), class= "display")
+      )
+  } ) # End Tax Summary
 }
 
 shinyApp(ui, server)
