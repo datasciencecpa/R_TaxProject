@@ -6,6 +6,7 @@ library (shiny)
 library (shinyjs)    #loading addional package to enable more UI experience
 library (DT)
 library (gdata)      # Use to read Excel file TaxRates.xls
+library(scales)
 source ("filingStatus.R")
 source ("income.R")
 source ("deductions.R")
@@ -74,19 +75,12 @@ ui <- fluidPage(
                         column(4, checkboxInput("hideDetailSummary", label = "Hide Detail Summary", value= TRUE))
                     ),
                     selectInput("otherDetailSummary",label = "Select Other Taxes Detail Summary", choices = c("NONE"),selected = "NONE"),
-                    dataTableOutput("otherDetailTbl"),
-                    checkboxInput("displayOtherDetailGrh", label = "Display Graph", value= FALSE),
-                    plotOutput("detailGraph")
+                    dataTableOutput("otherDetailTbl")
+                    # checkboxInput("displayOtherDetailGrh", label = "Display Graph", value= FALSE),
+                    # plotOutput("detailGraph")
                   ) # End Other Detail Section
-         )
+         ) 
        )
-    ),
-    tabPanel("Help", 
-        navlistPanel("General Questions",
-          tabPanel("Filing Status",
-                   "1.IRS Interactive Tax Assistant: ", a(href = "https://www.irs.gov/help/ita/what-is-my-filing-status", "What is my filing status?")
-          )
-        )         
     ),
     tabPanel("Information Summary",
       navlistPanel("Information you Enter:",
@@ -98,20 +92,16 @@ ui <- fluidPage(
                  dataTableOutput("Deduction_Summary"))
       )
     ),
-    tabPanel("Contact Us",
-      navlistPanel("Contact & About Me Information:",
-        tabPanel("About Me",
-                 p("Hi, my name is Long Nguyen. Currently, I am a graduate MSSD student at ", a(href = "http://www.bu.edu/csmet/academic-programs/mssd/", "Boston University."),
-                    "This project is part my self-learning R-Shiny and Data-Science."),
-                 p(strong("How this app comes about:"), "I deal with tax every day in my day job. Therefore, my first app would have something to do with the thing that everyone love to hate:Taxxxx!
-                   Though, my goal is to make this less painful and fun while exercising my programming skills."),
-                 # p(strong("Source code:"), a(href = "https://github.com/datasciencecpa/R_TaxProject", "R_TaxProject on github")),
-                 h5("This is me and my wife - Hanna!"),
-                 tags$img(src = "img1.JPG",height = "1000", width = "700")
-                 
-        ),
-        tabPanel("Contact me", h4("Email:  nguyenhlongvn@gmail.com"))
-      )
+    tabPanel("About",
+         p("Hi, my name is Long Nguyen. Currently, I am a graduate MSSD student at ", a(href = "http://www.bu.edu/csmet/academic-programs/mssd/", "Boston University."),
+            "This app is a part of my self-learning of R/Shiny and Data-Science."),
+         p(strong("How this app comes about:"), "I deal with tax every day in my day job. Therefore, my first app would have something to do with the thing that everyone love to hate:Taxxxx!
+           Though, my goals are to make this process less painful and fun while exercising my programming skills."),
+         p(),
+         h5("This is my wife and I taking a walk at Pier 39 in San Francisco"),
+         tags$img(src = "img1.JPG",height = "1000", width = "700")
+         
+
     )
   )
 )
@@ -128,9 +118,21 @@ server <- function(input, output, session) {
   
   #--------------------------------------------------------------------------------
   # Display user entered information to information summary tab
-  output$FS_Summary <- renderDataTable(statusInformation(), options= list(pageLength = 25), filter = "top")
-  output$Income_Summary <- renderDataTable(income(), options = list(pageLength = 25), filter = 'top')
-  output$Deduction_Summary <- renderDataTable(deductions(), options = list(pageLength = 25), filter="top")
+  output$FS_Summary <- renderDataTable(datatable({statusInformation()},
+                                                 extensions = "Buttons", 
+                                                 options = list(pageLength = 25, dom ="Bfrtip",buttons= c("excel", "print"),
+                                                                fixedColumns = TRUE, autoWidth = FALSE, paging= TRUE), class= "display")
+                                        )
+  output$Income_Summary <- renderDataTable(datatable({income()}, 
+                                                 extensions = "Buttons", 
+                                                 options = list(pageLength = 25, dom ="Bfrtip",buttons= c("excel", "print"),
+                                                                fixedColumns = TRUE, autoWidth = FALSE, paging= TRUE), class= "display")
+                                          )
+  output$Deduction_Summary <- renderDataTable(datatable({deductions()}, 
+                                                  extensions = "Buttons", 
+                                                  options = list(pageLength = 25, dom ="Bfrtip",buttons= c("excel", "print"),
+                                                                 fixedColumns = TRUE, autoWidth = FALSE, paging= TRUE), class= "display")           
+                                             )
   
   # -- Observe when user check on display graph---
   observe({
@@ -144,7 +146,8 @@ server <- function(input, output, session) {
       hideshow(c("showTaxSummaryTbl", "add2017","taxSummaryTbl","viewCreditChb",
                  "displaySummaryGraph"), FALSE)
     } # End Hide Tax Summary Section----------------------------------------------
-    
+  })  
+  observe({
     if (input$hideTaxPlanning){ # Hide Tax Planning
       hideshow(c("filingStatus","qualifyingChildU17", "qualifyingChildO17","qualifyingRelatives","YourIRAAmountSld",
                  "SpouseIRAAmountSld","HSAAmountSld"), TRUE)
@@ -152,13 +155,14 @@ server <- function(input, output, session) {
     else {
       hideshow(c("filingStatus","qualifyingChildU17", "qualifyingChildO17","qualifyingRelatives","YourIRAAmountSld",
                  "SpouseIRAAmountSld","HSAAmountSld"), FALSE)
-      
     }# End Hide Tax Planning. Uncheck this box will be handled separately within function below.
+  })
+  observe({
     if (input$hideDetailSummary){
-      updateCheckboxInput(session, "displayOtherDetailGrh",value = FALSE)
-      hideshow(c("otherDetailSummary","otherDetailTbl","displayOtherDetailGrh"), TRUE)
+      # updateCheckboxInput(session, "displayOtherDetailGrh",value = FALSE)
+      hideshow(c("otherDetailSummary","otherDetailTbl"), TRUE)
     } else {
-      hideshow(c("otherDetailSummary","otherDetailTbl","displayOtherDetailGrh"), FALSE)
+      hideshow(c("otherDetailSummary","otherDetailTbl"), FALSE)
     }# End hide Other Detail Summary Section.
     if (input$displaySummaryGraph) { #Show summary Graph
       show("summaryGraph")
@@ -166,11 +170,6 @@ server <- function(input, output, session) {
       hide("summaryGraph")
     } # End Summary Graph -----------------------
     
-    if (input$displayOtherDetailGrh) {
-      show("detailGraph")
-    } else {
-      hide("detailGraph")
-    }
     if (input$showTaxSummaryTbl){
       show("taxSummaryTbl")
     } else {
@@ -189,7 +188,6 @@ server <- function(input, output, session) {
   observe({
     if (input$taxPlanning){# Update values in planning section
       # Update variables for taxPlanning section
-      
       updateSelectInput(session,"filingStatus", selected = statusInformation()["Filing_Status",1])
       updateSliderInput(session, "qualifyingChildU17", value = as.numeric(statusInformation()[c("Qualifying_Child_Under_17"),1]))
       updateSliderInput(session, "qualifyingChildO17", value = as.numeric(statusInformation()[c("Qualifying_Child_Over_17"),1]))
@@ -197,6 +195,7 @@ server <- function(input, output, session) {
       updateSliderInput(session, "YourIRAAmountSld", value = deductions()["Your_IRA_Contribution",1])
       updateSliderInput(session, "SpouseIRAAmountSld", value = deductions()["Spouse_IRA_Cover",1])
       updateSliderInput(session, "HSAAmountSld", value = deductions()["HSA_Contribution",1])
+      updateCheckboxInput(session,"hideTaxPlanning", value = FALSE )
     }
   })
     
@@ -261,7 +260,7 @@ server <- function(input, output, session) {
         creditName <- input$creditsSelect
         return (datatable({credits18[[creditName]]},
                   extensions = "Buttons", 
-                  options = list(pageLength = 25, dom ="Bfrtip",buttons= c("excel", "pdf", "print"),
+                  options = list(pageLength = 25, dom ="Bfrtip",buttons= c("excel", "print"),
                                  fixedColumns = TRUE, autoWidth = FALSE, paging= TRUE), class= "display" 
                 )
         )
@@ -288,7 +287,7 @@ server <- function(input, output, session) {
         }
         return (datatable({detailSummaryDF},
                           extensions = "Buttons", 
-                          options = list(pageLength = 25, dom ="Bfrtip",buttons= c("excel", "pdf", "print"),
+                          options = list(pageLength = 25, dom ="Bfrtip",buttons= c("excel", "print"),
                                          fixedColumns = TRUE, autoWidth = TRUE, paging= TRUE), class= "display"        
                 ))
       })
@@ -298,19 +297,22 @@ server <- function(input, output, session) {
       Income_Credit <- row.names(summaryDF)
       valueRows <- apply(summaryDF, 1, function(row) all(row!=0))
       Income_Credit <- Income_Credit[valueRows]
+      
       graphDF <- data.frame(Income_Credit,summaryDF[valueRows,], row.names = NULL)
-
+      colnames(graphDF) <- append("Income_Credit", colnames(summaryDF))
+      point <- format_format(big.mark = " ", decimal.mark = ",", scientific = FALSE)
       output$summaryGraph <- renderPlot({
         ggplot(data = DFConverter(graphDF), aes(x= Income_Credit, y =Amount, fill = TaxYear))+
-          geom_bar (stat="identity", position = position_dodge())
+          geom_bar (stat="identity", position = position_dodge())+
+          geom_text(aes(label=Amount), vjust=-0.5, color="black", size=3.5, position = position_dodge(width = 0.9))+
+          scale_y_continuous(labels =point)
+        
       })
       
-        
-        
       # Final Step: return data to output$taxSummaryTbl
       return (
         datatable({summaryDF},extensions = "Buttons", 
-                  options = list(pageLength = 25,dom ="Bfrtip",buttons= c("excel", "pdf", "print"),
+                  options = list(pageLength = 25,dom ="Bfrtip",buttons= c("excel", "print"),
                                 fixedColumns = FALSE, autoWidth = FALSE, paging= TRUE), class= "display")
       )
   } ) # End Tax Summary

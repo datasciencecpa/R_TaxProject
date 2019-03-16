@@ -1,5 +1,5 @@
 instructionUI <- function (id){
-  ns <- NS(id)
+
   tabPanel("Instructions for how to use this app:",
            p("The goal of this app is to allow user with simple tax return (W-2 income, interest, dividends, capital gains/loss from stocks, simple itemized 
              deductions to enter these information for both 2018 & 2017 and see the compare result."),

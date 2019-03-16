@@ -182,16 +182,23 @@ belowAGIDeduction <- function(deductionDF, statusDF, AGI, taxYear){
 }
 DFConverter <- function (df){
   # This function is used to convert given dataframe into different format
-  print(head(df,5))
-  df_col_names <- colnames(df)
-  df_1 <- df[c(df_col_names[1], df_col_names[3])]  # get dataframe that contain the first and last column
-  colnames(df_1)[2] <- "Amount"
-  df_1$TaxYear <- "2017"  #adding new column and assigned value 2017
-  df[,3] <- NULL # Delete column with amount from 2017
-  colnames(df)[2] <- "Amount"
-  df$TaxYear <- "2018"
-  print (head(rbind(df, df_1),5))
-  return (rbind(df, df_1))
+
+
+  dfColName <- colnames(df)
+  df1 <- 0
+  for (i in 2: length(dfColName)){
+    df2 <- df[c(dfColName[1], dfColName[i])]
+    colnames(df2)[2] <- "Amount"
+    df2$TaxYear <- dfColName[i]
+    if (is.data.frame(df1)){
+      df1 <- rbind(df1, df2)
+      
+    } else {
+      df1 <- df2
+    }
+  }
+
+  return (df1)
 }
 taxCalculation <- function (taxableIncome, incomeDF, filingStatus, taxYear){
   # This function will calculate tax based on taxable income
