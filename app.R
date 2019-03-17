@@ -93,7 +93,7 @@ ui <- fluidPage(
       )
     ),
     tabPanel("About",
-         p("Hi, my name is Long Nguyen. Currently, I am a graduate MSSD student at ", a(href = "http://www.bu.edu/csmet/academic-programs/mssd/", "Boston University."),
+         p("Hi, my name is Long Nguyen. Currently, I am enrolled in MS Software Development at ", a(href = "http://www.bu.edu/csmet/academic-programs/mssd/", "Boston University."),
             "This app is a part of my self-learning of R/Shiny and Data-Science."),
          p(strong("How this app comes about:"), "I deal with tax every day in my day job. Therefore, my first app would have something to do with the thing that everyone love to hate:Taxxxx!
            Though, my goals are to make this process less painful and fun while exercising my programming skills."),
@@ -102,8 +102,6 @@ ui <- fluidPage(
          hr(),
          h5("This is my wife and I taking a walk at Pier 39 in San Francisco"),
          tags$img(src = "img1.JPG",height = "1000", width = "700")
-         
-
     )
   )
 )
