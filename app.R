@@ -193,7 +193,7 @@ server <- function(input, output, session) {
       updateSliderInput(session, "qualifyingChildO17", value = as.numeric(statusInformation()[c("Qualifying_Child_Over_17"),1]))
       updateSliderInput(session, "qualifyingRelatives", value = as.numeric(statusInformation()["Qualifying_Relative",1]))
       updateSliderInput(session, "YourIRAAmountSld", value = deductions()["Your_IRA_Contribution",1])
-      updateSliderInput(session, "SpouseIRAAmountSld", value = deductions()["Spouse_IRA_Cover",1])
+      updateSliderInput(session, "SpouseIRAAmountSld", value = deductions()["Spouse_IRA_Contribution",1])
       updateSliderInput(session, "HSAAmountSld", value = deductions()["HSA_Contribution",1])
       updateCheckboxInput(session,"hideTaxPlanning", value = FALSE )
     }
