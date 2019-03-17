@@ -97,7 +97,9 @@ ui <- fluidPage(
             "This app is a part of my self-learning of R/Shiny and Data-Science."),
          p(strong("How this app comes about:"), "I deal with tax every day in my day job. Therefore, my first app would have something to do with the thing that everyone love to hate:Taxxxx!
            Though, my goals are to make this process less painful and fun while exercising my programming skills."),
-         p(),
+         p(strong("Dedication: "),"This app could not be completed without the supports of my wife, who had been my chief editor and researcher during the entire project. \n
+           Her advices and mentor support are the big reason that I could complete this project."),
+         hr(),
          h5("This is my wife and I taking a walk at Pier 39 in San Francisco"),
          tags$img(src = "img1.JPG",height = "1000", width = "700")
          
@@ -243,7 +245,7 @@ server <- function(input, output, session) {
         statusDF["Qualifying_Child_Over_17",1] <- input$qualifyingChildO17
         statusDF["Qualifying_Relative",1] <- input$qualifyingRelatives
         deductionsDF["Your_IRA_Contribution",1] <- input$YourIRAAmountSld
-        deductionsDF["Spouse_IRA_Cover",1] <- input$SpouseIRAAmountSld
+        deductionsDF["Spouse_IRA_Contribution",1] <- input$SpouseIRAAmountSld
         deductionsDF["HSA_Contribution",1] <- input$HSAAmountSld
         # Step 3: calculate taxPlan
         taxPlanning <- taxSummary(2018, statusDF, incomeDF, deductionsDF, credits())

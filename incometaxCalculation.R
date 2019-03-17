@@ -244,9 +244,10 @@ creditCalculation <- function (AGI, taxes, incomeDF,statusDF, creditDF,IRAContri
     # print ("Calculate Educational credit for 2018")
 
     EDC <- educationalCrd(taxYear,AGI, taxes, filingStatus, creditDF, otherCredits["CDC",1])
-    if (EDC["Line_9_AOC_Nonrefundable_Amount ",]>0 | EDC["Refundable_AOC",]>0){
+    print (EDC)
+    if (EDC["Line_19:Nonrefundable Education Credits",]>0 | EDC["Refundable_AOC (40%)",]>0){
       otherCredits["Education",1] <- EDC["Line_19:Nonrefundable Education Credits",]
-      otherCredits["AOC",1] <- EDC["Refundable_AOC",]
+      otherCredits["AOC",1] <- EDC["Refundable_AOC (40%)",]
       returnList[["Education"]] <- EDC
     }
   }
