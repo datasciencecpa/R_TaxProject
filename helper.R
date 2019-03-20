@@ -20,3 +20,4 @@ updateNumInput_2 <- function(session, IDs, values){
     updateNumericInput(session, IDs[i], value = values[i])
   }
 }
+format

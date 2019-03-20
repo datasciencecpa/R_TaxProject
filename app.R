@@ -121,17 +121,20 @@ server <- function(input, output, session) {
   output$FS_Summary <- renderDataTable(datatable({statusInformation()},
                                                  extensions = "Buttons", 
                                                  options = list(pageLength = 25, dom ="Bfrtip",buttons= c("excel", "print"),
-                                                                fixedColumns = TRUE, autoWidth = FALSE, paging= TRUE), class= "display")
+                                                                fixedColumns = TRUE, autoWidth = FALSE, paging= TRUE), class= "display"
+                                                 )%>%formatCurrency(1:ncol(statusInformation()))
                                         )
   output$Income_Summary <- renderDataTable(datatable({income()}, 
                                                  extensions = "Buttons", 
                                                  options = list(pageLength = 25, dom ="Bfrtip",buttons= c("excel", "print"),
-                                                                fixedColumns = TRUE, autoWidth = FALSE, paging= TRUE), class= "display")
+                                                                fixedColumns = TRUE, autoWidth = FALSE, paging= TRUE), class= "display"
+                                                 )%>%formatCurrency(1:ncol(income()))
                                           )
   output$Deduction_Summary <- renderDataTable(datatable({deductions()}, 
                                                   extensions = "Buttons", 
                                                   options = list(pageLength = 25, dom ="Bfrtip",buttons= c("excel", "print"),
-                                                                 fixedColumns = TRUE, autoWidth = FALSE, paging= TRUE), class= "display")           
+                                                                 fixedColumns = TRUE, autoWidth = FALSE, paging= TRUE), class= "display"
+                                                  )%>%formatCurrency(1:ncol(deductions()))           
                                              )
   
   # -- Observe when user check on display graph---
@@ -262,7 +265,7 @@ server <- function(input, output, session) {
                   extensions = "Buttons", 
                   options = list(pageLength = 25, dom ="Bfrtip",buttons= c("excel", "print"),
                                  fixedColumns = TRUE, autoWidth = FALSE, paging= TRUE), class= "display" 
-                )
+                )%>%formatCurrency(1:ncol(credits18[[creditName]]))
         )
       })
       # Finish Step 5 ------------------------------------------------------------------------
@@ -289,7 +292,8 @@ server <- function(input, output, session) {
                           extensions = "Buttons", 
                           options = list(pageLength = 25, dom ="Bfrtip",buttons= c("excel", "print"),
                                          fixedColumns = TRUE, autoWidth = TRUE, paging= TRUE), class= "display"        
-                ))
+                )%>%formatCurrency(1:ncol(detailSummaryDF))
+                )
       })
       # Finish Step 6------------------------------------------------------------------------
       # Graph section -------------------------------------------------------------------------
@@ -314,6 +318,7 @@ server <- function(input, output, session) {
         datatable({summaryDF},extensions = "Buttons", 
                   options = list(pageLength = 25,dom ="Bfrtip",buttons= c("excel", "print"),
                                 fixedColumns = FALSE, autoWidth = FALSE, paging= TRUE), class= "display")
+        %>%formatCurrency(1:ncol(summaryDF))
       )
   } ) # End Tax Summary
 }
